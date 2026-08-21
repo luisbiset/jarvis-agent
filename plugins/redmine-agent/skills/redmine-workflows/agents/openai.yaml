@@ -1,0 +1,11 @@
+interface:
+  display_name: "Redmine SESAB"
+  short_description: "Gerencie chamados Redmine com segurança"
+  default_prompt: "Use $redmine-workflows para listar meus chamados abertos."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "redmine"
+      description: "Acesso seguro à API REST do Redmine da SESAB"
+policy:
+  allow_implicit_invocation: true

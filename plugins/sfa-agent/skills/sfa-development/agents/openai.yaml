@@ -1,0 +1,6 @@
+interface:
+  display_name: "SFA Development"
+  short_description: "Desenvolva o SFA com regras do domínio"
+  default_prompt: "Use $sfa-development para analisar e implementar esta tarefa no SFA."
+policy:
+  allow_implicit_invocation: true

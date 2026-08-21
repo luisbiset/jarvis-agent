@@ -1,0 +1,26 @@
+{
+  "name": "sfa-agent",
+  "version": "0.1.0+codex.20260821183325",
+  "description": "Coordenador pessoal do SFA com especialistas em frontend, backend e banco de dados.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "SFA Agent",
+    "shortDescription": "Coordene tr\u00eas especialistas do SFA.",
+    "longDescription": "Coordena frontend Angular, backend Java/Spring e persist\u00eancia Oracle/PostgreSQL no Sistema de Faturamento AGHUse, preservando regras BPA e compatibilidade com a stack legada.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Analysis",
+      "Code",
+      "Review"
+    ],
+    "defaultPrompt": [
+      "Analise esta tarefa no SFA.",
+      "Implemente esta corre\u00e7\u00e3o no SFA.",
+      "Revise estas mudan\u00e7as do SFA."
+    ]
+  }
+}
