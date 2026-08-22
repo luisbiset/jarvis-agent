@@ -108,15 +108,15 @@ O instalador:
 2. registra o marketplace local `codex-agents`;
 3. instala os quatro plugins;
 4. cria os agentes globais em `~/.codex/agents/`;
-5. usa links simbólicos para refletir automaticamente mudanças feitas neste clone.
+5. copia cada agente como um arquivo TOML independente, compatível com o carregador de subagentes do Codex.
 
-Para uma instalação portátil, sem links simbólicos:
+O argumento legado continua aceito para compatibilidade, mas produz o mesmo resultado da instalação padrão:
 
 ```bash
 ./scripts/install.sh --copy-agents
 ```
 
-Nesse modo, execute o instalador novamente após cada atualização para copiar as versões novas dos agentes.
+Execute o instalador novamente após cada atualização para copiar as versões novas dos agentes.
 
 ## 6. Reiniciar e verificar
 
@@ -215,10 +215,10 @@ Abra uma conversa nova depois da reinstalação.
 
 ### Agente global não foi atualizado
 
-Se a instalação foi feita com `--copy-agents`, execute o instalador novamente. Na instalação padrão, confirme se o link simbólico aponta para o clone atual:
+Execute o instalador novamente e confirme que os perfis são arquivos regulares, não links simbólicos:
 
 ```bash
-ls -l ~/.codex/agents
+find ~/.codex/agents -maxdepth 1 -type f -name '*.toml' -print
 ```
 
 ### Instalação antiga ou duplicada

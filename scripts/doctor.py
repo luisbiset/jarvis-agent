@@ -33,9 +33,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def agent_is_installed(path: Path, expected: Path) -> bool:
-    if path.is_symlink():
-        return path.resolve() == expected
-    return path.is_file() and path.read_bytes() == expected.read_bytes()
+    return path.is_file() and not path.is_symlink() and path.read_bytes() == expected.read_bytes()
 
 
 def main() -> int:
@@ -44,7 +42,10 @@ def main() -> int:
     installed_agents = CODEX_HOME / "agents"
     for name, target in sorted(expected_agents.items()):
         installed = installed_agents / name
-        status(agent_is_installed(installed, target), f"agente global {name} instalado a partir de {target}")
+        status(
+            agent_is_installed(installed, target),
+            f"agente global {name} copiado a partir de {target}",
+        )
 
     config_path = CODEX_HOME / "config.toml"
     config = {}

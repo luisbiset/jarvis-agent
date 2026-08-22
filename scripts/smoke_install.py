@@ -16,7 +16,7 @@ def main() -> int:
         codex_home = Path(temp_dir)
         env = {**os.environ, "CODEX_HOME": str(codex_home)}
         subprocess.run(
-            [str(ROOT / "scripts/install.sh"), "--copy-agents"],
+            [str(ROOT / "scripts/install.sh")],
             cwd=ROOT,
             env=env,
             check=True,

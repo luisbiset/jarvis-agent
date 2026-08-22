@@ -199,22 +199,39 @@ def validate_redmine_server() -> None:
 
 def validate_critical_contracts() -> None:
     contracts = {
-        "plugins/aghuse-agent/skills/aghuse-development/SKILL.md": [
-            "nunca criar uma nova `*RN`",
-            "criá-la como `*ON`",
-            "aghuse-idempotent-database-scripts",
-        ],
         "agents/aghuse_backend.toml": [
             "nunca crie uma nova classe `*RN`",
             "crie-a como `*ON`",
+        ],
+        "agents/aghuse_tests.toml": [
+            "Crie, amplie ou corrija testes somente quando a unidade de produção testada for uma classe `*ON` ou uma classe `*RN` existente",
+            "Não crie nem modifique testes de controller/action",
+            "É permitido ler e executar testes existentes fora de ON/RN apenas para diagnóstico",
+            "Antes de criar uma classe de teste, procure uma cobertura adequada no módulo, no restante do repositório e nas branches relacionadas ao fluxo",
+            "Só crie uma nova classe após demonstrar que não existe teste adequado",
         ],
         "plugins/aghuse-agent/skills/aghuse-idempotent-database-scripts/SKILL.md": [
             "A mesma regra vale para o rollback",
             "aplicação duas vezes, rollback duas vezes",
         ],
+        "plugins/aghuse-agent/skills/aghuse-development/SKILL.md": [
+            "nunca criar uma nova `*RN`",
+            "criá-la como `*ON`",
+            "aghuse-idempotent-database-scripts",
+            "testes unitários exclusivamente para ONs e RNs existentes",
+            "Não delegue ao `aghuse_tests` a criação ou alteração de testes de controller/action",
+            "Antes de autorizar uma nova classe `*ONTest` ou `*RNTest`",
+            "Prefira ampliar ou portar a classe de teste existente",
+        ],
         "agents/aghuse_database.toml": [
             "aplicação e rollback",
             "deve ser idempotente",
+            "Toda nova consulta baseada em Criteria",
+            "Não crie novas consultas com `DetachedCriteria`",
+        ],
+        "agents/sesab_reviewer.toml": [
+            "Ao revisar mudanças no AGHUse",
+            "reporte como achado a criação de consultas com `DetachedCriteria`",
         ],
         "plugins/redmine-agent/skills/redmine-workflows/SKILL.md": [
             "confirmação explícita imediatamente antes",

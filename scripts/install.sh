@@ -4,7 +4,6 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 codex_home="${CODEX_HOME:-$HOME/.codex}"
 marketplace_name="codex-agents"
-agent_mode="link"
 dry_run=false
 
 usage() {
@@ -27,7 +26,7 @@ while [[ $# -gt 0 ]]; do
       dry_run=true
       ;;
     --copy-agents)
-      agent_mode="copy"
+      # Compatibilidade com chamadas antigas. Agentes agora são sempre copiados.
       ;;
     -h|--help)
       usage
@@ -46,11 +45,7 @@ run mkdir -p "$codex_home/agents"
 
 for agent in "$project_root"/agents/*.toml; do
   destination="$codex_home/agents/$(basename "$agent")"
-  if [[ "$agent_mode" == "copy" ]]; then
-    run cp -f --remove-destination "$agent" "$destination"
-  else
-    run ln -sfn "$agent" "$destination"
-  fi
+  run cp -f --remove-destination "$agent" "$destination"
 done
 
 if ! codex plugin marketplace list | grep -q "^$marketplace_name[[:space:]]"; then

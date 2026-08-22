@@ -1,6 +1,6 @@
 {
   "name": "sesab-orchestrator",
-  "version": "0.1.0+codex.20260822025809",
+  "version": "0.1.0+codex.20260822052153",
   "description": "Orquestrador principal do Redmine, SFA e AGHUse.",
   "author": {
     "name": "Local developer"

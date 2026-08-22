@@ -23,7 +23,7 @@ Consulte o [guia completo do Jarvis Agent SESAB](plugins/sesab-orchestrator/skil
 - `agents/aghuse_frontend.toml`: especialista JSF/PrimeFaces do AGHUse.
 - `agents/aghuse_backend.toml`: especialista Java EE/EJB do AGHUse.
 - `agents/aghuse_database.toml`: especialista Oracle/PostgreSQL do AGHUse.
-- `agents/aghuse_tests.toml`: especialista em testes unitários do AGHUse.
+- `agents/aghuse_tests.toml`: especialista em testes unitários exclusivamente de ONs e RNs do AGHUse.
 - `agents/aghuse_analyst.toml`: analista somente leitura de tarefas e requisitos do AGHUse.
 - `agents/sesab_orchestrator.toml`: orquestrador principal dos dois sistemas.
 - `agents/sesab_reviewer.toml`: revisão final independente e somente leitura.
@@ -31,7 +31,7 @@ Consulte o [guia completo do Jarvis Agent SESAB](plugins/sesab-orchestrator/skil
 - `.agents/plugins/marketplace.json`: marketplace local deste projeto.
 - `scripts/validate.py`: valida manifests, agents, skills, evals e segredos literais.
 - `scripts/doctor.py`: diagnostica instalação, duplicidades e MCP sem mostrar credenciais; `--strict` falha em inconsistências.
-- `scripts/install.sh`: instala agents e plugins a partir desta fonte central; aceita `--dry-run` e `--copy-agents`.
+- `scripts/install.sh`: instala agents e plugins a partir desta fonte central; aceita `--dry-run`.
 - `scripts/smoke_install.py`: prova a instalação em um `CODEX_HOME` temporário e vazio.
 - `scripts/run_evals.py`: carrega os contratos de roteamento e, com `--live`, avalia decisões usando `codex exec`.
 - `evals/routing-cases.json`: casos de avaliação de roteamento e segurança.
@@ -56,7 +56,7 @@ Para conferir previamente os comandos sem alterar a instalação:
 ./scripts/install.sh --dry-run
 ~~~
 
-Para uma instalação portátil sem links simbólicos:
+O argumento legado abaixo continua aceito, mas a instalação padrão já copia os agentes:
 
 ~~~bash
 ./scripts/install.sh --copy-agents
@@ -74,7 +74,7 @@ codex plugin add sesab-orchestrator@codex-agents
 
 ## Instalação dos subagentes
 
-Os arquivos TOML podem ser copiados para `.codex/agents/` de um projeto ou para `~/.codex/agents/` quando devem ficar disponíveis globalmente. O instalador usa links simbólicos por padrão para refletir atualizações desta fonte central; use `--copy-agents` ao transportar a instalação para outra máquina. Não adicione esses arquivos ao Git corporativo sem uma decisão explícita da equipe.
+Os arquivos TOML podem ser copiados para `.codex/agents/` de um projeto ou para `~/.codex/agents/` quando devem ficar disponíveis globalmente. O instalador sempre cria arquivos independentes em `~/.codex/agents/`; execute-o novamente após alterar um agente e abra uma conversa nova para recarregar os perfis. Não adicione esses arquivos ao Git corporativo sem uma decisão explícita da equipe.
 
 Depois de alterar um plugin, valide-o, atualize o cachebuster e reinstale-o antes de testar em uma conversa nova.
 

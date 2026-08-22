@@ -1,6 +1,6 @@
 {
   "name": "sfa-agent",
-  "version": "0.1.0+codex.20260822020746",
+  "version": "0.1.0+codex.20260822052153",
   "description": "Coordenador pessoal do SFA com especialistas em frontend, backend e banco de dados.",
   "author": {
     "name": "Local developer"
