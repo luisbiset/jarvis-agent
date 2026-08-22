@@ -1,6 +1,6 @@
 ---
 name: sfa-development
-description: Coordenar análise, implementação, testes e revisão no Sistema de Faturamento AGHUse (SFA) por meio dos subagentes sfa_frontend, sfa_backend e sfa_database. Usar em tarefas que mencionem SFA, faturamento AGHUse, BPA, CNES, CBO, SIGTAP, glosas ou um repositório que contenha sfa/pom.xml e sfa-client/angular.json.
+description: Coordenar análise, implementação, testes e revisão no Sistema de Faturamento AGHUse (SFA) por meio dos subagentes sfa_frontend, sfa_backend, sfa_database e sfa_tests. Usar em tarefas que mencionem SFA, faturamento AGHUse, BPA, CNES, CBO, SIGTAP, glosas ou um repositório que contenha sfa/pom.xml e sfa-client/angular.json.
 ---
 
 # Coordenação do desenvolvimento do SFA
@@ -19,7 +19,9 @@ Atuar como coordenador do Sistema de Faturamento AGHUse. Entregar mudanças pequ
 - `sfa_backend`: controllers, services, VOs, segurança, integrações, regras BPA/faturamento e testes Java.
 - `sfa_database`: entidades, repositories, datasources, transações, consultas e scripts Oracle/PostgreSQL.
 
-O agente principal é o coordenador; os três perfis acima são os especialistas. Antes de editar, localizar o fluxo completo afetado e confirmar os contratos entre frontend, API, regras de faturamento e persistência.
+- `sfa_tests`: testes JUnit/Mockito/Spring Test e Jasmine/Karma, regressão, fixtures e cobertura.
+
+O agente principal é o coordenador; os quatro perfis acima são os especialistas. Antes de editar, localizar o fluxo completo afetado e confirmar os contratos entre frontend, API, regras de faturamento e persistência.
 
 Responder em português, salvo solicitação em contrário. Explicar impactos funcionais com os termos do domínio presentes no código, como BPA, competência, CNES, CBO, SIGTAP, auditoria, tratamento e glosa.
 
@@ -51,6 +53,8 @@ Responder em português, salvo solicitação em contrário. Explicar impactos fu
 4. Tratar o contrato como handoff explícito: frontend descreve necessidade de API; backend define request/response e regras; banco define persistência e fronteiras transacionais.
 5. Se o contrato ainda estiver ambíguo, sequenciar a implementação: banco -> backend -> frontend, ajustando a ordem quando a tarefa justificar.
 6. Ao receber os resultados, revisar o diff integrado, resolver divergências e executar as validações proporcionais ao risco.
+
+Acionar `sfa_tests` quando houver comportamento novo ou corrigido, risco de regressão, falha de suíte ou necessidade de cobertura. O especialista de implementação continua responsável por código testável; o agente de testes possui os arquivos de teste para evitar sobreposição.
 
 Não delegar trabalho irrelevante apenas para ocupar os três perfis. Em diagnóstico somente leitura, solicitar que cada especialista devolva evidências e recomendações sem editar. Em correções, deixar claro quais diretórios cada agente pode alterar.
 
@@ -116,4 +120,4 @@ npm run build -- --configuration development
 
 ## Concluir
 
-Informar arquivos alterados, comportamento resultante, comandos executados e qualquer validação impedida por banco, LDAP, navegador ou ambiente.
+Consolidar o handoff com: resultado, evidências, arquivos alterados, contrato afetado, validações executadas, riscos, limitações e próxima responsabilidade. Informar qualquer validação impedida por banco, LDAP, navegador ou ambiente.

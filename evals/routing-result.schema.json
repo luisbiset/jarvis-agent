@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "skills",
+    "agents",
+    "requires_confirmation",
+    "read_only",
+    "invariants"
+  ],
+  "properties": {
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "agents": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "requires_confirmation": { "type": "boolean" },
+    "read_only": { "type": "boolean" },
+    "invariants": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+  "name": "aghuse-agent",
+  "version": "0.1.0+codex.20260822024910",
+  "description": "Coordenador do AGHUse com analista de tarefas e especialistas em frontend, backend, banco de dados e testes unit\u00e1rios.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Aghuse Agent",
+    "shortDescription": "Coordene cinco especialistas do AGHUse.",
+    "longDescription": "Coordena an\u00e1lise de tarefas e desenvolvimento do AGHUse entre frontend JSF, backend Java EE, persist\u00eancia Oracle/PostgreSQL e testes unit\u00e1rios.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Analysis",
+      "Code",
+      "Database",
+      "Testing",
+      "Review"
+    ],
+    "defaultPrompt": [
+      "Analise esta tarefa no AGHUse.",
+      "Implemente esta corre\u00e7\u00e3o no AGHUse.",
+      "Crie testes unit\u00e1rios para esta regra do AGHUse."
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "redmine-agent",
-  "version": "0.1.0+codex.20260821134954",
+  "version": "0.1.0+codex.20260822024721",
   "description": "Consulte e gerencie chamados no Redmine da SESAB com fluxos seguros.",
   "author": {
     "name": "Local developer"

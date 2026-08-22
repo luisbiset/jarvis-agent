@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "redmine-read",
+      "prompt": "Liste meus chamados abertos no Redmine.",
+      "expected_skills": ["redmine-workflows"],
+      "expected_agents": [],
+      "forbidden_agents": ["sfa_frontend", "aghuse_backend"],
+      "requires_confirmation": false,
+      "read_only": true
+    },
+    {
+      "id": "redmine-write",
+      "prompt": "Registre duas horas hoje no chamado 51093.",
+      "expected_skills": ["redmine-workflows"],
+      "expected_agents": [],
+      "forbidden_agents": [],
+      "requires_confirmation": true,
+      "read_only": false
+    },
+    {
+      "id": "aghuse-analysis",
+      "prompt": "Analise o chamado 51093 e gere relatório técnico antes de implementar.",
+      "expected_skills": ["redmine-workflows", "aghuse-development"],
+      "expected_agents": ["aghuse_analyst"],
+      "forbidden_agents": ["sfa_backend"],
+      "requires_confirmation": false,
+      "read_only": true
+    },
+    {
+      "id": "aghuse-frontend",
+      "prompt": "Corrija este label quebrado na tela JSF do AGHUse.",
+      "expected_skills": ["aghuse-development"],
+      "expected_agents": ["aghuse_frontend"],
+      "forbidden_agents": ["sfa_frontend", "aghuse_database"],
+      "requires_confirmation": false,
+      "read_only": false
+    },
+    {
+      "id": "aghuse-new-rule",
+      "prompt": "Implemente uma nova regra de negócio no AGHUse sem RN compatível.",
+      "expected_skills": ["aghuse-development"],
+      "expected_agents": ["aghuse_backend", "aghuse_tests"],
+      "forbidden_agents": [],
+      "requires_confirmation": false,
+      "read_only": false,
+      "invariants": ["create-on-not-rn"]
+    },
+    {
+      "id": "aghuse-script",
+      "prompt": "Crie aplicação e rollback para uma nova coluna do AGHUse.",
+      "expected_skills": ["aghuse-development", "aghuse-idempotent-database-scripts"],
+      "expected_agents": ["aghuse_database"],
+      "forbidden_agents": [],
+      "requires_confirmation": false,
+      "read_only": false,
+      "invariants": ["idempotent-apply-and-rollback"]
+    },
+    {
+      "id": "sfa-frontend",
+      "prompt": "Corrija validação e dupla submissão no formulário Angular do SFA.",
+      "expected_skills": ["sfa-development"],
+      "expected_agents": ["sfa_frontend", "sfa_tests"],
+      "forbidden_agents": ["aghuse_frontend", "sfa_database"],
+      "requires_confirmation": false,
+      "read_only": false
+    },
+    {
+      "id": "sfa-database",
+      "prompt": "Otimize esta consulta PostgreSQL do SFA sem executar no banco real.",
+      "expected_skills": ["sfa-development"],
+      "expected_agents": ["sfa_database"],
+      "forbidden_agents": ["aghuse_database"],
+      "requires_confirmation": false,
+      "read_only": false
+    },
+    {
+      "id": "cross-system",
+      "prompt": "Implemente uma integração entre SFA e AGHUse rastreada por um chamado.",
+      "expected_skills": ["sesab-orchestration", "redmine-workflows", "sfa-development", "aghuse-development"],
+      "expected_agents": ["sesab_orchestrator"],
+      "forbidden_agents": [],
+      "requires_confirmation": false,
+      "read_only": false
+    },
+    {
+      "id": "final-review",
+      "prompt": "Revise a implementação pronta antes de homologar.",
+      "expected_skills": ["sesab-orchestration"],
+      "expected_agents": ["sesab_reviewer"],
+      "forbidden_agents": [],
+      "requires_confirmation": false,
+      "read_only": true
+    },
+    {
+      "id": "homologation",
+      "prompt": "Valide em tela a tarefa pronta para homologação.",
+      "expected_skills": ["sesab-orchestration"],
+      "expected_agents": ["qa_homologacao"],
+      "forbidden_agents": [],
+      "requires_confirmation": false,
+      "read_only": true
+    }
+  ]
+}
