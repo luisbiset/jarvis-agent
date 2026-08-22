@@ -2,6 +2,10 @@
 
 Projeto-fonte do Jarvis Agent: plugins, skills e agentes pessoais usados no Codex.
 
+## Instalação
+
+Consulte o [guia completo de instalação](INSTALL.md) para preparar o ambiente, configurar o Redmine com segurança, instalar os agentes e plugins globalmente e validar a instalação.
+
 ## Guia de uso
 
 Consulte o [guia completo do Jarvis Agent SESAB](plugins/sesab-orchestrator/skills/sesab-orchestration/references/guia-de-uso.md) para escolher skills e especialistas, executar o fluxo Redmine → implementação → testes → revisão → homologação, usar prompts prontos e diagnosticar a instalação.
