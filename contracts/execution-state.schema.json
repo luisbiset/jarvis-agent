@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jarvis://contracts/execution-state/2.0.0",
+  "type": "object",
+  "required": [
+    "schema_version", "run_id", "task_id", "jarvis_version", "created_at",
+    "updated_at", "current_state", "complexity", "risk_class",
+    "operational_mode", "reasoning_class", "budget", "history", "agents_used",
+    "metrics", "gate_decision"
+  ],
+  "properties": {
+    "schema_version": { "const": "2.0.0" },
+    "run_id": { "type": "string" },
+    "task_id": { "type": "string" },
+    "jarvis_version": { "type": "string" },
+    "created_at": { "type": "string" },
+    "updated_at": { "type": "string" },
+    "current_state": { "enum": ["NEW", "DISCOVERY", "PLAN_READY", "PLAN_APPROVED", "IMPLEMENTING", "VALIDATING", "REVIEW_READY", "HUMAN_GATE", "HOMOLOGATION_READY", "DONE", "BLOCKED"] },
+    "complexity": { "enum": ["TRIVIAL", "LOCALIZED", "TRANSVERSAL", "CRITICAL"] },
+    "risk_class": { "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+    "operational_mode": { "enum": ["COPILOT", "ASSISTED_AUTOPILOT", "READ_ONLY_AUDIT"] },
+    "reasoning_class": { "enum": ["FAST", "NORMAL", "DEEP"] },
+    "budget": {
+      "type": "object",
+      "required": ["max_agents", "max_parallel_agents", "required_reviewers", "override_justification"],
+      "properties": {
+        "max_agents": { "type": "integer", "minimum": 0 },
+        "max_parallel_agents": { "type": "integer", "minimum": 1 },
+        "required_reviewers": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "override_justification": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "history": { "type": "array", "items": { "type": "object" } },
+    "agents_used": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "metrics": {
+      "type": "object",
+      "required": ["duration_ms", "token_or_credit_cost", "retry_count"],
+      "properties": {
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "token_or_credit_cost": { "type": "number", "minimum": 0 },
+        "retry_count": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "gate_decision": { "type": ["string", "null"], "enum": [null, "APPROVED", "CHANGES_REQUESTED", "REJECTED"] }
+  },
+  "additionalProperties": false
+}

@@ -1,6 +1,0 @@
-interface:
-  display_name: "SESAB Orchestrator"
-  short_description: "Coordene Redmine, SFA e AGHUse"
-  default_prompt: "Use $sesab-orchestration para transformar este chamado do Redmine em trabalho coordenado no SFA ou AGHUse."
-policy:
-  allow_implicit_invocation: true

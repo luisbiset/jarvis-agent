@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "jarvis_version": "2.1.0",
+  "behavior_hash": null,
+  "minimum_scores": {
+    "routing_accuracy": 90.0,
+    "over_routing": 90.0,
+    "under_routing": 95.0,
+    "stage_order": 85.0,
+    "confirmation_safety": 100.0
+  },
+  "case_ids": []
+}

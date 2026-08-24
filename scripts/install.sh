@@ -52,7 +52,7 @@ if ! codex plugin marketplace list | grep -q "^$marketplace_name[[:space:]]"; th
   run codex plugin marketplace add "$project_root"
 fi
 
-for plugin in redmine-agent sfa-agent aghuse-agent sesab-orchestrator; do
+for plugin in redmine-agent sfa-agent aghuse-agent; do
   run codex plugin add "$plugin@$marketplace_name"
 done
 

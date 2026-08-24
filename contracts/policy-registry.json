@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "policies": [
+    {
+      "id": "AGH-RN-001",
+      "category": "critical_invariant",
+      "summary": "No AGHUse, reutilizar RN coesa existente ou criar ON; nunca criar nova classe RN.",
+      "enforced_by": ["agents/aghuse_backend.toml", "plugins/aghuse-agent/skills/aghuse-development/SKILL.md", "scripts/validate.py"]
+    },
+    {
+      "id": "AGH-DB-001",
+      "category": "critical_invariant",
+      "summary": "Scripts de implantação AGHUse são entregues externamente e não entram no Git do sistema.",
+      "enforced_by": ["agents/aghuse_database.toml", "agents/aghuse_auditor_do_diff.toml", "scripts/validate.py"]
+    },
+    {
+      "id": "AGH-DB-002",
+      "category": "critical_invariant",
+      "summary": "Aplicação e rollback de banco AGHUse devem ser idempotentes.",
+      "enforced_by": ["agents/aghuse_database.toml", "plugins/aghuse-agent/skills/aghuse-idempotent-database-scripts/SKILL.md", "scripts/validate.py"]
+    },
+    {
+      "id": "AGH-DB-003",
+      "category": "critical_invariant",
+      "summary": "Novas consultas Criteria do AGHUse usam JPA CriteriaBuilder, não a API Criteria legada do Hibernate.",
+      "enforced_by": ["agents/aghuse_database.toml", "agents/sesab_reviewer.toml", "scripts/validate.py"]
+    },
+    {
+      "id": "AGH-TEST-001",
+      "category": "critical_invariant",
+      "summary": "O especialista aghuse_tests cria ou altera testes unitários somente de ONs e RNs existentes.",
+      "enforced_by": ["agents/aghuse_tests.toml", "plugins/aghuse-agent/skills/aghuse-development/SKILL.md", "scripts/validate.py"]
+    },
+    {
+      "id": "SEC-001",
+      "category": "critical_invariant",
+      "summary": "Credenciais, URLs privadas e dados clínicos ou de faturamento reais não podem ser persistidos em código, handoffs ou telemetria.",
+      "enforced_by": ["AGENTS.md", "scripts/jarvis_runtime.py", "scripts/validate.py"]
+    },
+    {
+      "id": "FLOW-001",
+      "category": "flow_policy",
+      "summary": "Gate humano é obrigatório para aceitação final e não pode ser substituído por agente.",
+      "enforced_by": ["plugins/aghuse-agent/skills/aghuse-development/SKILL.md"]
+    },
+    {
+      "id": "FLOW-002",
+      "category": "flow_policy",
+      "summary": "Redmine, banco, deploy, commit e push exigem autorização própria; aprovação anterior não é autorização implícita.",
+      "enforced_by": ["plugins/redmine-agent/skills/redmine-workflows/SKILL.md"]
+    }
+  ]
+}

@@ -8,14 +8,13 @@ Consulte o [guia completo de instalação](INSTALL.md) para preparar o ambiente,
 
 ## Guia de uso
 
-Consulte o [guia completo do Jarvis Agent SESAB](plugins/sesab-orchestrator/skills/sesab-orchestration/references/guia-de-uso.md) para escolher skills e especialistas, executar o fluxo Redmine → implementação → testes → revisão → homologação, usar prompts prontos e diagnosticar a instalação.
+Comece pelos [comandos básicos para economizar créditos](docs/COMANDOS_BASICOS.md). Consulte também o [guia rápido por skill](docs/GUIA_RAPIDO.md) ou, para arquitetura, fluxos e diagnóstico, o [guia completo](docs/GUIA_COMPLETO.md).
 
 ## Estrutura
 
 - `plugins/redmine-agent/`: plugin de integração e workflows do Redmine.
 - `plugins/sfa-agent/`: coordenador de desenvolvimento do SFA.
 - `plugins/aghuse-agent/`: coordenador de desenvolvimento do AGHUse.
-- `plugins/sesab-orchestrator/`: orquestrador principal do Redmine, SFA e AGHUse.
 - `agents/sfa_frontend.toml`: especialista Angular do SFA.
 - `agents/sfa_backend.toml`: especialista Java/Spring do SFA.
 - `agents/sfa_database.toml`: especialista Oracle/PostgreSQL do SFA.
@@ -25,15 +24,17 @@ Consulte o [guia completo do Jarvis Agent SESAB](plugins/sesab-orchestrator/skil
 - `agents/aghuse_database.toml`: especialista Oracle/PostgreSQL do AGHUse.
 - `agents/aghuse_tests.toml`: especialista em testes unitários exclusivamente de ONs e RNs do AGHUse.
 - `agents/aghuse_analyst.toml`: analista somente leitura de tarefas e requisitos do AGHUse.
-- `agents/sesab_orchestrator.toml`: orquestrador principal dos dois sistemas.
 - `agents/sesab_reviewer.toml`: revisão final independente e somente leitura.
-- `agents/qa_homologacao.toml`: roteiros e execução de homologação em tela.
+- `agents/qa_homologacao.toml`: execução de roteiros e evidências de homologação em tela.
 - `.agents/plugins/marketplace.json`: marketplace local deste projeto.
 - `scripts/validate.py`: valida manifests, agents, skills, evals e segredos literais.
 - `scripts/doctor.py`: diagnostica instalação, duplicidades e MCP sem mostrar credenciais; `--strict` falha em inconsistências.
 - `scripts/install.sh`: instala agents e plugins a partir desta fonte central; aceita `--dry-run`.
 - `scripts/smoke_install.py`: prova a instalação em um `CODEX_HOME` temporário e vazio.
 - `scripts/run_evals.py`: carrega os contratos de roteamento e, com `--live`, avalia decisões usando `codex exec`.
+- `scripts/jarvis_runtime.py`: persiste estado, eventos, handoffs, context packs, cache de descoberta e métricas locais da V2.
+- `contracts/`: schemas, políticas, fronteiras de papéis, padrões de tarefa e versão comportamental.
+- `docs/TOPOLOGY.md`: topologia gerada automaticamente a partir dos manifests, agents e skills.
 - `evals/routing-cases.json`: casos de avaliação de roteamento e segurança.
 - `plugins/redmine-agent/src/`: cliente HTTP, ferramentas e protocolo MCP modularizados.
 - `plugins/redmine-agent/tests/`: testes de contrato, erros HTTP, timeout, redaction e ferramentas.
@@ -69,7 +70,6 @@ codex plugin marketplace add "$PWD"
 codex plugin add redmine-agent@codex-agents
 codex plugin add sfa-agent@codex-agents
 codex plugin add aghuse-agent@codex-agents
-codex plugin add sesab-orchestrator@codex-agents
 ```
 
 ## Instalação dos subagentes
@@ -89,15 +89,40 @@ node plugins/redmine-agent/scripts/server.mjs --self-test
 
 Os casos em `evals/routing-cases.json` documentam quais skills e agentes devem ou não ser acionados para pedidos representativos. A validação padrão é determinística e não acessa Redmine, banco ou ambientes reais.
 
+## Protocolo Jarvis V2
+
+A V2 classifica cada execução por complexidade, risco, modo operacional e reasoning antes do roteamento. Budgets padrão limitam tarefas `TRIVIAL`, `LOCALIZED`, `TRANSVERSAL` e `CRITICAL` a 2 (um especialista e Auditor opcional), 3, 6 e 8 agentes, respectivamente. O contrato completo está em [contracts/protocol.md](contracts/protocol.md), e o handoff fechado em [contracts/handoff.schema.json](contracts/handoff.schema.json).
+
+O runtime é opcional para tarefas simples e recomendado para fluxos multiagente:
+
+```bash
+python3 scripts/jarvis_runtime.py init \
+  --task-id TASK-FICTICIA \
+  --complexity LOCALIZED \
+  --risk-class MEDIUM \
+  --operational-mode ASSISTED_AUTOPILOT \
+  --reasoning-class NORMAL
+
+python3 scripts/jarvis_runtime.py transition --run-dir .jarvis/runs/<run_id> \
+  --to PLAN_APPROVED --reason "pedido direto e escopo inequívoco"
+python3 scripts/jarvis_runtime.py handoff --run-dir .jarvis/runs/<run_id>
+python3 scripts/jarvis_runtime.py summary --run-dir .jarvis/runs/<run_id>
+python3 scripts/jarvis_runtime.py dashboard
+```
+
+`.jarvis/` é local e ignorado pelo Git. Os eventos guardam metadados, caminhos, hashes e referências; conteúdo clínico, faturamento real, credenciais e URLs privadas são recusados.
+
 O eval ao vivo é opcional porque consome uma execução do modelo:
 
 ~~~bash
 python3 scripts/run_evals.py --live
 python3 scripts/run_evals.py --live --case aghuse-new-rule --model gpt-5.6-luna
+python3 scripts/run_evals.py --live --canary --save-results /tmp/jarvis-eval-v2
+python3 scripts/run_evals.py --result-dir /tmp/jarvis-eval-v2 --compare-baseline
 ~~~
 
 O modo ao vivo pede somente uma decisão estruturada de roteamento, usa sandbox somente leitura e proíbe chamadas externas e alterações.
 
 ## Formato de handoff
 
-Coordenadores e especialistas devem consolidar: resultado, evidências, arquivos, contrato afetado, validações, riscos, limitações e handoff pendente.
+Coordenadores e especialistas usam o schema V2: run/version, estágio, classificações, requisitos, arquivos com owner/finalidade, contratos, decisões com provenance, validações executadas e não executadas, riscos, limitações, blockers, stop reason e próximo responsável.

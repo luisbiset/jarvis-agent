@@ -1,0 +1,6 @@
+interface:
+  display_name: "Roteiro de Homologação AGHUse"
+  short_description: "Gere testes manuais reproduzíveis"
+  default_prompt: "Use $aghuse-roteiro-homologacao para criar o roteiro manual de homologação desta tarefa AGHUse."
+policy:
+  allow_implicit_invocation: true

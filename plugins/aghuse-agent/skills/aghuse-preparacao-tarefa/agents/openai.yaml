@@ -1,0 +1,6 @@
+interface:
+  display_name: "Preparação de Tarefa AGHUse"
+  short_description: "Mapeie contexto, escopo e pré-requisitos"
+  default_prompt: "Use $aghuse-preparacao-tarefa para preparar esta tarefa do AGHUse antes da implementação."
+policy:
+  allow_implicit_invocation: true

@@ -1,15 +1,15 @@
 {
   "name": "aghuse-agent",
-  "version": "0.1.0+codex.20260822170814",
-  "description": "Coordenador do AGHUse com analista de tarefas e especialistas em frontend, backend, banco de dados e testes unit\u00e1rios de ONs e RNs.",
+  "version": "0.1.0+codex.20260824125333",
+  "description": "Coordena\u00e7\u00e3o profissional do ciclo AGHUse, da an\u00e1lise paralela ao gate humano.",
   "author": {
     "name": "Local developer"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Aghuse Agent",
-    "shortDescription": "Coordene cinco especialistas do AGHUse.",
-    "longDescription": "Coordena an\u00e1lise de tarefas e desenvolvimento do AGHUse entre frontend JSF, backend Java EE, persist\u00eancia Oracle/PostgreSQL e testes unit\u00e1rios de ONs e RNs.",
+    "shortDescription": "Coordene o fluxo profissional do AGHUse.",
+    "longDescription": "Conduz tarefas AGHUse por an\u00e1lise paralela de requisitos e banco, plano aprovado, desenvolvimento especializado, QA, auditoria independente do diff e gate humano.",
     "developerName": "Local developer",
     "category": "Productivity",
     "capabilities": [
@@ -17,12 +17,14 @@
       "Code",
       "Database",
       "Testing",
-      "Review"
+      "Review",
+      "Automation",
+      "Security"
     ],
     "defaultPrompt": [
-      "Analise esta tarefa no AGHUse.",
-      "Implemente esta corre\u00e7\u00e3o no AGHUse.",
-      "Crie testes unit\u00e1rios para esta ON ou RN do AGHUse."
+      "Conduza esta tarefa AGHUse da an\u00e1lise paralela ao gate humano.",
+      "Implemente este plano aprovado no AGHUse e execute a valida\u00e7\u00e3o paralela.",
+      "Audite esta entrega AGHUse com QA e Auditor do diff."
     ]
   }
 }

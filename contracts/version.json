@@ -1,0 +1,6 @@
+{
+  "jarvis_version": "2.1.0",
+  "handoff_schema_version": "2.0.0",
+  "routing_schema_version": 2,
+  "policy_registry_version": "1.0.0"
+}

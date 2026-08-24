@@ -2,27 +2,39 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "required": [
-    "skills",
-    "agents",
-    "requires_confirmation",
-    "read_only",
-    "invariants"
+    "skills", "agents", "stages", "complexity", "risk_class",
+    "operational_mode", "reasoning_class", "max_agents",
+    "max_parallel_agents", "stop_reason", "requires_confirmation",
+    "read_only", "invariants"
   ],
   "properties": {
-    "skills": {
+    "skills": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "agents": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "stages": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "object",
+        "required": ["mode", "agents"],
+        "properties": {
+          "mode": { "enum": ["parallel", "sequential"] },
+          "agents": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        },
+        "additionalProperties": false
+      }
     },
-    "agents": {
-      "type": "array",
-      "items": { "type": "string" }
+    "complexity": { "enum": ["TRIVIAL", "LOCALIZED", "TRANSVERSAL", "CRITICAL"] },
+    "risk_class": { "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+    "operational_mode": { "enum": ["COPILOT", "ASSISTED_AUTOPILOT", "READ_ONLY_AUDIT"] },
+    "reasoning_class": { "enum": ["FAST", "NORMAL", "DEEP"] },
+    "max_agents": { "type": "integer", "minimum": 0, "maximum": 12 },
+    "max_parallel_agents": { "type": "integer", "minimum": 1, "maximum": 4 },
+    "stop_reason": {
+      "type": ["string", "null"],
+      "enum": [null, "AMBIGUOUS_REQUIREMENT", "SHARED_CONTRACT_OUT_OF_SCOPE", "TEST_CONTRADICTION", "EXTERNAL_AUTHORIZATION_REQUIRED", "INSUFFICIENT_CONTEXT", "VALIDATION_NOT_REPRODUCIBLE", "SPECIALIST_DIVERGENCE", "NEEDS_EXPLANATION"]
     },
     "requires_confirmation": { "type": "boolean" },
     "read_only": { "type": "boolean" },
-    "invariants": {
-      "type": "array",
-      "items": { "type": "string" }
-    }
+    "invariants": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
   },
   "additionalProperties": false
 }

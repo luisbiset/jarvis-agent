@@ -1,0 +1,6 @@
+interface:
+  display_name: "Mapeamento de Segurança AGHUse"
+  short_description: "Diagnostique permissões, perfis e menus"
+  default_prompt: "Use $aghuse-mapeamento-seguranca para diagnosticar este erro de permissão do AGHUse."
+policy:
+  allow_implicit_invocation: true

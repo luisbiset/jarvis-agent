@@ -1,0 +1,6 @@
+interface:
+  display_name: "Diagnóstico de Logs AGHUse"
+  short_description: "Encontre a causa raiz em logs AGHUse"
+  default_prompt: "Use $aghuse-diagnostico-logs para analisar este erro do AGHUse e identificar a causa raiz."
+policy:
+  allow_implicit_invocation: true

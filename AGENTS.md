@@ -11,6 +11,7 @@ Este repositório é a fonte central do Jarvis Agent e reúne os plugins, skills
 - Ao alterar uma skill, valide seu frontmatter e seu `agents/openai.yaml`.
 - Ao alterar um plugin, valide o manifest, atualize somente o cachebuster e reinstale pelo marketplace `codex-agents`.
 - Não execute operações reais no Redmine, banco, WildFly, Docker ou ambientes compartilhados durante testes deste projeto.
+- Aplique `SEC-001`: não persista credenciais, URLs privadas nem conteúdo clínico/faturamento real em handoffs, context packs, caches ou telemetria.
 
 ## Validação
 

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "roles": {
+    "aghuse_auditor_do_diff": {
+      "central_question": "O diff é limpo, mínimo e pertence à tarefa?",
+      "primary_evidence": "git_worktree_hunks_eol_files",
+      "must_not": ["architectural_review", "code_changes", "human_approval"]
+    },
+    "aghuse_qa": {
+      "central_question": "A implementação atende aos critérios e passa validações proporcionais?",
+      "primary_evidence": "tests_build_technical_script",
+      "must_not": ["fix_evaluated_code", "declare_ui_homologation", "human_approval"]
+    },
+    "sesab_reviewer": {
+      "central_question": "A solução é tecnicamente segura e coerente no sistema?",
+      "primary_evidence": "code_contracts_transactions_security_regression",
+      "must_not": ["worktree_cleanup", "replace_diff_auditor", "human_approval"]
+    },
+    "qa_homologacao": {
+      "central_question": "O fluxo funciona em tela no ambiente autorizado?",
+      "primary_evidence": "functional_execution_and_ui_evidence",
+      "must_not": ["primary_code_review", "code_changes", "production_use"]
+    }
+  }
+}

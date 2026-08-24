@@ -129,8 +129,8 @@ codex plugin list
 
 O diagnóstico saudável confirma:
 
-- 12 agentes globais;
-- os plugins `redmine-agent`, `sfa-agent`, `aghuse-agent` e `sesab-orchestrator`;
+- 16 agentes globais;
+- os plugins `redmine-agent`, `sfa-agent` e `aghuse-agent`;
 - o MCP Redmine apontando para este clone;
 - a presença de `REDMINE_API_KEY` sem exibir seu valor;
 - ausência de instalações legadas conflitantes.
@@ -141,6 +141,7 @@ Validação adicional opcional:
 python3 scripts/smoke_install.py
 node plugins/redmine-agent/scripts/server.mjs --self-test
 python3 scripts/run_evals.py
+python3 scripts/run_evals.py --canary
 ```
 
 ## 7. Testar no Codex
@@ -156,7 +157,7 @@ Liste meus chamados abertos no Redmine.
 ```
 
 ```text
-Use o orquestrador principal para analisar a tarefa 51093 e encaminhar o trabalho ao AGHUse.
+Use `$aghuse-development` para analisar e conduzir a tarefa 51093 no AGHUse.
 ```
 
 Consultas ao Redmine podem ser executadas diretamente. Alterações de chamado, comentários e lançamentos de horas devem pedir confirmação antes da escrita.
@@ -184,7 +185,6 @@ codex plugin marketplace add "$PWD"
 codex plugin add redmine-agent@codex-agents
 codex plugin add sfa-agent@codex-agents
 codex plugin add aghuse-agent@codex-agents
-codex plugin add sesab-orchestrator@codex-agents
 ```
 
 ## 10. Solução de problemas

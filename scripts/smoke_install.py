@@ -40,13 +40,13 @@ def main() -> int:
         )
         output = plugins.stdout + plugins.stderr
         lines = output.splitlines()
-        for plugin in ("redmine-agent", "sfa-agent", "aghuse-agent", "sesab-orchestrator"):
+        for plugin in ("redmine-agent", "sfa-agent", "aghuse-agent"):
             selector = f"{plugin}@codex-agents"
             if not any(selector in line and "installed, enabled" in line for line in lines):
                 raise RuntimeError(f"Plugin não foi instalado no perfil temporário: {selector}")
 
         print(
-            f"OK: instalação limpa validada com {len(expected_agents)} agentes e 4 plugins "
+            f"OK: instalação limpa validada com {len(expected_agents)} agentes e 3 plugins "
             "em perfil temporário."
         )
     return 0

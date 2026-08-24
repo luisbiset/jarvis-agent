@@ -46,6 +46,8 @@ def main() -> int:
             agent_is_installed(installed, target),
             f"agente global {name} copiado a partir de {target}",
         )
+    removed_agent = installed_agents / "sesab_orchestrator.toml"
+    status(not removed_agent.exists(), "agente removido sesab_orchestrator não está ativo")
 
     config_path = CODEX_HOME / "config.toml"
     config = {}
@@ -61,7 +63,7 @@ def main() -> int:
     result = subprocess.run(["codex", "plugin", "list"], capture_output=True, text=True)
     output = result.stdout + result.stderr
     lines = output.splitlines()
-    for plugin in ("redmine-agent", "sfa-agent", "aghuse-agent", "sesab-orchestrator"):
+    for plugin in ("redmine-agent", "sfa-agent", "aghuse-agent"):
         selector = f"{plugin}@codex-agents"
         enabled = any(selector in line and "installed, enabled" in line for line in lines)
         status(enabled, f"plugin {selector} instalado")
@@ -71,6 +73,11 @@ def main() -> int:
         if any(name in line and "installed, enabled" in line for line in lines)
     ]
     status(not duplicates, f"sem plugins legados ativos{': ' + ', '.join(duplicates) if duplicates else ''}")
+    removed_selector = "sesab-orchestrator@codex-agents"
+    status(
+        not any(removed_selector in line and "installed, enabled" in line for line in lines),
+        f"plugin removido {removed_selector} não está ativo",
+    )
 
     legacy_skills = [Path.home() / ".agents/skills/redmine-workflows", Path.home() / ".agents/skills/sfa-development"]
     active_legacy = [str(path) for path in legacy_skills if path.exists() or path.is_symlink()]

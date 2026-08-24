@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jarvis://contracts/handoff/2.0.0",
+  "title": "Jarvis Agent structured handoff",
+  "type": "object",
+  "required": [
+    "schema_version", "run_id", "jarvis_version", "status", "stage",
+    "complexity", "risk_class", "operational_mode", "reasoning_class",
+    "requirement_ids", "files", "contracts_changed", "decisions",
+    "validations", "risks", "limitations", "blockers", "stop_reason",
+    "ownership", "next"
+  ],
+  "properties": {
+    "schema_version": { "const": "2.0.0" },
+    "run_id": { "type": "string", "minLength": 8 },
+    "jarvis_version": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["IN_PROGRESS", "READY_FOR_REVIEW", "APPROVED_WITH_CAVEATS", "REJECTED", "BLOCKED", "NEEDS_EXPLANATION", "DONE"]
+    },
+    "stage": {
+      "enum": ["NEW", "DISCOVERY", "PLAN_READY", "PLAN_APPROVED", "IMPLEMENTING", "VALIDATING", "REVIEW_READY", "HUMAN_GATE", "HOMOLOGATION_READY", "DONE", "BLOCKED"]
+    },
+    "complexity": { "enum": ["TRIVIAL", "LOCALIZED", "TRANSVERSAL", "CRITICAL"] },
+    "risk_class": { "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+    "operational_mode": { "enum": ["COPILOT", "ASSISTED_AUTOPILOT", "READ_ONLY_AUDIT"] },
+    "reasoning_class": { "enum": ["FAST", "NORMAL", "DEEP"] },
+    "requirement_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "purpose", "requirement_ids", "owner"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "purpose": { "type": "string", "minLength": 1 },
+          "requirement_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1, "uniqueItems": true },
+          "owner": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "contracts_changed": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["decision_id", "evidence_refs", "confidence", "assumption", "observed", "interpretation", "validated_by", "validation_result"],
+        "properties": {
+          "decision_id": { "type": "string", "minLength": 1 },
+          "evidence_refs": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "confidence": { "enum": ["LOW", "MEDIUM", "HIGH"] },
+          "assumption": { "type": ["string", "null"] },
+          "observed": { "type": "string" },
+          "interpretation": { "type": "string" },
+          "validated_by": { "type": ["string", "null"] },
+          "validation_result": { "enum": ["PENDING", "CONFIRMED", "REFUTED", "NOT_APPLICABLE"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "validations": {
+      "type": "object",
+      "required": ["executed", "passed", "failed", "not_executed"],
+      "properties": {
+        "executed": { "type": "array", "items": { "type": "string" } },
+        "passed": { "type": "array", "items": { "type": "string" } },
+        "failed": { "type": "array", "items": { "type": "string" } },
+        "not_executed": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "stop_reason": {
+      "type": ["string", "null"],
+      "enum": [null, "AMBIGUOUS_REQUIREMENT", "SHARED_CONTRACT_OUT_OF_SCOPE", "TEST_CONTRADICTION", "EXTERNAL_AUTHORIZATION_REQUIRED", "INSUFFICIENT_CONTEXT", "VALIDATION_NOT_REPRODUCIBLE", "SPECIALIST_DIVERGENCE", "NEEDS_EXPLANATION"]
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string", "minLength": 1 },
+        "uniqueItems": true
+      }
+    },
+    "next": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+  },
+  "additionalProperties": false
+}

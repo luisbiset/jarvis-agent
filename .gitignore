@@ -8,4 +8,8 @@ plugins/*/.mcp.json
 .DS_Store
 node_modules/
 *.log
+__pycache__/
+*.py[cod]
 
+# Estado e telemetria locais do Jarvis (somente metadados)
+.jarvis/

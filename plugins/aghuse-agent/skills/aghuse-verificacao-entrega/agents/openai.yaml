@@ -1,0 +1,6 @@
+interface:
+  display_name: "Verificação de Entrega AGHUse"
+  short_description: "Confira prontidão antes da entrega"
+  default_prompt: "Use $aghuse-verificacao-entrega para conferir se esta mudança AGHUse está pronta para entrega."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Entrega de Banco AGHUse"
+  short_description: "Prepare scripts seguros para o Redmine"
+  default_prompt: "Use $aghuse-entrega-banco para revisar e preparar os scripts desta tarefa AGHUse para entrega."
+policy:
+  allow_implicit_invocation: true

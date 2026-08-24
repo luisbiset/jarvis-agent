@@ -1,0 +1,6 @@
+interface:
+  display_name: "Histórico de Alterações AGHUse"
+  short_description: "Encontre regressões e remoções no Git"
+  default_prompt: "Use $aghuse-historico-alteracoes para descobrir quando esta parte do AGHUse foi alterada ou removida."
+policy:
+  allow_implicit_invocation: true

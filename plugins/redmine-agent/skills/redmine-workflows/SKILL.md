@@ -5,6 +5,8 @@ description: Consultar e gerenciar projetos, chamados, comentários, status, res
 
 # Fluxos do Redmine SESAB
 
+Aplicar `FLOW-002`: nenhuma leitura, análise, plano ou gate anterior autoriza implicitamente comentário, status, horas ou outra escrita no Redmine. A mutação exige pedido e confirmação próprios.
+
 Usar as ferramentas do servidor `redmine` para acessar dados reais. Não substituir a integração por pesquisa web quando o pedido envolver chamados privados.
 
 ## Conectar com segurança

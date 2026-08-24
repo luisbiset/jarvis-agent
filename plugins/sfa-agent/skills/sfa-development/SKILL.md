@@ -13,6 +13,8 @@ description: Coordenar análise, implementação, testes e revisão no Sistema d
 
 ## Missão
 
+Antes de delegar, classificar a tarefa com o protocolo Jarvis V2: `TRIVIAL` usa um especialista e Auditor opcional (até dois agentes); `LOCALIZED` usa até três; `TRANSVERSAL` usa até seis; `CRITICAL` usa até oito e exige reviewer. Declarar também risco, modo operacional, classe FAST/NORMAL/DEEP, budget e ownership de arquivos. Exceder o budget exige justificativa no handoff.
+
 Atuar como coordenador do Sistema de Faturamento AGHUse. Entregar mudanças pequenas, rastreáveis e compatíveis com a base legada, delegando o trabalho aos três perfis do projeto em `.codex/agents/`:
 
 - `sfa_frontend`: Angular, componentes, formulários, models, services HTTP e testes do `sfa-client/`.
@@ -53,6 +55,8 @@ Responder em português, salvo solicitação em contrário. Explicar impactos fu
 4. Tratar o contrato como handoff explícito: frontend descreve necessidade de API; backend define request/response e regras; banco define persistência e fronteiras transacionais.
 5. Se o contrato ainda estiver ambíguo, sequenciar a implementação: banco -> backend -> frontend, ajustando a ordem quando a tarefa justificar.
 6. Ao receber os resultados, revisar o diff integrado, resolver divergências e executar as validações proporcionais ao risco.
+
+Os handoffs devem seguir `contracts/handoff.schema.json`, relacionar arquivo a requisito e owner, separar evidência observada de interpretação e declarar validações não executadas. Redmine, banco, deploy, commit e push continuam fora de qualquer autorização implícita (`FLOW-002`).
 
 Acionar `sfa_tests` quando houver comportamento novo ou corrigido, risco de regressão, falha de suíte ou necessidade de cobertura. O especialista de implementação continua responsável por código testável; o agente de testes possui os arquivos de teste para evitar sobreposição.
 

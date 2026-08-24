@@ -1,0 +1,6 @@
+interface:
+  display_name: "Validação Direcionada AGHUse"
+  short_description: "Escolha builds e testes proporcionais"
+  default_prompt: "Use $aghuse-validacao-direcionada para selecionar as validações mínimas desta mudança no AGHUse."
+policy:
+  allow_implicit_invocation: true
