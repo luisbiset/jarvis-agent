@@ -1,6 +1,5 @@
 name = "aghuse_auditor_do_diff"
 description = "Auditor do diff do AGHUse. Verifica em modo somente leitura baseline, escopo, hunks, arquivos inesperados, EOL/encoding, segredos e higiene da worktree."
-model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 
 developer_instructions = """

@@ -26,6 +26,12 @@
       "enforced_by": ["agents/aghuse_database.toml", "agents/sesab_reviewer.toml", "scripts/validate.py"]
     },
     {
+      "id": "DB-DDL-001",
+      "category": "critical_invariant",
+      "summary": "No Oracle, novas FKs e unique constraints sobre tabelas populadas usam ENABLE NOVALIDATE, toda FK possui índice associado e todo CREATE INDEX termina com ONLINE.",
+      "enforced_by": ["agents/aghuse_database.toml", "agents/sfa_database.toml", "plugins/aghuse-agent/skills/aghuse-idempotent-database-scripts/SKILL.md", "scripts/validate.py"]
+    },
+    {
       "id": "AGH-TEST-001",
       "category": "critical_invariant",
       "summary": "O especialista aghuse_tests cria ou altera testes unitários somente de ONs e RNs existentes.",
@@ -48,6 +54,18 @@
       "category": "flow_policy",
       "summary": "Redmine, banco, deploy, commit e push exigem autorização própria; aprovação anterior não é autorização implícita.",
       "enforced_by": ["plugins/redmine-agent/skills/redmine-workflows/SKILL.md"]
+    },
+    {
+      "id": "FLOW-003",
+      "category": "flow_policy",
+      "summary": "Toda tarefa usa sinais objetivos e policy V3 para reasoning adaptativo, budgets e telemetria por tentativa, com resumo métrico no fechamento.",
+      "enforced_by": ["config/AGENTS.md", "AGENTS.md", "contracts/reasoning-policy.json", "contracts/protocol.md", "scripts/jarvis_runtime.py", "scripts/install.sh", "scripts/validate.py"]
+    },
+    {
+      "id": "FLOW-004",
+      "category": "flow_policy",
+      "summary": "Mudanças relevantes geram transferência de conhecimento proporcional, baseada em evidências e recuperável por tarefa.",
+      "enforced_by": ["contracts/knowledge-transfer-policy.json", "contracts/technical-handoff.schema.json", "scripts/jarvis_runtime.py", "scripts/validate.py"]
     }
   ]
 }

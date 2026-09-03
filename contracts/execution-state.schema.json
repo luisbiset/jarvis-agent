@@ -1,49 +1,179 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "jarvis://contracts/execution-state/2.0.0",
+  "$id": "jarvis://contracts/execution-state/3.1.0",
   "type": "object",
   "required": [
-    "schema_version", "run_id", "task_id", "jarvis_version", "created_at",
-    "updated_at", "current_state", "complexity", "risk_class",
-    "operational_mode", "reasoning_class", "budget", "history", "agents_used",
-    "metrics", "gate_decision"
+    "schema_version", "run_id", "task_id", "jarvis_version", "policy_version",
+    "contracts_version", "config_hash", "telemetry_db", "created_at", "started_at",
+    "updated_at", "finished_at", "current_state", "complexity", "risk_class",
+    "operational_mode", "execution_path", "reasoning_class", "reasoning", "budget", "context_usage", "cost_budget", "history", "agents_used",
+    "routing", "metrics", "gate_decision", "gate_reason_code", "gate_reason_detail",
+    "gate_attempts"
   ],
   "properties": {
-    "schema_version": { "const": "2.0.0" },
-    "run_id": { "type": "string" },
-    "task_id": { "type": "string" },
+    "schema_version": { "const": "3.1.0" },
+    "run_id": { "type": "string", "minLength": 8 },
+    "task_id": { "type": "string", "minLength": 1 },
     "jarvis_version": { "type": "string" },
+    "policy_version": { "type": "string" },
+    "registry_version": { "type": "string" },
+    "contracts_version": { "const": "3.1.0" },
+    "config_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "telemetry_db": { "type": "string", "minLength": 1 },
     "created_at": { "type": "string" },
+    "started_at": { "type": "string" },
     "updated_at": { "type": "string" },
+    "finished_at": { "type": ["string", "null"] },
     "current_state": { "enum": ["NEW", "DISCOVERY", "PLAN_READY", "PLAN_APPROVED", "IMPLEMENTING", "VALIDATING", "REVIEW_READY", "HUMAN_GATE", "HOMOLOGATION_READY", "DONE", "BLOCKED"] },
     "complexity": { "enum": ["TRIVIAL", "LOCALIZED", "TRANSVERSAL", "CRITICAL"] },
     "risk_class": { "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
     "operational_mode": { "enum": ["COPILOT", "ASSISTED_AUTOPILOT", "READ_ONLY_AUDIT"] },
+    "execution_path": { "enum": ["FAST_PATH", "STANDARD"] },
     "reasoning_class": { "enum": ["FAST", "NORMAL", "DEEP"] },
+    "reasoning": {
+      "type": "object",
+      "required": ["policy_version", "signals", "score", "contributions", "initial_level", "current_level", "final_level", "requested_effort", "effective_effort", "requested_model", "effective_model", "context_budget", "max_input_tokens", "escalation_allowed", "escalations_used", "max_escalations", "last_escalation_reason", "attempts_used", "max_attempts", "max_child_depth", "termination_reason"],
+      "properties": {
+        "policy_version": { "type": "string", "minLength": 1 },
+        "signals": {
+          "type": "object",
+          "required": ["task_type", "estimated_files", "estimated_modules", "architectural", "production_critical", "database_migration", "security_sensitive", "tests_required", "ambiguity_score", "complexity_score"],
+          "properties": {
+            "task_type": { "type": "string", "minLength": 1 },
+            "estimated_files": { "type": "integer", "minimum": 0 },
+            "estimated_modules": { "type": "integer", "minimum": 0 },
+            "architectural": { "type": "boolean" },
+            "production_critical": { "type": "boolean" },
+            "database_migration": { "type": "boolean" },
+            "security_sensitive": { "type": "boolean" },
+            "tests_required": { "type": "boolean" },
+            "ambiguity_score": { "type": "number", "minimum": 0, "maximum": 3 },
+            "complexity_score": { "type": "number", "minimum": 0, "maximum": 4 }
+          },
+          "additionalProperties": false
+        },
+        "score": { "type": "number", "minimum": 0 },
+        "contributions": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } },
+        "initial_level": { "enum": ["INSTANT", "MEDIUM", "HIGH"] },
+        "current_level": { "enum": ["INSTANT", "MEDIUM", "HIGH"] },
+        "final_level": { "type": ["string", "null"], "enum": [null, "INSTANT", "MEDIUM", "HIGH"] },
+        "requested_effort": { "enum": ["low", "medium", "high", "xhigh", "max", "ultra"] },
+        "effective_effort": { "type": ["string", "null"], "enum": [null, "low", "medium", "high", "xhigh", "max", "ultra"] },
+        "requested_model": { "type": "string", "minLength": 1 },
+        "effective_model": { "type": ["string", "null"] },
+        "context_budget": { "enum": ["SMALL", "MEDIUM", "LARGE"] },
+        "max_input_tokens": { "type": "integer", "minimum": 1 },
+        "escalation_allowed": { "type": "boolean" },
+        "escalations_used": { "type": "integer", "minimum": 0 },
+        "max_escalations": { "type": "integer", "minimum": 0 },
+        "last_escalation_reason": { "type": ["string", "null"], "enum": [null, "TEST_FAILURE", "REPEATED_TOOL_FAILURE", "RESULT_INCONSISTENCY", "UNPLANNED_ARCHITECTURE", "SCOPE_EXPANDED", "CRITICAL_REVIEW_FINDING"] },
+        "attempts_used": { "type": "integer", "minimum": 0 },
+        "max_attempts": { "type": "integer", "minimum": 1 },
+        "max_child_depth": { "type": "integer", "minimum": 0 },
+        "termination_reason": { "type": ["string", "null"], "enum": [null, "SUCCESS", "BUDGET_EXHAUSTED", "TEST_FAILURE", "TOOL_FAILURE", "HUMAN_REVIEW_REQUIRED"] }
+      },
+      "additionalProperties": false
+    },
     "budget": {
       "type": "object",
-      "required": ["max_agents", "max_parallel_agents", "required_reviewers", "override_justification"],
+      "required": ["max_agents", "max_parallel_agents", "required_reviewers", "budget_limit", "budget_used", "budget_override", "budget_override_reason", "max_model_calls", "hard_max_model_calls", "model_calls_used", "max_duration_ms", "progress_events"],
       "properties": {
         "max_agents": { "type": "integer", "minimum": 0 },
         "max_parallel_agents": { "type": "integer", "minimum": 1 },
         "required_reviewers": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
-        "override_justification": { "type": ["string", "null"] }
+        "budget_limit": { "type": "integer", "minimum": 0 },
+        "budget_used": { "type": "integer", "minimum": 0 },
+        "budget_override": { "type": "boolean" },
+        "budget_override_reason": { "type": ["string", "null"] }
+        ,"max_model_calls": { "type": "integer", "minimum": 1 }
+        ,"hard_max_model_calls": { "type": "integer", "minimum": 1 }
+        ,"model_calls_used": { "type": "integer", "minimum": 0 }
+        ,"max_duration_ms": { "type": "integer", "minimum": 1 }
+        ,"progress_events": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "context_usage": {
+      "type": "object",
+      "required": ["mode", "files", "estimated_tokens", "tool_reads", "raw_bytes", "limit_hits", "limits"],
+      "properties": {
+        "mode": { "const": "OBSERVE_ONLY" },
+        "files": { "type": "integer", "minimum": 0 },
+        "estimated_tokens": { "type": "integer", "minimum": 0 },
+        "tool_reads": { "type": "integer", "minimum": 0 },
+        "raw_bytes": { "type": "integer", "minimum": 0 },
+        "limit_hits": { "type": "integer", "minimum": 0 },
+        "limits": {
+          "type": "object",
+          "required": ["max_files", "max_context_tokens", "max_tool_reads", "max_raw_bytes"],
+          "properties": {
+            "max_files": { "type": "integer", "minimum": 1 },
+            "max_context_tokens": { "type": "integer", "minimum": 1 },
+            "max_tool_reads": { "type": "integer", "minimum": 1 },
+            "max_raw_bytes": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "cost_budget": {
+      "type": "object",
+      "required": ["mode", "soft_limit_ratio", "max_credits", "max_uncached_input_tokens", "status", "limit_hits"],
+      "properties": {
+        "mode": { "const": "OBSERVE_ONLY" },
+        "soft_limit_ratio": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+        "max_credits": { "type": "number", "exclusiveMinimum": 0 },
+        "max_uncached_input_tokens": { "type": "integer", "minimum": 1 },
+        "status": { "enum": ["ALLOW", "SOFT_LIMIT_OBSERVED", "HARD_LIMIT_OBSERVED"] },
+        "limit_hits": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": false
     },
     "history": { "type": "array", "items": { "type": "object" } },
     "agents_used": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
-    "metrics": {
+    "routing": {
       "type": "object",
-      "required": ["duration_ms", "token_or_credit_cost", "retry_count"],
+      "required": ["agents_planned", "agents_invoked", "agents_skipped", "agents_rejected_by_budget", "parallel_batches", "routing_outcome", "unnecessary_agents", "missing_agents"],
       "properties": {
-        "duration_ms": { "type": "integer", "minimum": 0 },
-        "token_or_credit_cost": { "type": "number", "minimum": 0 },
-        "retry_count": { "type": "integer", "minimum": 0 }
+        "agents_planned": { "$ref": "#/$defs/agents" },
+        "agents_invoked": { "$ref": "#/$defs/agents" },
+        "agents_skipped": { "$ref": "#/$defs/agents" },
+        "agents_rejected_by_budget": { "$ref": "#/$defs/agents" },
+        "parallel_batches": { "type": "integer", "minimum": 0 },
+        "routing_outcome": { "enum": ["CORRECT", "OVER_ROUTED", "UNDER_ROUTED", "UNKNOWN"] },
+        "unnecessary_agents": { "$ref": "#/$defs/agents" },
+        "missing_agents": { "$ref": "#/$defs/agents" }
       },
       "additionalProperties": false
     },
-    "gate_decision": { "type": ["string", "null"], "enum": [null, "APPROVED", "CHANGES_REQUESTED", "REJECTED"] }
+    "metrics": {
+      "type": "object",
+      "required": ["duration_ms", "input_tokens", "cached_input_tokens", "output_tokens", "credits", "retry_count", "agent_invocation_count", "rework_cycles", "stop_count", "stop_reasons", "handoff_count", "first_pass_success", "human_gate_pass_on_first_attempt"],
+      "properties": {
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "cached_input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "credits": { "type": "number", "minimum": 0 },
+        "retry_count": { "type": "integer", "minimum": 0 },
+        "agent_invocation_count": { "type": "integer", "minimum": 0 },
+        "rework_cycles": { "type": "integer", "minimum": 0 },
+        "stop_count": { "type": "integer", "minimum": 0 },
+        "stop_reasons": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 1 } },
+        "handoff_count": { "type": "integer", "minimum": 0 },
+        "first_pass_success": { "type": ["boolean", "null"] },
+        "human_gate_pass_on_first_attempt": { "type": ["boolean", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "gate_decision": { "type": ["string", "null"], "enum": [null, "APPROVED", "CHANGES_REQUESTED", "REJECTED"] },
+    "gate_reason_code": { "type": ["string", "null"], "enum": [null, "APPROVED_AS_PLANNED", "WRONG_REQUIREMENT", "REGRESSION", "INSUFFICIENT_TEST", "OUT_OF_SCOPE", "BAD_IMPLEMENTATION", "BAD_EXPLANATION", "OTHER"] },
+    "gate_reason_detail": { "type": ["string", "null"] },
+    "gate_attempts": { "type": "integer", "minimum": 0 }
+  },
+  "$defs": {
+    "agents": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
   },
   "additionalProperties": false
 }

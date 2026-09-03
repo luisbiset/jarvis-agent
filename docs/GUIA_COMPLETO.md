@@ -17,7 +17,9 @@ O fluxo completo recomendado é:
 Redmine → análise → implementação → testes → revisão → homologação
 ```
 
-Nem toda tarefa precisa percorrer todas as etapas. Uma correção pequena pode usar apenas um especialista e um teste direcionado. O coordenador do sistema declara complexidade (`TRIVIAL`, `LOCALIZED`, `TRANSVERSAL`, `CRITICAL`), risco, modo (`COPILOT`, `ASSISTED_AUTOPILOT`, `READ_ONLY_AUDIT`) e reasoning (`FAST`, `NORMAL`, `DEEP`). Os budgets padrão são 2 (um especialista e Auditor opcional), 3, 6 e 8 agentes; exceder exige justificativa.
+Nem toda tarefa precisa percorrer todas as etapas. Uma correção pequena pode usar apenas um especialista e um teste direcionado. O coordenador declara complexidade (`TRIVIAL`, `LOCALIZED`, `TRANSVERSAL`, `CRITICAL`), risco, modo (`COPILOT`, `ASSISTED_AUTOPILOT`, `READ_ONLY_AUDIT`) e sinais objetivos; o policy engine V3 decide `INSTANT`, `MEDIUM` ou `HIGH`. Os budgets padrão são 1, 2, 4 e 6 agentes, com 1, 3, 5 e 6 chamadas de modelo; exceder exige justificativa e nunca ultrapassa o hard ceiling global.
+
+Tarefas triviais, de baixo risco e sem sinais críticos podem usar `FAST_PATH`. Limites de contexto e custo da V3.1 iniciam em `OBSERVE_ONLY`: medem excesso e produzem alertas estruturados, sem afirmar que conseguem interromper ferramentas ou chamadas já iniciadas.
 
 ## Uso rápido
 

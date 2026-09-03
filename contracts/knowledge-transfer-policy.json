@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "policy_id": "FLOW-004",
+  "policy_version": "1.0.0",
+  "levels": {
+    "TRIVIAL": { "enabled": false, "handoff": "NONE", "teach_back_questions": 0, "teach_back_required": false },
+    "LOCALIZED": { "enabled": true, "handoff": "SHORT", "teach_back_questions": 0, "teach_back_required": false },
+    "BUSINESS_RULE": { "enabled": true, "handoff": "FULL", "teach_back_questions": 3, "teach_back_required": false },
+    "TRANSVERSAL": { "enabled": true, "handoff": "FULL", "teach_back_questions": 4, "teach_back_required": false },
+    "CRITICAL": { "enabled": true, "handoff": "FULL", "teach_back_questions": 5, "teach_back_required": true }
+  },
+  "budget": {
+    "max_handoff_tokens": 4000,
+    "max_teachback_turns": 6
+  }
+}

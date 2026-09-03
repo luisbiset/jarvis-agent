@@ -67,7 +67,7 @@ def render() -> str:
         with path.open("rb") as stream:
             agent = tomllib.load(stream)
         lines.append(
-            f"| {escape(agent['name'])} | {escape(agent.get('model_reasoning_effort', 'normal'))} | "
+            f"| {escape(agent['name'])} | {escape(agent.get('model_reasoning_effort', 'adaptive'))} | "
             f"{escape(agent.get('sandbox_mode', 'workspace-write'))} | {escape(agent['description'])} |"
         )
 

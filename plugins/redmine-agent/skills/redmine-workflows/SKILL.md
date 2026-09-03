@@ -7,7 +7,13 @@ description: Consultar e gerenciar projetos, chamados, comentários, status, res
 
 Aplicar `FLOW-002`: nenhuma leitura, análise, plano ou gate anterior autoriza implicitamente comentário, status, horas ou outra escrita no Redmine. A mutação exige pedido e confirmação próprios.
 
-Usar as ferramentas do servidor `redmine` para acessar dados reais. Não substituir a integração por pesquisa web quando o pedido envolver chamados privados.
+## Usar sempre a API
+
+- Usar a API REST oficial do Redmine como canal obrigatório para toda consulta, alteração, registro de horas e anexo.
+- Preferir as ferramentas do servidor `redmine` quando elas expuserem a operação necessária.
+- Quando uma operação da API não estiver exposta pelo servidor, chamar diretamente o endpoint REST oficial com `REDMINE_API_KEY`, preservando as mesmas confirmações e verificações deste fluxo.
+- Não usar automação de navegador, preenchimento da interface, scraping, pesquisa web ou URLs públicas como substitutos da API.
+- Se a API estiver indisponível ou não oferecer a operação necessária, parar e informar a limitação em vez de contornar pela interface.
 
 ## Conectar com segurança
 
@@ -26,7 +32,7 @@ Usar as ferramentas do servidor `redmine` para acessar dados reais. Não substit
 
 ## Alterar
 
-Tratar `create_issue`, `add_issue_note`, `update_issue` e `log_time` como escrita em produção.
+Tratar `create_issue`, `add_issue_note`, `update_issue`, `log_time` e upload de anexos como escrita em produção.
 
 1. Obter o estado atual do chamado e os metadados necessários.
 2. Preparar um resumo do efeito, incluindo chamado, campos, texto e horas que serão enviados.
@@ -36,6 +42,15 @@ Tratar `create_issue`, `add_issue_note`, `update_issue` e `log_time` como escrit
 6. Relatar exatamente o que mudou e apresentar o ID/link do chamado.
 
 Nunca expor ferramenta de exclusão. Não encerrar chamado, trocar responsável, alterar prioridade, editar estimativa ou lançar horas sem mostrar o valor proposto na confirmação.
+
+## Anexar arquivos
+
+1. Consultar o chamado e validar localmente os arquivos antes do envio.
+2. Mostrar os nomes, a quantidade e o formato de envio e pedir confirmação explícita imediatamente antes do upload.
+3. Enviar cada arquivo para `/uploads.json` e vincular os tokens ao chamado em uma única atualização pela API.
+4. Respeitar o formato solicitado: não compactar arquivos quando o usuário pedir anexos individuais.
+5. Não repetir automaticamente uploads ou a vinculação cujo resultado seja incerto.
+6. Consultar novamente o chamado e confirmar os IDs e nomes dos anexos efetivamente vinculados.
 
 ## Criar chamados
 
@@ -61,5 +76,4 @@ Nunca expor ferramenta de exclusão. Não encerrar chamado, trocar responsável,
 
 - Respeitar as permissões retornadas pelo Redmine; um erro 403 não autoriza tentativa com outra identidade.
 - Não usar impersonação de usuário.
-- Não anexar arquivos nesta versão do agente.
 - Não executar alterações em lote. Preparar uma lista e solicitar autorização específica antes de cada conjunto claramente delimitado.

@@ -1,6 +1,5 @@
 name = "aghuse_banco_e_impacto"
 description = "Banco e impacto do AGHUse. Analisa em modo somente leitura persistência, schema, consultas, auditoria, desempenho, segurança e efeitos entre módulos antes do plano."
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
 developer_instructions = """

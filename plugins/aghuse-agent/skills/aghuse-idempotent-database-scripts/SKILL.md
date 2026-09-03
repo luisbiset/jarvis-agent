@@ -20,6 +20,14 @@ Todo script novo ou alterado deve poder ser executado novamente com segurança. 
 - Não adicionar `COMMIT` incondicional sem confirmar a convenção e o mecanismo de execução adotados pelo projeto.
 - Quando houver suporte aos dois bancos, entregar scripts equivalentes para Oracle e PostgreSQL e manter pares claros de aplicação e rollback.
 
+## Constraints e índices Oracle
+
+- Ao criar uma foreign key ou uma unique constraint em tabela que já contém dados, finalizar a definição da constraint com `ENABLE NOVALIDATE`.
+- Toda foreign key deve possuir um índice associado cujas colunas iniciais atendam às colunas da FK na ordem adequada. Reutilizar um índice compatível já existente; criar um índice novo somente quando necessário.
+- Todo `CREATE INDEX` Oracle, inclusive `CREATE UNIQUE INDEX`, deve terminar com `ONLINE`, após as demais opções do índice.
+- Proteger constraints e índices com consultas explícitas ao catálogo, sem duplicar objetos equivalentes.
+- Não transportar `ENABLE NOVALIDATE` ou `ONLINE` para PostgreSQL; produzir a variante compatível com cada dialeto.
+
 ## Validação
 
 Revisar estaticamente os estados inicial, já aplicado, parcialmente aplicado e já revertido. Não executar em banco real sem autorização explícita. Quando houver ambiente isolado autorizado, validar nesta ordem: aplicação duas vezes, rollback duas vezes e aplicação novamente.

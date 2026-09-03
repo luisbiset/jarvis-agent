@@ -13,6 +13,7 @@ Acione `aghuse_database` e aplique também `aghuse-idempotent-database-scripts`.
 - Parear aplicação e rollback idempotentes, inclusive após execução parcial.
 - Exigir comentários de dicionário para novas tabelas e colunas.
 - Conferir PKs, FKs, sequences, auditoria e índices sem duplicar índices ou prefixos já atendidos.
+- Em Oracle, conferir `ENABLE NOVALIDATE` em novas FKs e unique constraints sobre tabelas já populadas, um índice associado para cada FK e `ONLINE` ao final de todo `CREATE INDEX`; não transportar essas cláusulas para PostgreSQL.
 - Conceder somente privilégios necessários e justificar exceções.
 - Não mascarar erros inesperados nem inserir `COMMIT` sem convenção confirmada.
 - Usar o subcomando `banco` de `scripts/aghuse_automacao.py` para inspeção estática e `manifesto` para checksums.

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jarvis://contracts/technical-handoff/1.0.0",
+  "title": "Jarvis TechnicalHandoff",
+  "type": "object",
+  "required": [
+    "schema_version", "policy_version", "handoff_id", "task_id", "run_id",
+    "execution_id", "classification", "handoff_level", "summary",
+    "previous_behavior", "new_behavior", "changed_components", "execution_flow",
+    "decisions", "risks", "test_evidence", "reading_order", "questions",
+    "evidence_status", "created_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "policy_version": { "type": "string", "minLength": 1 },
+    "handoff_id": { "type": "string", "minLength": 8 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 8 },
+    "execution_id": { "type": ["string", "null"] },
+    "classification": { "enum": ["LOCALIZED", "BUSINESS_RULE", "TRANSVERSAL", "CRITICAL"] },
+    "handoff_level": { "enum": ["SHORT", "FULL"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "previous_behavior": { "type": "string", "minLength": 1 },
+    "new_behavior": { "type": "string", "minLength": 1 },
+    "changed_components": { "$ref": "#/$defs/evidenceItems" },
+    "execution_flow": { "$ref": "#/$defs/evidenceItems" },
+    "decisions": { "$ref": "#/$defs/evidenceItems" },
+    "risks": { "$ref": "#/$defs/evidenceItems" },
+    "test_evidence": { "$ref": "#/$defs/evidenceItems" },
+    "reading_order": { "$ref": "#/$defs/evidenceItems" },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["question_id", "prompt", "expected_concepts", "evidence_refs"],
+        "properties": {
+          "question_id": { "type": "string", "minLength": 1 },
+          "prompt": { "type": "string", "minLength": 1 },
+          "expected_concepts": { "type": "array", "items": { "type": "string", "minLength": 2 }, "minItems": 1, "uniqueItems": true },
+          "evidence_refs": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1, "uniqueItems": true }
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidence_status": { "enum": ["CONFIRMED", "PARTIAL", "UNKNOWN"] },
+    "created_at": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "evidenceItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["description", "path", "symbol", "reason", "evidence_status"],
+        "properties": {
+          "description": { "type": "string", "minLength": 1 },
+          "path": { "type": ["string", "null"] },
+          "symbol": { "type": ["string", "null"] },
+          "reason": { "type": "string", "minLength": 1 },
+          "evidence_status": { "enum": ["CONFIRMED", "UNKNOWN"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

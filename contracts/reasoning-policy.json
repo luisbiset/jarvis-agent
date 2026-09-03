@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "policy_version": "3.1.0",
+  "default_level": "MEDIUM",
+  "levels": {
+    "INSTANT": { "reasoning_class": "FAST", "reasoning_effort": "low", "model": "gpt-5.6-luna", "context_budget": "SMALL", "max_input_tokens": 16000 },
+    "MEDIUM": { "reasoning_class": "NORMAL", "reasoning_effort": "medium", "model": "gpt-5.6-terra", "context_budget": "MEDIUM", "max_input_tokens": 64000 },
+    "HIGH": { "reasoning_class": "DEEP", "reasoning_effort": "high", "model": "gpt-5.6-sol", "context_budget": "LARGE", "max_input_tokens": 160000 }
+  },
+  "agent_caps": {
+    "router": "INSTANT",
+    "documentation": "MEDIUM",
+    "test": "MEDIUM",
+    "default": "HIGH"
+  },
+  "thresholds": {
+    "instant_max_score": 3,
+    "medium_max_score": 8
+  },
+  "weights": {
+    "architectural": 3,
+    "production_critical": 3,
+    "security_sensitive": 3,
+    "database_migration": 2,
+    "multiple_modules": 2,
+    "many_files": 2,
+    "tests_required": 1
+  },
+  "limits": {
+    "multiple_modules_min": 2,
+    "many_files_min": 6,
+    "max_ambiguity_points": 3,
+    "max_complexity_points": 4
+  },
+  "escalation": {
+    "enabled": true,
+    "max_per_task": 1,
+    "allowed_from": "MEDIUM",
+    "target": "HIGH",
+    "triggers": ["TEST_FAILURE"]
+  },
+  "context_limits": {
+    "SMALL": { "max_files": 4, "max_context_tokens": 12000, "max_tool_reads": 8, "max_raw_bytes": 180000 },
+    "MEDIUM": { "max_files": 12, "max_context_tokens": 40000, "max_tool_reads": 24, "max_raw_bytes": 600000 },
+    "LARGE": { "max_files": 30, "max_context_tokens": 100000, "max_tool_reads": 60, "max_raw_bytes": 1500000 }
+  },
+  "model_call_limits": {
+    "TRIVIAL": 1,
+    "LOCALIZED": 3,
+    "TRANSVERSAL": 5,
+    "CRITICAL": 6
+  },
+  "cost_limits": {
+    "mode": "OBSERVE_ONLY",
+    "soft_limit_ratio": 0.8,
+    "TRIVIAL": { "max_credits": 5, "max_uncached_input_tokens": 25000 },
+    "LOCALIZED": { "max_credits": 15, "max_uncached_input_tokens": 80000 },
+    "TRANSVERSAL": { "max_credits": 35, "max_uncached_input_tokens": 180000 },
+    "CRITICAL": { "max_credits": 60, "max_uncached_input_tokens": 300000 }
+  },
+  "budget": {
+    "max_attempts": 3,
+    "max_total_retries": 3,
+    "max_child_executions": 3,
+    "max_child_depth": 3,
+    "hard_max_model_calls": 8,
+    "max_duration_ms": 3600000
+  }
+}

@@ -105,10 +105,11 @@ Instalação recomendada para uma máquina de desenvolvimento:
 O instalador:
 
 1. valida o projeto;
-2. registra o marketplace local `codex-agents`;
-3. instala os quatro plugins;
-4. cria os agentes globais em `~/.codex/agents/`;
-5. copia cada agente como um arquivo TOML independente, compatível com o carregador de subagentes do Codex.
+2. instala a política global de métricas em `~/.codex/AGENTS.md` e registra o caminho do runtime;
+3. registra o marketplace local `codex-agents`;
+4. instala os três plugins;
+5. cria os agentes globais em `~/.codex/agents/`;
+6. copia cada agente como um arquivo TOML independente, compatível com o carregador de subagentes do Codex.
 
 O argumento legado continua aceito para compatibilidade, mas produz o mesmo resultado da instalação padrão:
 
@@ -130,6 +131,7 @@ codex plugin list
 O diagnóstico saudável confirma:
 
 - 16 agentes globais;
+- a política global `FLOW-003` e o ponteiro do Jarvis Runtime;
 - os plugins `redmine-agent`, `sfa-agent` e `aghuse-agent`;
 - o MCP Redmine apontando para este clone;
 - a presença de `REDMINE_API_KEY` sem exibir seu valor;
@@ -179,6 +181,8 @@ Se o instalador não puder ser usado:
 
 ```bash
 mkdir -p ~/.codex/agents
+cp config/AGENTS.md ~/.codex/AGENTS.md
+printf '%s\n' "$PWD" > ~/.codex/jarvis-agent-root
 cp agents/*.toml ~/.codex/agents/
 
 codex plugin marketplace add "$PWD"

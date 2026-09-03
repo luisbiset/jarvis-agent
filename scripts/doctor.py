@@ -37,7 +37,18 @@ def agent_is_installed(path: Path, expected: Path) -> bool:
 
 
 def main() -> int:
-    args = parse_args()
+    cli_args = parse_args()
+    global_instructions = CODEX_HOME / "AGENTS.md"
+    expected_global_instructions = ROOT / "config/AGENTS.md"
+    status(
+        agent_is_installed(global_instructions, expected_global_instructions),
+        "instruções globais de métricas instaladas",
+    )
+    root_pointer = CODEX_HOME / "jarvis-agent-root"
+    status(
+        root_pointer.is_file() and root_pointer.read_text(encoding="utf-8").strip() == str(ROOT),
+        "ponteiro global do Jarvis Runtime aponta para o projeto central",
+    )
     expected_agents = {path.name: path.resolve() for path in (ROOT / "agents").glob("*.toml")}
     installed_agents = CODEX_HOME / "agents"
     for name, target in sorted(expected_agents.items()):
@@ -55,9 +66,9 @@ def main() -> int:
         with config_path.open("rb") as stream:
             config = tomllib.load(stream)
     redmine = config.get("mcp_servers", {}).get("redmine", {})
-    args = redmine.get("args", [])
+    redmine_args = redmine.get("args", [])
     central_server = str(ROOT / "plugins/redmine-agent/scripts/server.mjs")
-    status(central_server in args, "MCP Redmine aponta para o projeto central")
+    status(central_server in redmine_args, "MCP Redmine aponta para o projeto central")
     status(bool(os.environ.get("REDMINE_API_KEY")), "REDMINE_API_KEY disponível sem exibir o valor")
 
     result = subprocess.run(["codex", "plugin", "list"], capture_output=True, text=True)
@@ -84,7 +95,7 @@ def main() -> int:
     status(not active_legacy, f"sem symlinks legados de skills{': ' + ', '.join(active_legacy) if active_legacy else ''}")
     if FAILURES:
         print(f"Resumo: {len(FAILURES)} verificação(ões) requerem atenção.")
-        return 1 if args.strict else 0
+        return 1 if cli_args.strict else 0
     print("Resumo: instalação saudável.")
     return 0
 

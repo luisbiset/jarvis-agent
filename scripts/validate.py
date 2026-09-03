@@ -64,8 +64,8 @@ def validate_agents() -> set[str]:
                 fail(f"Agente duplicado: {name}")
             names.add(name)
         effort = data.get("model_reasoning_effort")
-        if effort is not None and effort not in {"low", "medium", "high"}:
-            fail(f"{path.relative_to(ROOT)} possui model_reasoning_effort inválido: {effort!r}")
+        if effort is not None:
+            fail(f"{path.relative_to(ROOT)} fixa model_reasoning_effort={effort!r}; a V3 exige policy adaptativa")
     return names
 
 
@@ -264,12 +264,15 @@ def validate_evals(agent_names: set[str]) -> None:
             fail(f"Avaliação {case_id} possui invariantes desconhecidas: {sorted(unknown_invariants)}")
 
 
-def validate_v2_contracts(agent_names: set[str]) -> None:
+def validate_versioned_contracts(agent_names: set[str]) -> None:
     contract_dir = ROOT / "contracts"
     required = {
         "version.json",
+        "reasoning-policy.json",
+        "knowledge-transfer-policy.json",
         "policy-registry.json",
         "handoff.schema.json",
+        "technical-handoff.schema.json",
         "execution-state.schema.json",
         "role-boundaries.json",
         "task-patterns.json",
@@ -278,12 +281,12 @@ def validate_v2_contracts(agent_names: set[str]) -> None:
     }
     missing = [name for name in sorted(required) if not (contract_dir / name).is_file()]
     if missing:
-        fail(f"Contratos V2 ausentes: {missing}")
+        fail(f"Contratos versionados ausentes: {missing}")
         return
 
     version = load_json(contract_dir / "version.json")
-    if version.get("jarvis_version") != "2.1.0" or version.get("routing_schema_version") != 2:
-        fail("contracts/version.json não declara Jarvis 2.1.0 e routing schema 2")
+    if version.get("jarvis_version") != "3.1.0" or version.get("execution_state_schema_version") != "3.1.0" or version.get("telemetry_schema_version") != "3.1.0" or version.get("reasoning_policy_version") != "3.1.0" or version.get("technical_handoff_schema_version") != "1.0.0" or version.get("knowledge_transfer_policy_version") != "1.0.0" or version.get("routing_schema_version") != 2:
+        fail("contracts/version.json não declara Jarvis/runtime/policy 3.1.0 e routing schema 2")
 
     handoff = load_json(contract_dir / "handoff.schema.json")
     handoff_required = {
@@ -399,12 +402,12 @@ def validate_jarvis_runtime() -> None:
     scripts = [ROOT / "scripts/jarvis_runtime.py", ROOT / "scripts/run_evals.py", ROOT / "scripts/generate_topology.py"]
     for script in scripts:
         if not script.is_file():
-            fail(f"Script V2 ausente: {script.relative_to(ROOT)}")
+            fail(f"Script V3 ausente: {script.relative_to(ROOT)}")
             continue
         try:
             ast.parse(script.read_text(encoding="utf-8"), filename=str(script))
         except SyntaxError as exc:
-            fail(f"Script V2 possui Python inválido em {script.relative_to(ROOT)}: {exc}")
+            fail(f"Script V3 possui Python inválido em {script.relative_to(ROOT)}: {exc}")
     env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
     result = subprocess.run(
         [sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "tests"), "-p", "test_*.py"],
@@ -415,7 +418,7 @@ def validate_jarvis_runtime() -> None:
     )
     if result.returncode:
         details = (result.stdout + result.stderr).strip()
-        fail(f"Testes do runtime Jarvis V2 falharam: {details}")
+        fail(f"Testes do runtime Jarvis V3 falharam: {details}")
     evals = subprocess.run(
         [sys.executable, str(ROOT / "scripts/run_evals.py")],
         cwd=ROOT,
@@ -424,7 +427,7 @@ def validate_jarvis_runtime() -> None:
         text=True,
     )
     if evals.returncode:
-        fail(f"Carregamento dos evals V2 falhou: {(evals.stdout + evals.stderr).strip()}")
+        fail(f"Carregamento dos evals falhou: {(evals.stdout + evals.stderr).strip()}")
     topology = subprocess.run(
         [sys.executable, str(ROOT / "scripts/generate_topology.py"), "--check"],
         cwd=ROOT,
@@ -436,8 +439,92 @@ def validate_jarvis_runtime() -> None:
         fail(f"Topologia gerada está desatualizada: {(topology.stdout + topology.stderr).strip()}")
 
 
+def validate_reasoning_policy() -> None:
+    policy = load_json(ROOT / "contracts/reasoning-policy.json")
+    if policy.get("policy_version") != "3.1.0":
+        fail("Reasoning policy deve declarar policy_version 3.1.0")
+    if policy.get("default_level") != "MEDIUM":
+        fail("Reasoning policy deve usar fallback MEDIUM")
+    thresholds = policy.get("thresholds", {})
+    if thresholds.get("instant_max_score") != 3 or thresholds.get("medium_max_score") != 8:
+        fail("Thresholds V3 devem ser INSTANT até 3 e MEDIUM até 8")
+    escalation = policy.get("escalation", {})
+    if escalation.get("allowed_from") != "MEDIUM" or escalation.get("target") != "HIGH" or escalation.get("max_per_task") != 1:
+        fail("Escalada V3 deve permitir somente MEDIUM -> HIGH uma vez")
+    budget = policy.get("budget", {})
+    if budget.get("max_attempts") != 3 or budget.get("max_total_retries") != 3 or budget.get("max_child_executions") != 3 or budget.get("max_child_depth") != 3:
+        fail("Budgets V3 devem limitar tentativas, retries, child executions e child depth a 3")
+    expected_routing = {
+        "INSTANT": ("gpt-5.6-luna", "low", "SMALL"),
+        "MEDIUM": ("gpt-5.6-terra", "medium", "MEDIUM"),
+        "HIGH": ("gpt-5.6-sol", "high", "LARGE"),
+    }
+    for level, expected in expected_routing.items():
+        config = policy.get("levels", {}).get(level, {})
+        if (config.get("model"), config.get("reasoning_effort"), config.get("context_budget")) != expected:
+            fail(f"Roteamento adaptativo inválido para {level}")
+    if budget.get("hard_max_model_calls", 0) < 1 or budget.get("max_duration_ms", 0) < 1:
+        fail("Budget V3 deve limitar chamadas de modelo e duração")
+    if policy.get("model_call_limits") != {"TRIVIAL": 1, "LOCALIZED": 3, "TRANSVERSAL": 5, "CRITICAL": 6}:
+        fail("Limites de model calls por complexidade inválidos")
+    context_limits = policy.get("context_limits", {})
+    for key in ("max_files", "max_context_tokens", "max_tool_reads", "max_raw_bytes"):
+        values = [context_limits.get(level, {}).get(key, 0) for level in ("SMALL", "MEDIUM", "LARGE")]
+        if any(value <= 0 for value in values) or values != sorted(values):
+            fail(f"Context limits inválidos ou não monotônicos para {key}")
+    cost_limits = policy.get("cost_limits", {})
+    if cost_limits.get("mode") != "OBSERVE_ONLY" or not 0 < cost_limits.get("soft_limit_ratio", 0) < 1:
+        fail("Cost limits devem iniciar em OBSERVE_ONLY")
+
+
+def validate_knowledge_transfer_policy() -> None:
+    policy = load_json(ROOT / "contracts/knowledge-transfer-policy.json")
+    if policy.get("policy_id") != "FLOW-004" or policy.get("policy_version") != "1.0.0":
+        fail("Knowledge transfer deve declarar FLOW-004 e policy_version 1.0.0")
+    expected = {
+        "TRIVIAL": (False, "NONE", 0, False),
+        "LOCALIZED": (True, "SHORT", 0, False),
+        "BUSINESS_RULE": (True, "FULL", 3, False),
+        "TRANSVERSAL": (True, "FULL", 4, False),
+        "CRITICAL": (True, "FULL", 5, True),
+    }
+    levels = policy.get("levels", {})
+    for name, values in expected.items():
+        config = levels.get(name, {})
+        observed = (config.get("enabled"), config.get("handoff"), config.get("teach_back_questions"), config.get("teach_back_required"))
+        if observed != values:
+            fail(f"Knowledge transfer inválida para {name}: {observed}")
+    budget = policy.get("budget", {})
+    if budget.get("max_handoff_tokens") != 4000 or budget.get("max_teachback_turns") != 6:
+        fail("Budgets de knowledge transfer devem ser 4000 tokens e 6 turnos")
+    schema = load_json(ROOT / "contracts/technical-handoff.schema.json")
+    if schema.get("additionalProperties") is not False or schema.get("$id") != "jarvis://contracts/technical-handoff/1.0.0":
+        fail("technical-handoff.schema.json deve ser fechado e versionado em 1.0.0")
+
+
 def validate_critical_contracts() -> None:
     contracts = {
+        "config/AGENTS.md": [
+            "Aplicar `FLOW-003` a toda tarefa solicitada",
+            "não escolher reasoning manualmente quando o policy engine V3 estiver disponível",
+            "Antes de executar qualquer trabalho substantivo ou chamar ferramentas, mostrar ao usuário uma linha curta",
+            "modelo LLM <model retornado pela policy>",
+            "modelo LLM pendente da policy",
+            "Somente `MEDIUM` pode escalar automaticamente uma vez para `HIGH`",
+            "Registrar tokens e créditos somente quando forem valores observados",
+            "Encerrar toda resposta final com uma linha curta",
+        ],
+        "AGENTS.md": [
+            "Aplique `FLOW-003` a toda tarefa",
+            "informe as pré-métricas ao usuário antes do trabalho substantivo",
+        ],
+        "contracts/protocol.md": [
+            "Toda tarefa solicitada, inclusive consulta, explicação, diagnóstico somente leitura ou ação externa",
+            "Aplicar `FLOW-003`",
+            "o fechamento deve dizer `não informados`",
+            "`HIGH` nunca escala novamente",
+            "O reasoning do agente principal já iniciado não muda no meio da mesma chamada",
+        ],
         "agents/aghuse_backend.toml": [
             "nunca crie uma nova classe `*RN`",
             "crie-a como `*ON`",
@@ -452,6 +539,10 @@ def validate_critical_contracts() -> None:
         "plugins/aghuse-agent/skills/aghuse-idempotent-database-scripts/SKILL.md": [
             "A mesma regra vale para o rollback",
             "aplicação duas vezes, rollback duas vezes",
+            "finalizar a definição da constraint com `ENABLE NOVALIDATE`",
+            "Toda foreign key deve possuir um índice associado",
+            "Todo `CREATE INDEX` Oracle, inclusive `CREATE UNIQUE INDEX`, deve terminar com `ONLINE`",
+            "Não transportar `ENABLE NOVALIDATE` ou `ONLINE` para PostgreSQL",
         ],
         "plugins/aghuse-agent/skills/aghuse-development/SKILL.md": [
             "nunca criar uma nova `*RN`",
@@ -461,6 +552,14 @@ def validate_critical_contracts() -> None:
             "Não delegue ao `aghuse_tests` a criação ou alteração de testes de controller/action",
             "Antes de autorizar uma nova classe `*ONTest` ou `*RNTest`",
             "Prefira ampliar ou portar a classe de teste existente",
+            "policy engine central do Jarvis V3",
+            "Não fixe modelo ou reasoning por perfil",
+            "Somente `MEDIUM` pode escalar uma vez para `HIGH`",
+        ],
+        "plugins/sfa-agent/skills/sfa-development/SKILL.md": [
+            "protocolo Jarvis V3",
+            "Não fixe modelo ou reasoning por perfil",
+            "somente `MEDIUM` pode escalar uma vez para `HIGH`",
         ],
         "agents/aghuse_database.toml": [
             "aplicação e rollback",
@@ -471,6 +570,17 @@ def validate_critical_contracts() -> None:
             "não duplicar índices simples, compostos ou prefixos já atendidos",
             "princípio do menor privilégio",
             "declare explicitamente a justificativa técnica",
+            "finalize a definição da constraint com `ENABLE NOVALIDATE`",
+            "Toda foreign key deve possuir um índice associado",
+            "Todo `CREATE INDEX` Oracle, inclusive `CREATE UNIQUE INDEX`, deve terminar com a cláusula `ONLINE`",
+            "não as copie para scripts PostgreSQL",
+        ],
+        "agents/sfa_database.toml": [
+            "Aplique `DB-DDL-001` nos scripts Oracle",
+            "finalize a definição da constraint com `ENABLE NOVALIDATE`",
+            "Toda foreign key deve possuir um índice associado",
+            "Todo `CREATE INDEX` Oracle, inclusive `CREATE UNIQUE INDEX`, deve terminar com a cláusula `ONLINE`",
+            "não as copie para scripts PostgreSQL",
         ],
         "agents/sesab_reviewer.toml": [
             "Ao revisar mudanças no AGHUse",
@@ -479,6 +589,8 @@ def validate_critical_contracts() -> None:
         "plugins/redmine-agent/skills/redmine-workflows/SKILL.md": [
             "confirmação explícita imediatamente antes",
             "Não repetir automaticamente uma escrita",
+            "Usar a API REST oficial do Redmine como canal obrigatório",
+            "Não usar automação de navegador",
         ],
     }
     for relative, fragments in contracts.items():
@@ -509,10 +621,12 @@ def main() -> int:
     agents = validate_agents()
     plugins = validate_plugins()
     validate_evals(agents)
-    validate_v2_contracts(agents)
+    validate_versioned_contracts(agents)
     validate_redmine_server()
     validate_aghuse_automation()
     validate_jarvis_runtime()
+    validate_reasoning_policy()
+    validate_knowledge_transfer_policy()
     validate_critical_contracts()
     scan_secrets()
     if ERRORS:

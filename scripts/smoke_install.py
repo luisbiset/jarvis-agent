@@ -22,6 +22,14 @@ def main() -> int:
             check=True,
         )
 
+        installed_instructions = codex_home / "AGENTS.md"
+        expected_instructions = ROOT / "config/AGENTS.md"
+        if not installed_instructions.is_file() or installed_instructions.read_bytes() != expected_instructions.read_bytes():
+            raise RuntimeError("Instruções globais de métricas não foram instaladas")
+        root_pointer = codex_home / "jarvis-agent-root"
+        if not root_pointer.is_file() or root_pointer.read_text(encoding="utf-8").strip() != str(ROOT):
+            raise RuntimeError("Ponteiro do Jarvis Runtime não foi instalado corretamente")
+
         expected_agents = sorted((ROOT / "agents").glob("*.toml"))
         for source in expected_agents:
             installed = codex_home / "agents" / source.name

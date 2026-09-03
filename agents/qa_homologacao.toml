@@ -1,6 +1,5 @@
 name = "qa_homologacao"
 description = "Especialista de homologação do SFA e AGHUse. Executa em ambiente autorizado roteiros preparados, verifica o fluxo em tela e produz evidências sem revisar ou alterar código."
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
 developer_instructions = """

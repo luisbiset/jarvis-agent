@@ -1,4 +1,4 @@
-# Jarvis Agent
+# Jarvis Agent V3.1
 
 Projeto-fonte do Jarvis Agent: plugins, skills e agentes pessoais usados no Codex.
 
@@ -32,9 +32,12 @@ Comece pelos [comandos básicos para economizar créditos](docs/COMANDOS_BASICOS
 - `scripts/install.sh`: instala agents e plugins a partir desta fonte central; aceita `--dry-run`.
 - `scripts/smoke_install.py`: prova a instalação em um `CODEX_HOME` temporário e vazio.
 - `scripts/run_evals.py`: carrega os contratos de roteamento e, com `--live`, avalia decisões usando `codex exec`.
-- `scripts/jarvis_runtime.py`: persiste estado, eventos, handoffs, context packs, cache de descoberta e métricas locais da V2.
+- `config/AGENTS.md`: política global instalada no Codex para aplicar métricas em todas as tarefas.
+- `scripts/jarvis_runtime.py`: decide reasoning adaptativo, aplica budgets por complexidade e persiste estado, tentativas, escaladas, findings, gates e métricas históricas da V3.1 em JSONL e SQLite.
+- `contracts/reasoning-policy.json`: pesos, thresholds, levels e budgets versionados do Adaptive Reasoning.
 - `contracts/`: schemas, políticas, fronteiras de papéis, padrões de tarefa e versão comportamental.
 - `docs/TOPOLOGY.md`: topologia gerada automaticamente a partir dos manifests, agents e skills.
+- `docs/TELEMETRIA.md`: comandos e contrato operacional da telemetria local V3.
 - `evals/routing-cases.json`: casos de avaliação de roteamento e segurança.
 - `plugins/redmine-agent/src/`: cliente HTTP, ferramentas e protocolo MCP modularizados.
 - `plugins/redmine-agent/tests/`: testes de contrato, erros HTTP, timeout, redaction e ferramentas.
@@ -89,11 +92,11 @@ node plugins/redmine-agent/scripts/server.mjs --self-test
 
 Os casos em `evals/routing-cases.json` documentam quais skills e agentes devem ou não ser acionados para pedidos representativos. A validação padrão é determinística e não acessa Redmine, banco ou ambientes reais.
 
-## Protocolo Jarvis V2
+## Protocolo Jarvis V3
 
-A V2 classifica cada execução por complexidade, risco, modo operacional e reasoning antes do roteamento. Budgets padrão limitam tarefas `TRIVIAL`, `LOCALIZED`, `TRANSVERSAL` e `CRITICAL` a 2 (um especialista e Auditor opcional), 3, 6 e 8 agentes, respectivamente. O contrato completo está em [contracts/protocol.md](contracts/protocol.md), e o handoff fechado em [contracts/handoff.schema.json](contracts/handoff.schema.json).
+A V3.1 classifica complexidade, risco e modo, calcula reasoning `INSTANT`/`MEDIUM`/`HIGH` por sinais objetivos e permite somente uma escalada `MEDIUM → HIGH` dentro do budget. Budgets padrão limitam tarefas `TRIVIAL`, `LOCALIZED`, `TRANSVERSAL` e `CRITICAL` a 1, 2, 4 e 6 agentes e a 1, 3, 5 e 6 chamadas de modelo. O contrato completo está em [contracts/protocol.md](contracts/protocol.md), a policy em [contracts/reasoning-policy.json](contracts/reasoning-policy.json) e o handoff em [contracts/handoff.schema.json](contracts/handoff.schema.json).
 
-O runtime é opcional para tarefas simples e recomendado para fluxos multiagente:
+O runtime é usado em todas as tarefas quando estiver disponível; tarefas simples continuam sem subagentes e usam somente a classificação e o registro mínimos:
 
 ```bash
 python3 scripts/jarvis_runtime.py init \
@@ -101,16 +104,26 @@ python3 scripts/jarvis_runtime.py init \
   --complexity LOCALIZED \
   --risk-class MEDIUM \
   --operational-mode ASSISTED_AUTOPILOT \
-  --reasoning-class NORMAL
+  --task-type BACKEND \
+  --estimated-files 3 \
+  --tests-required \
+  --complexity-score 3
 
 python3 scripts/jarvis_runtime.py transition --run-dir .jarvis/runs/<run_id> \
   --to PLAN_APPROVED --reason "pedido direto e escopo inequívoco"
+python3 scripts/jarvis_runtime.py invocation-start --run-dir .jarvis/runs/<run_id> \
+  --agent aghuse_backend --stage IMPLEMENTING --reasoning-effort medium
+python3 scripts/jarvis_runtime.py invocation-finish --run-dir .jarvis/runs/<run_id> \
+  --invocation-id <invocation_id> --status OK --agent-result USEFUL \
+  --input-tokens 1000 --cached-input-tokens 400 --output-tokens 250 --credits 1.2
 python3 scripts/jarvis_runtime.py handoff --run-dir .jarvis/runs/<run_id>
 python3 scripts/jarvis_runtime.py summary --run-dir .jarvis/runs/<run_id>
 python3 scripts/jarvis_runtime.py dashboard
+python3 scripts/jarvis_runtime.py report-cost --last 20 --group-by agent
+python3 scripts/jarvis_runtime.py export --format json --output /tmp/jarvis-telemetry.json
 ```
 
-`.jarvis/` é local e ignorado pelo Git. Os eventos guardam metadados, caminhos, hashes e referências; conteúdo clínico, faturamento real, credenciais e URLs privadas são recusados.
+O runtime calcula automaticamente horários e durações. Tokens e créditos são valores observados fornecidos pelo executor; quando indisponíveis, permanecem zero em vez de serem estimados. O banco histórico fica em `.jarvis/telemetry/jarvis.db`. Todo `.jarvis/` é local e ignorado pelo Git; conteúdo clínico, faturamento real, credenciais e URLs privadas são recusados.
 
 O eval ao vivo é opcional porque consome uma execução do modelo:
 
@@ -125,4 +138,4 @@ O modo ao vivo pede somente uma decisão estruturada de roteamento, usa sandbox 
 
 ## Formato de handoff
 
-Coordenadores e especialistas usam o schema V2: run/version, estágio, classificações, requisitos, arquivos com owner/finalidade, contratos, decisões com provenance, validações executadas e não executadas, riscos, limitações, blockers, stop reason e próximo responsável.
+Coordenadores e especialistas preservam o handoff schema 2.0 dentro do runtime V3: run/version, estágio, classificações, requisitos, arquivos com owner/finalidade, contratos, decisões com provenance, validações executadas e não executadas, riscos, limitações, blockers, stop reason e próximo responsável.

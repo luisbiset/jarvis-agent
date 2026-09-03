@@ -13,9 +13,9 @@ description: Coordenar o ciclo do AGHUse entre análise paralela, plano aprovado
 
 ## Executar a arquitetura do AGHUse Agent
 
-Antes de rotear, declare no handoff V2: `complexity`, `risk_class`, `operational_mode`, `reasoning_class`, `max_agents` e `max_parallel_agents`. Use `TRIVIAL` (um especialista e Auditor opcional, até 2 agentes), `LOCALIZED` (até 3), `TRANSVERSAL` (até 6) ou `CRITICAL` (até 8); exceder o budget exige justificativa. Um especialista único pode implementar diretamente uma correção trivial, sem camada adicional de Desenvolvedor. O Reviewer não participa de tarefa trivial e torna-se obrigatório somente por risco sistêmico alto/crítico.
+Antes de rotear, declare no handoff V3: `complexity`, `risk_class`, `operational_mode`, sinais da tarefa, reasoning decidido, `max_agents` e `max_parallel_agents`. Use `TRIVIAL` (um especialista e Auditor opcional, até 2 agentes), `LOCALIZED` (até 3), `TRANSVERSAL` (até 6) ou `CRITICAL` (até 8); exceder o budget exige justificativa. Um especialista único pode implementar diretamente uma correção trivial, sem camada adicional de Desenvolvedor. O Reviewer não participa de tarefa trivial e torna-se obrigatório somente por risco sistêmico alto/crítico.
 
-Use `FAST` para baseline, busca e validação mecânica; `NORMAL` para implementação localizada; `DEEP` para ambiguidade, impacto transversal, incidente difícil ou revisão de alto risco. Escalone somente com evidência. Não acione `aghuse_analyst` e `aghuse_requisitos_e_legado` juntos sem justificativa explícita.
+Use o policy engine central do Jarvis V3 para obter `INSTANT`, `MEDIUM` ou `HIGH` e propague `model`, `reasoning_effort`, `context_budget` e limites retornados a cada subagente. Não fixe modelo ou reasoning por perfil. Todo retry exige progresso verificável e consome o budget agregado da tarefa. Somente `MEDIUM` pode escalar uma vez para `HIGH`, após sinal verificável aceito pelo evaluator e dentro do budget; `HIGH` nunca escala novamente. Não acione `aghuse_analyst` e `aghuse_requisitos_e_legado` juntos sem justificativa explícita.
 
 Para uma tarefa completa, conduzir este fluxo:
 
@@ -54,6 +54,8 @@ No estágio **Desenvolvedor**, usar os especialistas de camada abaixo do perfil 
 Na **Validação paralela**, congelar o diff funcional e acionar QA e Auditor do diff de forma independente. Se qualquer um reprovar, retornar os achados mínimos ao Desenvolvedor e repetir a validação afetada. Apresentar ao Gate humano o resultado consolidado, incluindo o que foi executado, o que não pôde ser validado e os riscos restantes. Gate humano não implica autorização automática para Redmine, banco, deploy, commit ou push; cada ação continua limitada ao pedido explícito do usuário.
 
 Persistir as transições `NEW -> DISCOVERY -> PLAN_READY -> PLAN_APPROVED -> IMPLEMENTING -> VALIDATING -> REVIEW_READY -> HUMAN_GATE -> HOMOLOGATION_READY -> DONE` quando o runtime local estiver disponível. Falha de validação ou pedido de mudança retorna somente ao estágio necessário. Tarefas triviais/localizadas com pedido direto inequívoco podem ir de `NEW` a `PLAN_APPROVED`; fluxos formais não podem iniciar developer antes desse estado.
+
+Instrumentar a execução com o runtime V3 quando `scripts/jarvis_runtime.py` estiver disponível no Jarvis Agent. Informar sinais no `init` para o reasoning adaptativo, declarar os agentes planejados e envolver cada chamada real, inclusive repetições do mesmo perfil, com `invocation-start` e `invocation-finish`, usando o effort decidido. Após falha elegível, chamar o evaluator antes de qualquer retry e reutilizar o contexto compacto da escalada. No fechamento, registrar tokens/créditos somente quando o executor os fornecer, tentativas, testes, arquivos, tools, `agent_result`, termination reason, findings acionáveis e `routing_outcome`. Não persistir prompts, conteúdo clínico, credenciais ou URLs privadas.
 
 Parar antes de escrever por requisito ambíguo, contrato compartilhado fora do escopo, teste contraditório, autorização externa ausente, contexto insuficiente ou divergência não resolvida. Se a solução de risco alto não puder ser explicada, usar `NEEDS_EXPLANATION`.
 

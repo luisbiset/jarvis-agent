@@ -4,6 +4,8 @@
 
 Comece com **uma única skill**, informe o escopo exato e peça a menor validação suficiente.
 
+O Jarvis aplica automaticamente `FLOW-003` em toda tarefa: classifica complexidade, risco, modo, reasoning e budget, usa o mínimo de agentes e apresenta uma linha curta de métricas no fechamento.
+
 Modelo para copiar:
 
 > `$skill` Faça **[objetivo]** em **[arquivo/módulo]**. Considere **[erro ou requisito]**. Termine quando **[critério verificável]**. Não use subagentes. Valide apenas o escopo alterado. Não faça commit, push, deploy nem alterações externas.

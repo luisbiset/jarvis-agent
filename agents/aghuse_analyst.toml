@@ -1,6 +1,5 @@
 name = "aghuse_analyst"
 description = "Analista ad-hoc do AGHUse. Use quando o usuário pedir um relatório técnico independente fora do pipeline completo; não acione junto com aghuse_requisitos_e_legado sem justificativa explícita."
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
 developer_instructions = """

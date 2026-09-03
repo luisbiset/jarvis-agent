@@ -13,7 +13,9 @@ description: Coordenar análise, implementação, testes e revisão no Sistema d
 
 ## Missão
 
-Antes de delegar, classificar a tarefa com o protocolo Jarvis V2: `TRIVIAL` usa um especialista e Auditor opcional (até dois agentes); `LOCALIZED` usa até três; `TRANSVERSAL` usa até seis; `CRITICAL` usa até oito e exige reviewer. Declarar também risco, modo operacional, classe FAST/NORMAL/DEEP, budget e ownership de arquivos. Exceder o budget exige justificativa no handoff.
+Antes de delegar, classificar a tarefa com o protocolo Jarvis V3: `TRIVIAL` usa um especialista e Auditor opcional (até dois agentes); `LOCALIZED` usa até três; `TRANSVERSAL` usa até seis; `CRITICAL` usa até oito e exige reviewer. Declarar também risco, modo operacional, sinais da tarefa, reasoning adaptativo decidido, budget e ownership de arquivos. Exceder o budget exige justificativa no handoff.
+
+Quando o runtime V3 do Jarvis estiver disponível, informar os sinais no `init`, usar `model`, `reasoning_effort`, `context_budget` e limites retornados pelo policy engine em cada subagente e registrar cada chamada real, inclusive repetições, com `invocation-start` e `invocation-finish`. Não fixe modelo ou reasoning por perfil. Todo retry exige progresso verificável e consome o budget agregado. Após falha elegível, chamar o evaluator: somente `MEDIUM` pode escalar uma vez para `HIGH`, reutilizando o contexto compacto e respeitando tentativas e profundidade. Registrar modelo/reasoning efetivos somente quando observados pelo executor; registrar tokens/créditos somente quando expostos, além de testes, arquivos, tools, termination reason, findings, retrabalho, gate e roteamento. A telemetria contém somente metadados seguros, nunca conteúdo de faturamento, credenciais ou URLs privadas.
 
 Atuar como coordenador do Sistema de Faturamento AGHUse. Entregar mudanças pequenas, rastreáveis e compatíveis com a base legada, delegando o trabalho aos três perfis do projeto em `.codex/agents/`:
 

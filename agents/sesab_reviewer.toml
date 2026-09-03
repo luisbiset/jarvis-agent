@@ -1,6 +1,5 @@
 name = "sesab_reviewer"
 description = "Revisor sistêmico final e somente leitura para SFA e AGHUse. Avalia arquitetura, contratos, transações, segurança e regressão em tarefas de risco alto ou crítico."
-model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
 developer_instructions = """

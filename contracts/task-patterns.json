@@ -2,10 +2,11 @@
   "schema_version": 1,
   "patterns": [
     {"id": "aghuse-jsf-label", "complexity": "TRIVIAL", "risk_class": "LOW", "max_agents": 1, "agents": ["aghuse_frontend"], "validations": ["xhtml_or_properties_check"]},
-    {"id": "aghuse-dao-criteria", "complexity": "LOCALIZED", "risk_class": "MEDIUM", "max_agents": 3, "agents": ["aghuse_database", "aghuse_qa"], "validations": ["targeted_module_test", "criteria_policy_check"]},
-    {"id": "aghuse-new-on", "complexity": "LOCALIZED", "risk_class": "MEDIUM", "max_agents": 3, "agents": ["aghuse_backend", "aghuse_tests"], "validations": ["targeted_on_test"]},
-    {"id": "aghuse-external-db-script", "complexity": "LOCALIZED", "risk_class": "HIGH", "max_agents": 3, "agents": ["aghuse_database", "sesab_reviewer"], "validations": ["idempotence_review", "manifest_hashes", "git_absence"]},
+    {"id": "aghuse-dao-criteria", "complexity": "LOCALIZED", "risk_class": "MEDIUM", "max_agents": 2, "agents": ["aghuse_database", "aghuse_qa"], "validations": ["targeted_module_test", "criteria_policy_check"]},
+    {"id": "aghuse-new-on", "complexity": "LOCALIZED", "risk_class": "MEDIUM", "max_agents": 2, "agents": ["aghuse_backend", "aghuse_tests"], "validations": ["targeted_on_test"]},
+    {"id": "aghuse-external-db-script", "complexity": "LOCALIZED", "risk_class": "HIGH", "max_agents": 2, "agents": ["aghuse_database", "sesab_reviewer"], "validations": ["idempotence_review", "manifest_hashes", "git_absence"]},
     {"id": "aghuse-log-incident", "complexity": "LOCALIZED", "risk_class": "MEDIUM", "max_agents": 0, "agents": [], "validations": ["read_only_root_cause"]},
-    {"id": "sfa-localized-billing-rule", "complexity": "LOCALIZED", "risk_class": "HIGH", "max_agents": 3, "agents": ["sfa_backend", "sfa_tests", "sesab_reviewer"], "validations": ["targeted_backend_test", "billing_regression"]}
+    {"id": "sfa-localized-billing-rule", "complexity": "LOCALIZED", "risk_class": "HIGH", "max_agents": 2, "agents": ["sfa_backend", "sfa_tests"], "validations": ["targeted_backend_test", "billing_regression"]},
+    {"id": "aghuse-transversal-analysis", "complexity": "TRANSVERSAL", "risk_class": "MEDIUM", "max_agents": 4, "agents": ["aghuse_requisitos_e_legado", "aghuse_backend", "aghuse_database", "sesab_reviewer"], "validations": ["evidence_map", "impact_review"]}
   ]
 }
