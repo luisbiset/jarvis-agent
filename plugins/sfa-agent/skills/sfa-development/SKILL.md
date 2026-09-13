@@ -5,6 +5,10 @@ description: Coordenar análise, implementação, testes e revisão no Sistema d
 
 # Coordenação do desenvolvimento do SFA
 
+## Pipeline por times
+
+Use os times lógicos do runtime: Time de Análise para discovery somente leitura, Time de Desenvolvimento para edição e Time de Revisão e Qualidade para validação independente. Especialistas SFA podem atuar em análise quando invocados com `team=ANALISE`, sempre sem escrita. Selecione o conjunto mínimo, preserve ownership e produza handoff antes de avançar ao próximo time; não adicione coordenadores LLM.
+
 ## Identificar o projeto
 
 - Confirmar que o repositório contém `sfa/pom.xml` e `sfa-client/angular.json` antes de aplicar estas regras.

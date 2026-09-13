@@ -2,6 +2,14 @@
 
 Este documento é a fonte única da política de fluxo. Invariantes técnicas possuem IDs em `policy-registry.json` e permanecem repetidas somente onde a defesa em profundidade é necessária.
 
+## Times de agentes
+
+`FLOW-005` formaliza a organização abaixo.
+
+O runtime seleciona deterministicamente primeiro o time e depois o menor conjunto de especialistas. `ANALISE` (Time de Análise) cobre `DISCOVERY` e `PLAN_READY` em modo somente leitura; `DESENVOLVIMENTO` (Time de Desenvolvimento) é o único time que altera código por padrão em `IMPLEMENTING`; `REVISAO_QUALIDADE` (Time de Revisão e Qualidade) cobre `VALIDATING`, `REVIEW_READY` e `HOMOLOGATION_READY` com conclusão independente. Times não são agentes nem geram chamadas adicionais de modelo.
+
+O fluxo entre times é sequencial e usa handoffs/context-packs mínimos. Paralelismo ocorre somente dentro do mesmo time entre frentes independentes, respeitando ownership e `max_parallel_agents`. O runtime infere o time pelo estado e rejeita agente fora do time. Finding crítico retorna a `IMPLEMENTING`; QA não corrige o código avaliado e o implementador não atua como revisor final.
+
 ## Classificação antes do roteamento
 
 Toda tarefa solicitada, inclusive consulta, explicação, diagnóstico somente leitura ou ação externa, deve ser classificada antes do trabalho substantivo. A classificação não obriga o uso de subagentes: tarefas simples devem permanecer econômicas.
@@ -57,6 +65,14 @@ Todo handoff segue `handoff.schema.json`. Requisitos conhecidos recebem IDs; cad
 `FLOW-004` adiciona um `TechnicalHandoff` separado ao final de mudanças relevantes. A classificação reutiliza complexidade, risco e `task_type` já calculados pelo runtime. Símbolos não encontrados devem aparecer como `UNKNOWN/NOT_CONFIRMED`; tarefas triviais não disparam geração cara. O Teach-Back reutiliza o artefato, respeita o budget e nunca persiste a resposta livre do desenvolvedor.
 
 Um arquivo compartilhado possui um único owner por estágio. Contratos são sequenciados produtor -> consumidor. Context packs carregam referências e hashes, não cópias integrais. O cache de descoberta compartilha fatos, nunca conclusões obrigatórias; QA e reviewers mantêm independência de julgamento.
+
+## Retrieval-Augmented Generation
+
+`RAG-001` adiciona recuperação local como infraestrutura transversal, não como agente. O índice de conhecimento fica em `.jarvis/rag/index.db`, separado de `.jarvis/telemetry/jarvis.db`, usa SHA-256 para reindexação incremental e preserva repositório, caminho, símbolo, linhas e hash em cada hit. Arquivos secretos, binários, builds, `.git`, `.jarvis` e conteúdo recusado pela política de segurança não entram no índice.
+
+O modo inicial é lexical com SQLite FTS5 e fallback compatível quando FTS5 não estiver disponível. As interfaces `EmbeddingProvider` e `VectorStore` permitem busca híbrida futura sem acoplar o runtime a fornecedor ou serviço externo. Ausência de embeddings nunca bloqueia o Jarvis.
+
+O comando `retrieve` consome uma fração do `context_budget` já decidido pelo FLOW-003, grava `context-packs/rag-context.json` e não conta como chamada de modelo. Um pack é reutilizado somente quando query, budget e hashes das fontes continuam válidos. RAG localiza candidatos; banco, segurança, faturamento e contratos críticos ainda exigem leitura e confirmação da fonte original.
 
 ## Fronteiras de validação
 

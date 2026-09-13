@@ -7,7 +7,7 @@
     "contracts_version", "config_hash", "telemetry_db", "created_at", "started_at",
     "updated_at", "finished_at", "current_state", "complexity", "risk_class",
     "operational_mode", "execution_path", "reasoning_class", "reasoning", "budget", "context_usage", "cost_budget", "history", "agents_used",
-    "routing", "metrics", "gate_decision", "gate_reason_code", "gate_reason_detail",
+    "routing", "metrics", "rag", "teams", "gate_decision", "gate_reason_code", "gate_reason_detail",
     "gate_attempts"
   ],
   "properties": {
@@ -132,6 +132,15 @@
     },
     "history": { "type": "array", "items": { "type": "object" } },
     "agents_used": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "teams": {
+      "type": "object", "additionalProperties": false,
+      "required": ["planned", "completed", "current", "runs"],
+      "properties": {
+        "planned": { "$ref": "#/$defs/teams" }, "completed": { "$ref": "#/$defs/teams" },
+        "current": { "type": ["string", "null"], "enum": [null, "ANALISE", "DESENVOLVIMENTO", "REVISAO_QUALIDADE"] },
+        "runs": { "type": "object", "additionalProperties": { "$ref": "#/$defs/teamRun" } }
+      }
+    },
     "routing": {
       "type": "object",
       "required": ["agents_planned", "agents_invoked", "agents_skipped", "agents_rejected_by_budget", "parallel_batches", "routing_outcome", "unnecessary_agents", "missing_agents"],
@@ -167,13 +176,40 @@
       },
       "additionalProperties": false
     },
+    "rag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "policy_version", "queries", "selected_chunks", "estimated_tokens", "cache_hits", "cache_misses", "last_query_id", "last_context_pack"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "policy_version": {"type": "string"},
+        "queries": {"type": "integer", "minimum": 0},
+        "selected_chunks": {"type": "integer", "minimum": 0},
+        "estimated_tokens": {"type": "integer", "minimum": 0},
+        "cache_hits": {"type": "integer", "minimum": 0},
+        "cache_misses": {"type": "integer", "minimum": 0},
+        "last_query_id": {"type": ["string", "null"]},
+        "last_context_pack": {"type": ["string", "null"]}
+      }
+    },
     "gate_decision": { "type": ["string", "null"], "enum": [null, "APPROVED", "CHANGES_REQUESTED", "REJECTED"] },
     "gate_reason_code": { "type": ["string", "null"], "enum": [null, "APPROVED_AS_PLANNED", "WRONG_REQUIREMENT", "REGRESSION", "INSUFFICIENT_TEST", "OUT_OF_SCOPE", "BAD_IMPLEMENTATION", "BAD_EXPLANATION", "OTHER"] },
     "gate_reason_detail": { "type": ["string", "null"] },
     "gate_attempts": { "type": "integer", "minimum": 0 }
   },
   "$defs": {
-    "agents": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+    "agents": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "teams": { "type": "array", "items": { "enum": ["ANALISE", "DESENVOLVIMENTO", "REVISAO_QUALIDADE"] }, "uniqueItems": true },
+    "teamRun": {
+      "type": "object", "additionalProperties": false,
+      "required": ["started_at", "finished_at", "agents", "model_calls", "credits", "tokens", "findings", "status"],
+      "properties": {
+        "started_at": { "type": "string" }, "finished_at": { "type": ["string", "null"] },
+        "agents": { "$ref": "#/$defs/agents" }, "model_calls": { "type": "integer", "minimum": 0 },
+        "credits": { "type": "number", "minimum": 0 }, "tokens": { "type": "integer", "minimum": 0 },
+        "findings": { "type": "integer", "minimum": 0 }, "status": { "enum": ["RUNNING", "DONE", "BLOCKED"] }
+      }
+    }
   },
   "additionalProperties": false
 }

@@ -8,30 +8,30 @@ Versão comportamental: `3.1.0`.
 
 | Plugin | Versão | Skills |
 |---|---|---:|
-| aghuse-agent | `0.1.0+codex.20260827080925` | 10 |
+| aghuse-agent | `0.1.0+codex.20260907123454` | 10 |
 | redmine-agent | `0.1.0+codex.20260826141923` | 1 |
-| sfa-agent | `0.1.0+codex.20260827081002` | 1 |
+| sfa-agent | `0.1.0+codex.20260907123454` | 1 |
 
-## Agentes
+## Times de agentes
 
-| Agente | Reasoning padrão | Sandbox | Responsabilidade |
-|---|---|---|---|
-| aghuse_analyst | adaptive | read-only | Analista ad-hoc do AGHUse. Use quando o usuário pedir um relatório técnico independente fora do pipeline completo; não acione junto com aghuse_requisitos_e_legado sem justificativa explícita. |
-| aghuse_auditor_do_diff | adaptive | read-only | Auditor do diff do AGHUse. Verifica em modo somente leitura baseline, escopo, hunks, arquivos inesperados, EOL/encoding, segredos e higiene da worktree. |
-| aghuse_backend | adaptive | workspace-write | Especialista no backend do AGHUse em Java 17, Maven multi-módulo, Java EE 8, EJB, CDI, JAX-RS e WildFly. Use para regras, facades, serviços, APIs, integrações e empacotamento EAR. |
-| aghuse_banco_e_impacto | adaptive | read-only | Banco e impacto do AGHUse. Analisa em modo somente leitura persistência, schema, consultas, auditoria, desempenho, segurança e efeitos entre módulos antes do plano. |
-| aghuse_database | adaptive | workspace-write | Especialista na persistência Oracle/PostgreSQL do AGHUse. Use para entidades JPA, DAOs, HQL/Criteria/SQL, dialetos, JTA, unidades aghu-pu/aghu-fit-pu, Envers, Search, cache e desempenho. |
-| aghuse_desenvolvedor | adaptive | workspace-write | Desenvolvedor do AGHUse. Executa o plano aprovado e integra somente os especialistas técnicos necessários de frontend, backend, banco e testes. |
-| aghuse_frontend | adaptive | workspace-write | Especialista no frontend server-side do AGHUse com Java 17, JSF 2.3, Facelets, PrimeFaces 12 e CDI. Use para XHTML, componentes, controllers de apresentação, navegação, CSS e JavaScript dos módulos web. |
-| aghuse_qa | adaptive | workspace-write | QA do AGHUse. Valida de forma independente requisitos, testes, build direcionado e roteiro funcional, sem corrigir o código que está avaliando. |
-| aghuse_requisitos_e_legado | adaptive | read-only | Discovery formal de requisitos e legado do AGHUse. Use no pipeline profissional antes do plano; não acione junto com aghuse_analyst sem justificativa explícita. |
-| aghuse_tests | adaptive | workspace-write | Especialista em testes unitários de ONs e RNs do AGHUse com JUnit 5, Mockito, Maven Surefire, AGHUBaseUnitTest, JaCoCo e Clover. Use para criar, corrigir, isolar e diagnosticar testes e cobertura dessas regras de negócio. |
-| qa_homologacao | adaptive | read-only | Especialista de homologação do SFA e AGHUse. Executa em ambiente autorizado roteiros preparados, verifica o fluxo em tela e produz evidências sem revisar ou alterar código. |
-| sesab_reviewer | adaptive | read-only | Revisor sistêmico final e somente leitura para SFA e AGHUse. Avalia arquitetura, contratos, transações, segurança e regressão em tarefas de risco alto ou crítico. |
-| sfa_backend | adaptive | workspace-write | Especialista no backend do SFA em Java 11 e Spring Boot 2.5.2. Use para controllers, services, VOs, segurança, regras BPA/faturamento, integrações, contratos HTTP e testes Java em sfa/. |
-| sfa_database | adaptive | workspace-write | Especialista de banco do SFA para Oracle e PostgreSQL. Use para entidades JPA, repositories, datasources, transações, consultas, desempenho, schema e scripts SQL em sfa/. |
-| sfa_frontend | adaptive | workspace-write | Especialista no frontend do SFA em Angular 12, RxJS 6 e TypeScript 4.3. Use para telas, formulários, rotas, Angular Material, models, services HTTP, interceptors, autenticação e testes Karma/Jasmine em sfa-client/. |
-| sfa_tests | adaptive | workspace-write | Especialista em testes do SFA. Use para JUnit/Mockito/Spring Test no backend e Jasmine/Karma no Angular, incluindo regressão, fixtures, cobertura e diagnóstico de falhas. |
+| Time | Agente | Papel | Reasoning padrão | Sandbox | Responsabilidade |
+|---|---|---|---|---|---|
+| Time de Análise | aghuse_analyst | ANALYST | adaptive | read-only | Analista ad-hoc do AGHUse. Use quando o usuário pedir um relatório técnico independente fora do pipeline completo; não acione junto com aghuse_requisitos_e_legado sem justificativa explícita. |
+| Time de Revisão e Qualidade | aghuse_auditor_do_diff | DIFF_AUDITOR | adaptive | read-only | Auditor do diff do AGHUse. Verifica em modo somente leitura baseline, escopo, hunks, arquivos inesperados, EOL/encoding, segredos e higiene da worktree. |
+| Time de Desenvolvimento | aghuse_backend | BACKEND | adaptive | workspace-write | Especialista no backend do AGHUse em Java 17, Maven multi-módulo, Java EE 8, EJB, CDI, JAX-RS e WildFly. Use para regras, facades, serviços, APIs, integrações e empacotamento EAR. |
+| Time de Análise | aghuse_banco_e_impacto | DATABASE_IMPACT | adaptive | read-only | Banco e impacto do AGHUse. Analisa em modo somente leitura persistência, schema, consultas, auditoria, desempenho, segurança e efeitos entre módulos antes do plano. |
+| Time de Desenvolvimento | aghuse_database | DATABASE | adaptive | workspace-write | Especialista na persistência Oracle/PostgreSQL do AGHUse. Use para entidades JPA, DAOs, HQL/Criteria/SQL, dialetos, JTA, unidades aghu-pu/aghu-fit-pu, Envers, Search, cache e desempenho. |
+| Time de Desenvolvimento | aghuse_desenvolvedor | INTEGRATOR | adaptive | workspace-write | Desenvolvedor do AGHUse. Executa o plano aprovado e integra somente os especialistas técnicos necessários de frontend, backend, banco e testes. |
+| Time de Desenvolvimento | aghuse_frontend | FRONTEND | adaptive | workspace-write | Especialista no frontend server-side do AGHUse com Java 17, JSF 2.3, Facelets, PrimeFaces 12 e CDI. Use para XHTML, componentes, controllers de apresentação, navegação, CSS e JavaScript dos módulos web. |
+| Time de Revisão e Qualidade | aghuse_qa | QA | adaptive | workspace-write | QA do AGHUse. Valida de forma independente requisitos, testes, build direcionado e roteiro funcional, sem corrigir o código que está avaliando. |
+| Time de Análise | aghuse_requisitos_e_legado | REQUIREMENTS_LEGACY | adaptive | read-only | Discovery formal de requisitos e legado do AGHUse. Use no pipeline profissional antes do plano; não acione junto com aghuse_analyst sem justificativa explícita. |
+| Time de Desenvolvimento | aghuse_tests | TEST_DEVELOPMENT | adaptive | workspace-write | Especialista em testes unitários de ONs e RNs do AGHUse com JUnit 5, Mockito, Maven Surefire, AGHUBaseUnitTest, JaCoCo e Clover. Use para criar, corrigir, isolar e diagnosticar testes e cobertura dessas regras de negócio. |
+| Time de Revisão e Qualidade | qa_homologacao | HOMOLOGATION | adaptive | read-only | Especialista de homologação do SFA e AGHUse. Executa em ambiente autorizado roteiros preparados, verifica o fluxo em tela e produz evidências sem revisar ou alterar código. |
+| Time de Revisão e Qualidade | sesab_reviewer | SYSTEM_REVIEWER | adaptive | read-only | Revisor sistêmico final e somente leitura para SFA e AGHUse. Avalia arquitetura, contratos, transações, segurança e regressão em tarefas de risco alto ou crítico. |
+| Time de Análise, Time de Desenvolvimento | sfa_backend | BACKEND | adaptive | workspace-write | Especialista no backend do SFA em Java 11 e Spring Boot 2.5.2. Use para controllers, services, VOs, segurança, regras BPA/faturamento, integrações, contratos HTTP e testes Java em sfa/. |
+| Time de Análise, Time de Desenvolvimento | sfa_database | DATABASE | adaptive | workspace-write | Especialista de banco do SFA para Oracle e PostgreSQL. Use para entidades JPA, repositories, datasources, transações, consultas, desempenho, schema e scripts SQL em sfa/. |
+| Time de Análise, Time de Desenvolvimento | sfa_frontend | FRONTEND | adaptive | workspace-write | Especialista no frontend do SFA em Angular 12, RxJS 6 e TypeScript 4.3. Use para telas, formulários, rotas, Angular Material, models, services HTTP, interceptors, autenticação e testes Karma/Jasmine em sfa-client/. |
+| Time de Desenvolvimento, Time de Revisão e Qualidade | sfa_tests | TESTS | adaptive | workspace-write | Especialista em testes do SFA. Use para JUnit/Mockito/Spring Test no backend e Jasmine/Karma no Angular, incluindo regressão, fixtures, cobertura e diagnóstico de falhas. |
 
 ## Skills
 
@@ -65,3 +65,5 @@ Versão comportamental: `3.1.0`.
 | `FLOW-002` | flow_policy | Redmine, banco, deploy, commit e push exigem autorização própria; aprovação anterior não é autorização implícita. |
 | `FLOW-003` | flow_policy | Toda tarefa usa sinais objetivos e policy V3 para reasoning adaptativo, budgets e telemetria por tentativa, com resumo métrico no fechamento. |
 | `FLOW-004` | flow_policy | Mudanças relevantes geram transferência de conhecimento proporcional, baseada em evidências e recuperável por tarefa. |
+| `FLOW-005` | flow_policy | O runtime seleciona times lógicos antes do menor conjunto de agentes, preservando escrita e revisão independente. |
+| `RAG-001` | knowledge_policy | Retrieval local usa provenance, respeita o context budget, recusa conteúdo sensível antes da indexação e exige confirmação na fonte para decisões críticas. |

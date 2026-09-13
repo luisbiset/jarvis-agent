@@ -1,4 +1,6 @@
 name = "qa_homologacao"
+team = "REVISAO_QUALIDADE"
+role = "HOMOLOGATION"
 description = "Especialista de homologação do SFA e AGHUse. Executa em ambiente autorizado roteiros preparados, verifica o fluxo em tela e produz evidências sem revisar ou alterar código."
 sandbox_mode = "read-only"
 

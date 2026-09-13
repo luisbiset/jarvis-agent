@@ -1,4 +1,6 @@
 name = "sfa_database"
+allowed_teams = ["ANALISE", "DESENVOLVIMENTO"]
+role = "DATABASE"
 description = "Especialista de banco do SFA para Oracle e PostgreSQL. Use para entidades JPA, repositories, datasources, transações, consultas, desempenho, schema e scripts SQL em sfa/."
 
 developer_instructions = """

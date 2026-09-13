@@ -34,10 +34,13 @@ Comece pelos [comandos básicos para economizar créditos](docs/COMANDOS_BASICOS
 - `scripts/run_evals.py`: carrega os contratos de roteamento e, com `--live`, avalia decisões usando `codex exec`.
 - `config/AGENTS.md`: política global instalada no Codex para aplicar métricas em todas as tarefas.
 - `scripts/jarvis_runtime.py`: decide reasoning adaptativo, aplica budgets por complexidade e persiste estado, tentativas, escaladas, findings, gates e métricas históricas da V3.1 em JSONL e SQLite.
+- `scripts/jarvis_rag.py`: indexa e consulta conhecimento local incremental sem chamada de modelo.
+- `rag/`: chunking estrutural, segurança, índice SQLite, retrieval, ranking e interfaces de embeddings/vector store.
 - `contracts/reasoning-policy.json`: pesos, thresholds, levels e budgets versionados do Adaptive Reasoning.
 - `contracts/`: schemas, políticas, fronteiras de papéis, padrões de tarefa e versão comportamental.
 - `docs/TOPOLOGY.md`: topologia gerada automaticamente a partir dos manifests, agents e skills.
 - `docs/TELEMETRIA.md`: comandos e contrato operacional da telemetria local V3.
+- `docs/RAG.md`: arquitetura, segurança, comandos e limites do RAG local-first.
 - `evals/routing-cases.json`: casos de avaliação de roteamento e segurança.
 - `plugins/redmine-agent/src/`: cliente HTTP, ferramentas e protocolo MCP modularizados.
 - `plugins/redmine-agent/tests/`: testes de contrato, erros HTTP, timeout, redaction e ferramentas.

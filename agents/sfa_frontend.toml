@@ -1,4 +1,6 @@
 name = "sfa_frontend"
+allowed_teams = ["ANALISE", "DESENVOLVIMENTO"]
+role = "FRONTEND"
 description = "Especialista no frontend do SFA em Angular 12, RxJS 6 e TypeScript 4.3. Use para telas, formulários, rotas, Angular Material, models, services HTTP, interceptors, autenticação e testes Karma/Jasmine em sfa-client/."
 
 developer_instructions = """

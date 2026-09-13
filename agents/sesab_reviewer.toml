@@ -1,4 +1,6 @@
 name = "sesab_reviewer"
+team = "REVISAO_QUALIDADE"
+role = "SYSTEM_REVIEWER"
 description = "Revisor sistêmico final e somente leitura para SFA e AGHUse. Avalia arquitetura, contratos, transações, segurança e regressão em tarefas de risco alto ou crítico."
 sandbox_mode = "read-only"
 

@@ -1,4 +1,6 @@
 name = "aghuse_requisitos_e_legado"
+team = "ANALISE"
+role = "REQUIREMENTS_LEGACY"
 description = "Discovery formal de requisitos e legado do AGHUse. Use no pipeline profissional antes do plano; não acione junto com aghuse_analyst sem justificativa explícita."
 sandbox_mode = "read-only"
 

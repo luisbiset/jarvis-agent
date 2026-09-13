@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "aghuse-apac-profissionais",
+      "query": "agrupamento de profissionais no espelho APAC",
+      "expected": {"symbols_any": ["FatItemEspelhoContaApacDAO"], "source_types": ["CODE", "TEST"], "max_rank": 5}
+    },
+    {
+      "id": "jarvis-reasoning-policy",
+      "query": "context budget e limites de model calls",
+      "expected": {"paths_any": ["contracts/reasoning-policy.json"], "source_types": ["CODE", "DOC"], "max_rank": 5}
+    }
+  ]
+}

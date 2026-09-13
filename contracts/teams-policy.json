@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "FLOW-005",
+  "state_team_map": {
+    "DISCOVERY": "ANALISE",
+    "PLAN_READY": "ANALISE",
+    "IMPLEMENTING": "DESENVOLVIMENTO",
+    "VALIDATING": "REVISAO_QUALIDADE",
+    "REVIEW_READY": "REVISAO_QUALIDADE",
+    "HOMOLOGATION_READY": "REVISAO_QUALIDADE"
+  },
+  "soft_targets": {
+    "TRIVIAL": {"ANALISE": [0, 15], "DESENVOLVIMENTO": [70, 100], "REVISAO_QUALIDADE": [0, 30]},
+    "LOCALIZED": {"ANALISE": [10, 25], "DESENVOLVIMENTO": [50, 70], "REVISAO_QUALIDADE": [20, 35]},
+    "TRANSVERSAL": {"ANALISE": [20, 30], "DESENVOLVIMENTO": [40, 60], "REVISAO_QUALIDADE": [25, 40]},
+    "CRITICAL": {"ANALISE": [25, 35], "DESENVOLVIMENTO": [35, 50], "REVISAO_QUALIDADE": [30, 40]}
+  },
+  "teams": {
+    "ANALISE": {
+      "display_name": "Time de Análise",
+      "allowed_states": ["DISCOVERY", "PLAN_READY"],
+      "can_write": false,
+      "agents": ["aghuse_requisitos_e_legado", "aghuse_banco_e_impacto", "aghuse_analyst", "sfa_backend", "sfa_frontend", "sfa_database"]
+    },
+    "DESENVOLVIMENTO": {
+      "display_name": "Time de Desenvolvimento",
+      "allowed_states": ["IMPLEMENTING"],
+      "can_write": true,
+      "agents": ["aghuse_desenvolvedor", "aghuse_backend", "aghuse_frontend", "aghuse_database", "aghuse_tests", "sfa_backend", "sfa_frontend", "sfa_database", "sfa_tests"]
+    },
+    "REVISAO_QUALIDADE": {
+      "display_name": "Time de Revisão e Qualidade",
+      "allowed_states": ["VALIDATING", "REVIEW_READY", "HOMOLOGATION_READY"],
+      "can_write": false,
+      "agents": ["aghuse_qa", "aghuse_auditor_do_diff", "sesab_reviewer", "qa_homologacao", "sfa_tests"]
+    }
+  },
+  "rules": {
+    "select_minimum_agents": true,
+    "forbid_select_all_by_default": true,
+    "implementer_cannot_be_final_reviewer": true,
+    "global_budget_is_authoritative": true,
+    "coordination_model_calls": 0
+  }
+}

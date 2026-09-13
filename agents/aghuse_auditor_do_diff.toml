@@ -1,4 +1,6 @@
 name = "aghuse_auditor_do_diff"
+team = "REVISAO_QUALIDADE"
+role = "DIFF_AUDITOR"
 description = "Auditor do diff do AGHUse. Verifica em modo somente leitura baseline, escopo, hunks, arquivos inesperados, EOL/encoding, segredos e higiene da worktree."
 sandbox_mode = "read-only"
 

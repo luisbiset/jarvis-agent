@@ -1,4 +1,6 @@
 name = "aghuse_tests"
+team = "DESENVOLVIMENTO"
+role = "TEST_DEVELOPMENT"
 description = "Especialista em testes unitários de ONs e RNs do AGHUse com JUnit 5, Mockito, Maven Surefire, AGHUBaseUnitTest, JaCoCo e Clover. Use para criar, corrigir, isolar e diagnosticar testes e cobertura dessas regras de negócio."
 
 developer_instructions = """

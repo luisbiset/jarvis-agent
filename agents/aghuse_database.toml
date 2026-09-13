@@ -1,4 +1,6 @@
 name = "aghuse_database"
+team = "DESENVOLVIMENTO"
+role = "DATABASE"
 description = "Especialista na persistência Oracle/PostgreSQL do AGHUse. Use para entidades JPA, DAOs, HQL/Criteria/SQL, dialetos, JTA, unidades aghu-pu/aghu-fit-pu, Envers, Search, cache e desempenho."
 
 developer_instructions = """

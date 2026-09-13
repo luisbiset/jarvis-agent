@@ -1,5 +1,19 @@
 # Changelog comportamental
 
+## Times 1.0.0 - 2026-09-07
+
+- Formaliza Time de Análise, Time de Desenvolvimento e Time de Revisão e Qualidade sem criar coordenadores LLM.
+- Adiciona membership, roteamento team-first, estado/eventos, RAG/context-packs e telemetria por time com compatibilidade de CLI.
+
+## RAG 1.0.0 - 2026-09-03
+
+- Adiciona índice local incremental separado da telemetria, com SQLite FTS5 e fallback lexical.
+- Chunking estrutural preserva símbolos, caminhos, linhas, hashes e tipo de fonte.
+- Retrieval respeita `SMALL`/`MEDIUM`/`LARGE`, deduplica conteúdo e gera `rag-context.json` por execução.
+- Runtime reutiliza context pack fresco, registra métricas RAG e não contabiliza retrieval determinístico como model call.
+- `EmbeddingProvider` e `VectorStore` desacoplam a futura busca semântica; sem provider, o modo seguro é `LEXICAL_ONLY`.
+- Conteúdo sensível é recusado antes da indexação; resultado recuperado não substitui confirmação na fonte.
+
 ## 3.1.0 - 2026-08-27
 
 - `FLOW-004` adiciona Technical Handoff baseado em evidências, mapa de leitura, Teach-Back proporcional e recuperação por task.

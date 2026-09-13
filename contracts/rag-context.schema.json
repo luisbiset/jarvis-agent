@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jarvis.local/contracts/rag-context.schema.json",
+  "title": "Jarvis RAG Context Pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "query_id", "query_hash", "filters_hash", "created_at", "context_budget", "retrieval_mode", "candidates", "hits", "estimated_tokens", "duplicate_chunks_removed", "latency_ms"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": ["string", "null"]},
+    "query_id": {"type": "string", "pattern": "^ragq-"},
+    "query_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "filters_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "created_at": {"type": "string"},
+    "context_budget": {"enum": ["SMALL", "MEDIUM", "LARGE"]},
+    "retrieval_mode": {"enum": ["LEXICAL_ONLY", "HYBRID"]},
+    "candidates": {"type": "integer", "minimum": 0},
+    "estimated_tokens": {"type": "integer", "minimum": 0},
+    "duplicate_chunks_removed": {"type": "integer", "minimum": 0},
+    "latency_ms": {"type": "integer", "minimum": 0},
+    "hits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["chunk_id", "source_type", "repo", "path", "language", "chunk_type", "symbol", "start_line", "end_line", "content_hash", "lexical_score", "semantic_score", "final_score", "text"],
+        "properties": {
+          "chunk_id": {"type": "string"}, "source_type": {"type": "string"}, "repo": {"type": "string"}, "path": {"type": "string"},
+          "language": {"type": "string"}, "chunk_type": {"type": "string"}, "symbol": {"type": ["string", "null"]},
+          "start_line": {"type": "integer", "minimum": 1}, "end_line": {"type": "integer", "minimum": 1},
+          "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "lexical_score": {"type": "number"}, "semantic_score": {"type": "number"}, "final_score": {"type": "number"},
+          "text": {"type": "string"}
+        }
+      }
+    }
+  }
+}

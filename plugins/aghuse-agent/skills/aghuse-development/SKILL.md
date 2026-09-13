@@ -5,6 +5,10 @@ description: Coordenar o ciclo do AGHUse entre análise paralela, plano aprovado
 
 # Coordenação do AGHUse
 
+## Pipeline por times
+
+Organize o fluxo nos times lógicos definidos pelo runtime: Time de Análise para discovery somente leitura, Time de Desenvolvimento para implementar o plano aprovado e Time de Revisão e Qualidade para QA, auditoria, revisão sistêmica e homologação autorizada. Selecione somente os especialistas necessários; não crie agentes coordenadores. Preserve handoffs entre times, ownership de arquivos e independência entre implementador e revisão final.
+
 ## Identificar o projeto
 
 - Localizar a raiz que contém `aghu/pom.xml` e `aghu-entidades/pom.xml`; se estiverem em um diretório aninhado `aghuse/`, trabalhar a partir dele.

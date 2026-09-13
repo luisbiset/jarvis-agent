@@ -2,6 +2,10 @@
 
 O runtime mantém três representações complementares sob `.jarvis/`:
 
+## Métricas por time
+
+Cada invocação e consulta RAG registra `team`. O dashboard agrega chamadas, créditos observados, tokens, agentes e consultas RAG para `ANALISE`, `DESENVOLVIMENTO` e `REVISAO_QUALIDADE`. `report-cost --group-by team` usa a mesma dimensão. As metas percentuais de `contracts/teams-policy.json` são observacionais; o budget global continua soberano.
+
 - `runs/<run_id>/state.json`: snapshot atual da execução;
 - `runs/<run_id>/events.jsonl`: trilha append-only de eventos;
 - `telemetry/jarvis.db`: histórico SQLite para dashboard e exportação.

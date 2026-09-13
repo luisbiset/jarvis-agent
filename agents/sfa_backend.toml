@@ -1,4 +1,6 @@
 name = "sfa_backend"
+allowed_teams = ["ANALISE", "DESENVOLVIMENTO"]
+role = "BACKEND"
 description = "Especialista no backend do SFA em Java 11 e Spring Boot 2.5.2. Use para controllers, services, VOs, segurança, regras BPA/faturamento, integrações, contratos HTTP e testes Java em sfa/."
 
 developer_instructions = """

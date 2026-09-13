@@ -1,4 +1,6 @@
 name = "sfa_tests"
+allowed_teams = ["DESENVOLVIMENTO", "REVISAO_QUALIDADE"]
+role = "TESTS"
 description = "Especialista em testes do SFA. Use para JUnit/Mockito/Spring Test no backend e Jasmine/Karma no Angular, incluindo regressão, fixtures, cobertura e diagnóstico de falhas."
 
 developer_instructions = """

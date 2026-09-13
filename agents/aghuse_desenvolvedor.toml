@@ -1,4 +1,6 @@
 name = "aghuse_desenvolvedor"
+team = "DESENVOLVIMENTO"
+role = "INTEGRATOR"
 description = "Desenvolvedor do AGHUse. Executa o plano aprovado e integra somente os especialistas técnicos necessários de frontend, backend, banco e testes."
 
 developer_instructions = """

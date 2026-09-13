@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "policy_id": "RAG-001",
+  "policy_version": "1.0.0",
+  "enabled": true,
+  "retrieval": {
+    "mode": "HYBRID",
+    "fallback_mode": "LEXICAL_ONLY",
+    "lexical_weight": 0.45,
+    "semantic_weight": 0.45,
+    "structural_weight": 0.1,
+    "min_final_score": 0.2
+  },
+  "budgets": {
+    "SMALL": {"candidate_k": 12, "top_k": 4, "max_tokens": 3000, "max_sources": 4},
+    "MEDIUM": {"candidate_k": 30, "top_k": 10, "max_tokens": 10000, "max_sources": 10},
+    "LARGE": {"candidate_k": 60, "top_k": 20, "max_tokens": 25000, "max_sources": 20}
+  },
+  "indexing": {
+    "incremental": true,
+    "hash_algorithm": "sha256",
+    "local_only": true
+  }
+}

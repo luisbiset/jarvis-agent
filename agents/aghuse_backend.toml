@@ -1,4 +1,6 @@
 name = "aghuse_backend"
+team = "DESENVOLVIMENTO"
+role = "BACKEND"
 description = "Especialista no backend do AGHUse em Java 17, Maven multi-módulo, Java EE 8, EJB, CDI, JAX-RS e WildFly. Use para regras, facades, serviços, APIs, integrações e empacotamento EAR."
 
 developer_instructions = """

@@ -18,11 +18,15 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 VERSION_PATH = ROOT / "contracts/version.json"
 REASONING_POLICY_PATH = ROOT / "contracts/reasoning-policy.json"
 KNOWLEDGE_TRANSFER_POLICY_PATH = ROOT / "contracts/knowledge-transfer-policy.json"
+RAG_POLICY_PATH = ROOT / "contracts/rag-policy.json"
+TEAMS_POLICY_PATH = ROOT / "contracts/teams-policy.json"
 DEFAULT_RUNS_DIR = ROOT / ".jarvis/runs"
 DEFAULT_TELEMETRY_DB = ROOT / ".jarvis/telemetry/jarvis.db"
+DEFAULT_RAG_DB = ROOT / ".jarvis/rag/index.db"
 COMPLEXITIES = ("TRIVIAL", "LOCALIZED", "TRANSVERSAL", "CRITICAL")
 RISKS = ("LOW", "MEDIUM", "HIGH", "CRITICAL")
 MODES = ("COPILOT", "ASSISTED_AUTOPILOT", "READ_ONLY_AUDIT")
@@ -58,6 +62,7 @@ DEVELOPMENT_TASK_TYPES = {"BACKEND", "FRONTEND", "DATABASE", "TEST", "SECURITY",
 KNOWLEDGE_TRANSFER_CLASSES = ("TRIVIAL", "LOCALIZED", "BUSINESS_RULE", "TRANSVERSAL", "CRITICAL")
 EVIDENCE_STATUSES = ("CONFIRMED", "PARTIAL", "UNKNOWN")
 TEACHBACK_RESULTS = ("CORRECT", "PARTIAL", "INCORRECT")
+TEAMS = ("ANALISE", "DESENVOLVIMENTO", "REVISAO_QUALIDADE")
 
 
 class RuntimeErrorSafe(RuntimeError):
@@ -90,6 +95,29 @@ def load_json(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise RuntimeErrorSafe(f"objeto JSON esperado em {path}")
     return value
+
+
+def load_teams_policy() -> dict[str, Any]:
+    policy = load_json(TEAMS_POLICY_PATH)
+    if policy.get("schema_version") != "1.0.0" or set(policy.get("teams", {})) != set(TEAMS):
+        raise RuntimeErrorSafe("política de times inválida")
+    return policy
+
+
+def team_for_stage(stage: str) -> str | None:
+    return load_teams_policy().get("state_team_map", {}).get(stage)
+
+
+def resolve_team(stage: str, agent: str | None = None, explicit: str | None = None) -> str:
+    team = explicit or team_for_stage(stage)
+    if team not in TEAMS:
+        raise RuntimeErrorSafe(f"estado {stage} não possui time operacional; informe --team")
+    config = load_teams_policy()["teams"][team]
+    if stage not in config["allowed_states"]:
+        raise RuntimeErrorSafe(f"estado {stage} não é permitido para o time {team}")
+    if agent and agent not in config["agents"]:
+        raise RuntimeErrorSafe(f"agente {agent} não pertence ao time {team}")
+    return team
 
 
 def load_reasoning_policy() -> dict[str, Any]:
@@ -129,6 +157,25 @@ def load_reasoning_policy() -> dict[str, Any]:
             raise RuntimeErrorSafe(f"cost limit inválido: {complexity}")
     if policy["cost_limits"].get("mode") != "OBSERVE_ONLY" or not 0 < policy["cost_limits"].get("soft_limit_ratio", 0) < 1:
         raise RuntimeErrorSafe("cost limits devem iniciar em OBSERVE_ONLY com soft_limit_ratio entre 0 e 1")
+    return policy
+
+
+def load_rag_policy() -> dict[str, Any]:
+    policy = load_json(RAG_POLICY_PATH)
+    if policy.get("policy_version") != "1.0.0" or not isinstance(policy.get("enabled"), bool):
+        raise RuntimeErrorSafe("política RAG inválida")
+    budgets = policy.get("budgets", {})
+    previous = {"candidate_k": 0, "top_k": 0, "max_tokens": 0, "max_sources": 0}
+    for level in CONTEXT_BUDGETS:
+        current = budgets.get(level, {})
+        for key in previous:
+            value = current.get(key, 0)
+            if not isinstance(value, int) or value < 1 or value < previous[key]:
+                raise RuntimeErrorSafe(f"budget RAG inválido ou não monotônico: {level}.{key}")
+            previous[key] = value
+        context_max = load_reasoning_policy()["context_limits"][level]["max_context_tokens"]
+        if current["max_tokens"] > context_max:
+            raise RuntimeErrorSafe(f"budget RAG excede contexto global: {level}")
     return policy
 
 
@@ -350,7 +397,7 @@ def telemetry_db_for_state(state: dict[str, Any], root: Path) -> Path:
 DDL = """
 PRAGMA foreign_keys=ON;
 CREATE TABLE IF NOT EXISTS runs(run_id TEXT PRIMARY KEY,task_id TEXT NOT NULL,started_at TEXT NOT NULL,finished_at TEXT,duration_ms INTEGER NOT NULL,status TEXT NOT NULL,complexity TEXT NOT NULL,risk_class TEXT NOT NULL,operational_mode TEXT NOT NULL,reasoning_class TEXT NOT NULL,jarvis_version TEXT NOT NULL,policy_version TEXT NOT NULL,contracts_version TEXT NOT NULL,config_hash TEXT NOT NULL,budget_limit INTEGER NOT NULL,budget_used INTEGER NOT NULL,budget_override INTEGER NOT NULL,budget_override_reason TEXT,agent_invocation_count INTEGER NOT NULL,unique_agent_count INTEGER NOT NULL,rework_cycles INTEGER NOT NULL,stop_count INTEGER NOT NULL,first_pass_success INTEGER,human_gate_pass_on_first_attempt INTEGER,routing_outcome TEXT NOT NULL,input_tokens INTEGER NOT NULL,cached_input_tokens INTEGER NOT NULL,output_tokens INTEGER NOT NULL,credits REAL NOT NULL);
-CREATE TABLE IF NOT EXISTS agent_invocations(invocation_id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(run_id),agent TEXT NOT NULL,stage TEXT NOT NULL,status TEXT NOT NULL,started_at TEXT NOT NULL,finished_at TEXT,duration_ms INTEGER NOT NULL DEFAULT 0,model TEXT NOT NULL,reasoning_effort TEXT NOT NULL,input_tokens INTEGER NOT NULL DEFAULT 0,cached_input_tokens INTEGER NOT NULL DEFAULT 0,output_tokens INTEGER NOT NULL DEFAULT 0,credits REAL NOT NULL DEFAULT 0,agent_result TEXT,findings_count INTEGER NOT NULL DEFAULT 0,critical_findings_count INTEGER NOT NULL DEFAULT 0,parallel_batch TEXT,blocker TEXT,model_requested TEXT,model_effective TEXT,context_budget TEXT,progress_event TEXT,reasoning_effort_effective TEXT);
+CREATE TABLE IF NOT EXISTS agent_invocations(invocation_id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(run_id),agent TEXT NOT NULL,stage TEXT NOT NULL,team TEXT,status TEXT NOT NULL,started_at TEXT NOT NULL,finished_at TEXT,duration_ms INTEGER NOT NULL DEFAULT 0,model TEXT NOT NULL,reasoning_effort TEXT NOT NULL,input_tokens INTEGER NOT NULL DEFAULT 0,cached_input_tokens INTEGER NOT NULL DEFAULT 0,output_tokens INTEGER NOT NULL DEFAULT 0,credits REAL NOT NULL DEFAULT 0,agent_result TEXT,findings_count INTEGER NOT NULL DEFAULT 0,critical_findings_count INTEGER NOT NULL DEFAULT 0,parallel_batch TEXT,blocker TEXT,model_requested TEXT,model_effective TEXT,context_budget TEXT,progress_event TEXT,reasoning_effort_effective TEXT);
 CREATE TABLE IF NOT EXISTS transitions(transition_id INTEGER PRIMARY KEY AUTOINCREMENT,run_id TEXT NOT NULL REFERENCES runs(run_id),source TEXT,target TEXT NOT NULL,at TEXT NOT NULL,reason TEXT NOT NULL,stop_reason TEXT,rework_origin TEXT,rework_reason TEXT);
 CREATE TABLE IF NOT EXISTS handoffs(handoff_id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(run_id),stage TEXT NOT NULL,created_at TEXT NOT NULL,output_path TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS findings(finding_id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(run_id),invocation_id TEXT NOT NULL REFERENCES agent_invocations(invocation_id),category TEXT NOT NULL,severity TEXT NOT NULL,actioned INTEGER NOT NULL,evidence_ref TEXT,created_at TEXT NOT NULL);
@@ -361,6 +408,8 @@ CREATE TABLE IF NOT EXISTS release_evals(eval_id TEXT PRIMARY KEY,jarvis_version
 CREATE TABLE IF NOT EXISTS execution_attempts(execution_id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(run_id),task_id TEXT NOT NULL,parent_execution_id TEXT,agent_type TEXT NOT NULL,task_type TEXT NOT NULL,policy_version TEXT NOT NULL,attempt_number INTEGER NOT NULL,initial_reasoning TEXT NOT NULL,effective_reasoning TEXT NOT NULL,complexity_score REAL NOT NULL,ambiguity_score REAL NOT NULL,escalated INTEGER NOT NULL,escalation_reason TEXT,input_tokens INTEGER NOT NULL DEFAULT 0,cached_input_tokens INTEGER NOT NULL DEFAULT 0,output_tokens INTEGER NOT NULL DEFAULT 0,total_tokens INTEGER NOT NULL DEFAULT 0,credits REAL NOT NULL DEFAULT 0,duration_ms INTEGER NOT NULL DEFAULT 0,files_read INTEGER NOT NULL DEFAULT 0,files_changed INTEGER NOT NULL DEFAULT 0,tool_calls INTEGER NOT NULL DEFAULT 0,tests_run INTEGER NOT NULL DEFAULT 0,tests_passed INTEGER NOT NULL DEFAULT 0,tests_failed INTEGER NOT NULL DEFAULT 0,review_findings INTEGER NOT NULL DEFAULT 0,success INTEGER,termination_reason TEXT,child_depth INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,finished_at TEXT,model_requested TEXT,model_effective TEXT,context_budget TEXT,progress_event TEXT,reasoning_effort_effective TEXT);
 CREATE TABLE IF NOT EXISTS technical_handoffs(handoff_id TEXT PRIMARY KEY,task_id TEXT NOT NULL,run_id TEXT NOT NULL REFERENCES runs(run_id),execution_id TEXT,classification TEXT NOT NULL,summary TEXT NOT NULL,previous_behavior TEXT NOT NULL,new_behavior TEXT NOT NULL,reading_map_json TEXT NOT NULL,decisions_json TEXT NOT NULL,risks_json TEXT NOT NULL,test_evidence_json TEXT NOT NULL,output_path TEXT NOT NULL,created_at TEXT NOT NULL,policy_version TEXT NOT NULL,evidence_status TEXT NOT NULL,handoff_tokens INTEGER NOT NULL DEFAULT 0,handoff_duration_ms INTEGER NOT NULL DEFAULT 0,teachback_required INTEGER NOT NULL DEFAULT 0,teachback_questions INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS teachback_evaluations(evaluation_id TEXT PRIMARY KEY,handoff_id TEXT NOT NULL REFERENCES technical_handoffs(handoff_id),task_id TEXT NOT NULL,question_id TEXT NOT NULL,result TEXT NOT NULL,matched_concepts INTEGER NOT NULL,total_concepts INTEGER NOT NULL,duration_ms INTEGER NOT NULL DEFAULT 0,developer_requested_deeper_explanation INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS rag_queries(query_id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(run_id),team TEXT,query_hash TEXT NOT NULL,retrieval_mode TEXT NOT NULL,context_budget TEXT NOT NULL,candidates INTEGER NOT NULL,selected INTEGER NOT NULL,estimated_tokens INTEGER NOT NULL,latency_ms INTEGER NOT NULL,cache_hit INTEGER NOT NULL,created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS rag_hits(query_id TEXT NOT NULL REFERENCES rag_queries(query_id),chunk_id TEXT NOT NULL,repo TEXT NOT NULL,path TEXT NOT NULL,symbol TEXT,content_hash TEXT NOT NULL,lexical_score REAL NOT NULL,semantic_score REAL NOT NULL,final_score REAL NOT NULL,rank INTEGER NOT NULL,PRIMARY KEY(query_id,chunk_id));
 """
 
 
@@ -375,6 +424,8 @@ def connect_db(path: Path) -> sqlite3.Connection:
             if column not in existing:
                 connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
     migrations = {
+        "agent_invocations": {"team": "TEXT"},
+        "rag_queries": {"team": "TEXT"},
         "technical_handoffs": {"teachback_required": "INTEGER NOT NULL DEFAULT 0", "teachback_questions": "INTEGER NOT NULL DEFAULT 0"},
         "teachback_evaluations": {"developer_requested_deeper_explanation": "INTEGER NOT NULL DEFAULT 0"},
     }
@@ -447,8 +498,10 @@ def initial_state(task_id: str, complexity: str, risk_class: str, operational_mo
         },
         "budget": {"max_agents": limit, "max_parallel_agents": parallel, "required_reviewers": REQUIRED_REVIEWERS[risk_class], "budget_limit": limit, "budget_used": 0, "budget_override": bool(budget_justification), "budget_override_reason": "EXPLICIT_OVERRIDE" if budget_justification else None, "max_model_calls": model_call_limit, "hard_max_model_calls": policy["budget"]["hard_max_model_calls"], "model_calls_used": 0, "max_duration_ms": decision["max_duration_ms"], "progress_events": 0},
         "context_usage": {"mode": "OBSERVE_ONLY", "files": 0, "estimated_tokens": 0, "tool_reads": 0, "raw_bytes": 0, "limit_hits": 0, "limits": context_limits.copy()},
+        "rag": {"enabled": load_rag_policy()["enabled"], "policy_version": load_rag_policy()["policy_version"], "queries": 0, "selected_chunks": 0, "estimated_tokens": 0, "cache_hits": 0, "cache_misses": 0, "last_query_id": None, "last_context_pack": None},
         "cost_budget": {"mode": policy["cost_limits"]["mode"], "soft_limit_ratio": policy["cost_limits"]["soft_limit_ratio"], "max_credits": cost_limits["max_credits"], "max_uncached_input_tokens": cost_limits["max_uncached_input_tokens"], "status": "ALLOW", "limit_hits": 0},
         "history": [{"from": None, "to": "NEW", "at": timestamp, "reason": "run initialized", "stop_reason": None}],
+        "teams": {"planned": [], "completed": [], "current": None, "runs": {}},
         "agents_used": [],
         "routing": {"agents_planned": sorted(set(agents_planned or [])), "agents_invoked": [], "agents_skipped": [], "agents_rejected_by_budget": [], "parallel_batches": 0, "routing_outcome": "UNKNOWN", "unnecessary_agents": [], "missing_agents": []},
         "metrics": {"duration_ms": 0, "input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0, "credits": 0.0, "retry_count": 0, "agent_invocation_count": 0, "rework_cycles": 0, "stop_count": 0, "stop_reasons": {}, "handoff_count": 0, "first_pass_success": None, "human_gate_pass_on_first_attempt": None},
@@ -537,8 +590,24 @@ def transition(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeErrorSafe("retorno do gate à implementação exige CHANGES_REQUESTED ou REJECTED")
     timestamp = now()
     entry = {"from": source, "to": target, "at": timestamp, "reason": args.reason, "stop_reason": stop_reason, "rework_origin": origin, "rework_reason": rework_reason}
+    previous_team = state.get("teams", {}).get("current")
+    next_team = team_for_stage(target)
     state["current_state"] = target
     state["history"].append(entry)
+    teams_state = state.setdefault("teams", {"planned": [], "completed": [], "current": None, "runs": {}})
+    team_events = []
+    if previous_team and previous_team != next_team:
+        run = teams_state["runs"].setdefault(previous_team, {"started_at": timestamp, "finished_at": None, "agents": [], "model_calls": 0, "credits": 0.0, "tokens": 0, "findings": 0, "status": "RUNNING"})
+        run.update({"finished_at": timestamp, "status": "BLOCKED" if target == "BLOCKED" else "DONE"})
+        if previous_team not in teams_state["completed"] and target != "BLOCKED":
+            teams_state["completed"].append(previous_team)
+        team_events.append({"event": "TEAM_BLOCKED" if target == "BLOCKED" else "TEAM_COMPLETED", "team": previous_team})
+    if next_team and next_team != previous_team:
+        if next_team not in teams_state["planned"]:
+            teams_state["planned"].append(next_team)
+        teams_state["runs"].setdefault(next_team, {"started_at": timestamp, "finished_at": None, "agents": [], "model_calls": 0, "credits": 0.0, "tokens": 0, "findings": 0, "status": "RUNNING"})
+        team_events.append({"event": "TEAM_STARTED", "team": next_team})
+    teams_state["current"] = next_team or (previous_team if target == "BLOCKED" else None)
     if target == "HUMAN_GATE" and state["metrics"]["first_pass_success"] is None:
         state["metrics"]["first_pass_success"] = state["metrics"]["rework_cycles"] == 0
     if rework:
@@ -562,6 +631,8 @@ def transition(args: argparse.Namespace) -> dict[str, Any]:
                 state["metrics"]["human_gate_pass_on_first_attempt"] = state["gate_attempts"] == 1
             connection.execute("INSERT INTO human_gates VALUES(?,?,?,?,?,?,?)", (make_id("gate"), state["run_id"], state["gate_attempts"], gate, gate_code, gate_detail, timestamp))
     append_jsonl(root / "events.jsonl", {"event": "STATE_TRANSITION", "run_id": state["run_id"], **entry})
+    for team_event in team_events:
+        append_jsonl(root / "events.jsonl", {**team_event, "at": timestamp, "run_id": state["run_id"], "state": target})
     persist_state(root, state)
     return state
 
@@ -595,6 +666,7 @@ def _register_agent(state: dict[str, Any], agent: str, justification: str | None
 def invocation_start(args: argparse.Namespace) -> dict[str, Any]:
     root = run_path(args.run_dir)
     state = load_json(root / "state.json")
+    team = resolve_team(args.stage, args.agent, getattr(args, "team", None))
     reasoning = state.get("reasoning", {})
     call_policy = invocation_policy(state, args.agent, getattr(args, "task_type", None))
     required_model = call_policy["model"]
@@ -691,7 +763,7 @@ def invocation_start(args: argparse.Namespace) -> dict[str, Any]:
     with connect_db(telemetry_db_for_state(state, root)) as connection:
         if batch and connection.execute("SELECT COUNT(*) FROM agent_invocations WHERE run_id=? AND parallel_batch=?", (state["run_id"], batch)).fetchone()[0] == 0:
             state["routing"]["parallel_batches"] += 1
-        connection.execute("INSERT INTO agent_invocations(invocation_id,run_id,agent,stage,status,started_at,model,reasoning_effort,parallel_batch,model_requested,model_effective,context_budget,progress_event) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", (invocation_id, state["run_id"], args.agent, args.stage, "RUNNING", started_at, model, effort, batch, required_model, None, call_policy["context_budget"], progress_event))
+        connection.execute("INSERT INTO agent_invocations(invocation_id,run_id,agent,stage,team,status,started_at,model,reasoning_effort,parallel_batch,model_requested,model_effective,context_budget,progress_event) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (invocation_id, state["run_id"], args.agent, args.stage, team, "RUNNING", started_at, model, effort, batch, required_model, None, call_policy["context_budget"], progress_event))
         signals = reasoning.get("signals", {})
         connection.execute("""INSERT INTO execution_attempts(execution_id,run_id,task_id,parent_execution_id,agent_type,task_type,policy_version,attempt_number,initial_reasoning,effective_reasoning,complexity_score,ambiguity_score,escalated,escalation_reason,child_depth,created_at,model_requested,model_effective,context_budget,progress_event) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
             invocation_id, state["run_id"], state["task_id"], parent_execution_id, args.agent,
@@ -700,7 +772,14 @@ def invocation_start(args: argparse.Namespace) -> dict[str, Any]:
             signals.get("complexity_score", 0), signals.get("ambiguity_score", 0), int(reasoning.get("escalations_used", 0) > 0),
             reasoning.get("last_escalation_reason"), child_depth, started_at, required_model, None, call_policy["context_budget"], progress_event,
         ))
-    event = {"event": "AGENT_INVOCATION_STARTED", "at": started_at, "run_id": state["run_id"], "invocation_id": invocation_id, "agent": args.agent, "stage": args.stage, "status": "RUNNING", "model_requested": required_model, "model_effective": None, "reasoning_effort": effort, "reasoning_level": call_policy["level"], "context_budget": call_policy["context_budget"], "max_input_tokens": call_policy["max_input_tokens"], "agent_cap": call_policy["cap"], "attempt_number": attempt_number, "progress_event": progress_event, "parallel_batch": batch}
+    team_run = state["teams"]["runs"].setdefault(team, {"started_at": started_at, "finished_at": None, "agents": [], "model_calls": 0, "credits": 0.0, "tokens": 0, "findings": 0, "status": "RUNNING"})
+    if args.agent not in team_run["agents"]:
+        team_run["agents"].append(args.agent)
+    team_run["model_calls"] += 1
+    state["teams"]["current"] = team
+    if team not in state["teams"]["planned"]:
+        state["teams"]["planned"].append(team)
+    event = {"event": "AGENT_INVOCATION_STARTED", "at": started_at, "run_id": state["run_id"], "invocation_id": invocation_id, "agent": args.agent, "stage": args.stage, "team": team, "status": "RUNNING", "model_requested": required_model, "model_effective": None, "reasoning_effort": effort, "reasoning_level": call_policy["level"], "context_budget": call_policy["context_budget"], "max_input_tokens": call_policy["max_input_tokens"], "agent_cap": call_policy["cap"], "attempt_number": attempt_number, "progress_event": progress_event, "parallel_batch": batch}
     append_jsonl(root / "events.jsonl", event)
     persist_state(root, state)
     return event
@@ -741,6 +820,11 @@ def invocation_finish(args: argparse.Namespace) -> dict[str, Any]:
             values["credits"], duration, values["files_read"], values["files_changed"], values["tool_calls"], values["tests_run"],
             values["tests_passed"], values["tests_failed"], values["review_findings"], int(success), termination, finished_at, observed_model, observed_effort, args.invocation_id,
         ))
+    team = row["team"] or team_for_stage(row["stage"])
+    if team:
+        team_run = state["teams"]["runs"][team]
+        team_run["credits"] = round(team_run["credits"] + values["credits"], 4)
+        team_run["tokens"] += values["input_tokens"] + values["output_tokens"]
     if observed_model is not None:
         state["reasoning"]["effective_model"] = observed_model
     if observed_effort is not None:
@@ -886,6 +970,10 @@ def finding(args: argparse.Namespace) -> dict[str, Any]:
         connection.execute("INSERT INTO findings VALUES(?,?,?,?,?,?,?,?)", (finding_id, state["run_id"], args.invocation_id, args.category, args.severity, int(args.actioned), evidence_ref, created_at))
         counts = connection.execute("SELECT COUNT(*) total,SUM(severity='CRITICAL') critical FROM findings WHERE invocation_id=?", (args.invocation_id,)).fetchone()
         connection.execute("UPDATE agent_invocations SET findings_count=?,critical_findings_count=? WHERE invocation_id=?", (counts["total"], counts["critical"] or 0, args.invocation_id))
+        invocation = connection.execute("SELECT team FROM agent_invocations WHERE invocation_id=?", (args.invocation_id,)).fetchone()
+    if invocation and invocation["team"]:
+        state["teams"]["runs"][invocation["team"]]["findings"] += 1
+        persist_state(root, state)
     event = {"event": "FINDING_RECORDED", "at": created_at, "run_id": state["run_id"], "finding_id": finding_id, "invocation_id": args.invocation_id, "category": args.category, "severity": args.severity, "finding_actioned": bool(args.actioned), "evidence_ref": evidence_ref}
     append_jsonl(root / "events.jsonl", event)
     return event
@@ -917,6 +1005,27 @@ def route(args: argparse.Namespace) -> dict[str, Any]:
     return event
 
 
+def team_route(args: argparse.Namespace) -> dict[str, Any]:
+    """Seleciona times antes dos agentes sem consumir chamada de modelo."""
+    patterns = load_json(ROOT / "contracts/task-patterns.json").get("patterns", [])
+    pattern = next((item for item in patterns if item.get("id") == args.pattern), None)
+    if not pattern:
+        raise RuntimeErrorSafe(f"pattern de tarefa desconhecido: {args.pattern}")
+    selected, agents = [], []
+    policy = load_teams_policy()
+    for stage in pattern.get("teams", []):
+        if stage.get("optional") and not args.include_optional:
+            continue
+        team, team_agents = stage["team"], stage.get("agents", [])
+        for agent in team_agents:
+            resolve_team(policy["teams"][team]["allowed_states"][0], agent, team)
+        selected.append({"team": team, "display_name": policy["teams"][team]["display_name"], "agents": team_agents, "optional": bool(stage.get("optional"))})
+        agents.extend(team_agents)
+    if len(set(agents)) > pattern["max_agents"] and not args.include_optional:
+        raise RuntimeErrorSafe(f"roteamento excede max_agents do pattern: {len(set(agents))}/{pattern['max_agents']}")
+    return {"pattern": pattern["id"], "complexity": pattern["complexity"], "risk_class": pattern["risk_class"], "teams": selected, "agents": list(dict.fromkeys(agents)), "max_agents": pattern["max_agents"], "coordination_model_calls": 0, "legacy_agents": pattern.get("agents", [])}
+
+
 def decision(args: argparse.Namespace) -> dict[str, Any]:
     root = run_path(args.run_dir)
     state = load_json(root / "state.json")
@@ -938,7 +1047,8 @@ def handoff_template(state: dict[str, Any]) -> dict[str, Any]:
 def create_handoff(args: argparse.Namespace) -> dict[str, Any]:
     root = run_path(args.run_dir)
     state = load_json(root / "state.json")
-    destination = Path(args.output).resolve() if args.output else root / f"handoff-{state['current_state'].lower()}.json"
+    team_slug = (state.get("teams", {}).get("current") or state["current_state"]).lower().replace("_", "-")
+    destination = Path(args.output).resolve() if args.output else root / "context-packs" / f"handoff-{team_slug}.json"
     write_json(destination, handoff_template(state))
     handoff_id, created_at = make_id("handoff"), now()
     state["metrics"]["handoff_count"] += 1
@@ -1207,9 +1317,63 @@ def discovery_record(args: argparse.Namespace) -> dict[str, Any]:
     return {"query_hash": event["query_hash"], "refs": len(refs)}
 
 
+def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
+    from rag.retriever import retrieve, write_context_pack
+
+    root = run_path(args.run_dir)
+    state = load_json(root / "state.json")
+    policy = load_rag_policy()
+    retrieval_stage = state["current_state"] if team_for_stage(state["current_state"]) else "DISCOVERY"
+    team = resolve_team(retrieval_stage, getattr(args, "agent", None), getattr(args, "team", None))
+    if not policy["enabled"]:
+        raise RuntimeErrorSafe("RAG está desabilitado pela policy")
+    database = Path(args.database).resolve()
+    if not database.is_file():
+        raise RuntimeErrorSafe(f"índice RAG inexistente: {database}; execute scripts/jarvis_rag.py index")
+    context_budget = state["reasoning"]["context_budget"]
+    query_hash = hashlib.sha256(args.query.encode()).hexdigest()
+    filters_hash = hashlib.sha256(json.dumps({"path": args.path_filter, "repo": args.domain}, sort_keys=True).encode()).hexdigest()
+    destination = root / "context-packs" / f"rag-context-{team.lower().replace('_', '-')}.json"
+    if destination.is_file():
+        cached = load_json(destination)
+        fresh = cached.get("query_hash") == query_hash and cached.get("filters_hash") == filters_hash and cached.get("context_budget") == context_budget
+        if fresh:
+            with sqlite3.connect(database) as connection:
+                for hit in cached.get("hits", []):
+                    row = connection.execute("SELECT content_hash,active FROM documents WHERE repo=? AND path=?", (hit.get("repo"), hit.get("path"))).fetchone()
+                    if row is None or row[0] != hit.get("content_hash") or not row[1]:
+                        fresh = False
+                        break
+        if fresh:
+            state["rag"]["cache_hits"] += 1
+            state["rag"]["last_query_id"] = cached["query_id"]
+            state["rag"]["last_context_pack"] = str(destination)
+            persist_state(root, state)
+            append_jsonl(root / "events.jsonl", {"event": "RAG_RETRIEVAL_CACHE_HIT", "at": now(), "run_id": state["run_id"], "query_id": cached["query_id"], "selected_chunks": len(cached["hits"]), "estimated_tokens": cached["estimated_tokens"]})
+            return {"context_pack": str(destination), "query_id": cached["query_id"], "retrieval_mode": cached["retrieval_mode"], "selected_chunks": len(cached["hits"]), "estimated_tokens": cached["estimated_tokens"], "cache_hit": True}
+    try:
+        payload = retrieve(database, args.query, policy, context_budget, state["run_id"], args.path_filter, args.domain)
+    except (ValueError, sqlite3.Error) as exc:
+        raise RuntimeErrorSafe(f"retrieval RAG falhou: {exc}") from exc
+    write_context_pack(destination, payload)
+    state["rag"].update({
+        "queries": state["rag"]["queries"] + 1,
+        "selected_chunks": state["rag"]["selected_chunks"] + len(payload["hits"]),
+        "estimated_tokens": state["rag"]["estimated_tokens"] + payload["estimated_tokens"],
+        "cache_misses": state["rag"]["cache_misses"] + 1,
+        "last_query_id": payload["query_id"], "last_context_pack": str(destination),
+    })
+    persist_state(root, state)
+    append_jsonl(root / "events.jsonl", {"event": "RAG_RETRIEVAL_COMPLETED", "at": now(), "run_id": state["run_id"], "query_id": payload["query_id"], "retrieval_mode": payload["retrieval_mode"], "candidates": payload["candidates"], "selected_chunks": len(payload["hits"]), "estimated_tokens": payload["estimated_tokens"], "latency_ms": payload["latency_ms"]})
+    with connect_db(telemetry_db_for_state(state, root)) as connection:
+        connection.execute("INSERT INTO rag_queries(query_id,run_id,team,query_hash,retrieval_mode,context_budget,candidates,selected,estimated_tokens,latency_ms,cache_hit,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (payload["query_id"], state["run_id"], team, payload["query_hash"], payload["retrieval_mode"], context_budget, payload["candidates"], len(payload["hits"]), payload["estimated_tokens"], payload["latency_ms"], 0, payload["created_at"]))
+        connection.executemany("INSERT INTO rag_hits VALUES(?,?,?,?,?,?,?,?,?,?)", ((payload["query_id"], hit["chunk_id"], hit["repo"], hit["path"], hit["symbol"], hit["content_hash"], hit["lexical_score"], hit["semantic_score"], hit["final_score"], rank) for rank, hit in enumerate(payload["hits"], 1)))
+    return {"context_pack": str(destination), "query_id": payload["query_id"], "retrieval_mode": payload["retrieval_mode"], "selected_chunks": len(payload["hits"]), "estimated_tokens": payload["estimated_tokens"], "cache_hit": False}
+
+
 def summary(args: argparse.Namespace) -> dict[str, Any]:
     state = load_json(run_path(args.run_dir) / "state.json")
-    return {"run_id": state["run_id"], "jarvis_version": state["jarvis_version"], "task_id": state["task_id"], "state": state["current_state"], "complexity": state["complexity"], "risk_class": state["risk_class"], "operational_mode": state["operational_mode"], "reasoning_class": state["reasoning_class"], "reasoning": state.get("reasoning"), "agents": state["agents_used"], "unique_agent_count": len(state["agents_used"]), "budget": state["budget"], "routing": state["routing"], "metrics": state["metrics"], "gate_decision": state["gate_decision"], "gate_reason_code": state["gate_reason_code"], "gate_attempts": state["gate_attempts"]}
+    return {"run_id": state["run_id"], "jarvis_version": state["jarvis_version"], "task_id": state["task_id"], "state": state["current_state"], "complexity": state["complexity"], "risk_class": state["risk_class"], "operational_mode": state["operational_mode"], "reasoning_class": state["reasoning_class"], "reasoning": state.get("reasoning"), "agents": state["agents_used"], "unique_agent_count": len(state["agents_used"]), "budget": state["budget"], "routing": state["routing"], "teams": state.get("teams", {}), "rag": state["rag"], "metrics": state["metrics"], "gate_decision": state["gate_decision"], "gate_reason_code": state["gate_reason_code"], "gate_attempts": state["gate_attempts"]}
 
 
 def percentile(values: list[int], fraction: float) -> int:
@@ -1269,7 +1433,7 @@ def compare_releases(args: argparse.Namespace) -> dict[str, Any]:
     return {"telemetry_db": str(db_path), "releases": comparison, "eval_results": evals}
 
 
-def dashboard(args: argparse.Namespace) -> dict[str, Any]:
+def _dashboard_base(args: argparse.Namespace) -> dict[str, Any]:
     db_path = Path(getattr(args, "telemetry_db", None) or telemetry_db_for_runs(Path(args.runs_dir))).resolve()
     if not db_path.is_file(): return {"telemetry_db": str(db_path), "total_runs": 0}
     with connect_db(db_path) as connection:
@@ -1297,6 +1461,37 @@ def dashboard(args: argparse.Namespace) -> dict[str, Any]:
     return {"telemetry_db": str(db_path), "total_runs": total, "successful_runs": sum(row["status"] == "DONE" for row in runs), "failed_runs": sum(row["status"] == "BLOCKED" for row in runs), "average_duration_ms": sum(durations) / total if total else 0, "p50_duration_ms": percentile(durations, .5), "p95_duration_ms": percentile(durations, .95), "first_pass_success_rate": sum(row["first_pass_success"] == 1 for row in runs) / total if total else 0, "human_approval_rate": len(approved) / total if total else 0, "average_rework_cycles": sum(row["rework_cycles"] for row in runs) / total if total else 0, "average_credits": sum(row["credits"] for row in runs) / total if total else 0, "average_agent_invocations": sum(row["agent_invocation_count"] for row in runs) / total if total else 0, "average_unique_agents": sum(row["unique_agent_count"] for row in runs) / total if total else 0, "over_budget_rate": sum(row["budget_override"] == 1 for row in runs) / total if total else 0, "over_routing_rate": sum(row["routing_outcome"] == "OVER_ROUTED" for row in runs) / total if total else 0, "under_routing_rate": sum(row["routing_outcome"] == "UNDER_ROUTED" for row in runs) / total if total else 0, "credits_by_complexity": group_sum(runs, "complexity", "credits"), "credits_by_risk": group_sum(runs, "risk_class", "credits"), "credits_by_agent": group_sum(invocations, "agent", "credits"), "credits_by_model": group_sum(invocations, "model", "credits"), "credits_by_reasoning_effort": group_sum(invocations, "reasoning_effort", "credits"), "calls_by_context_budget": calls_by_context, "uncached_input_tokens": sum(max(0, row["input_tokens"] - row["cached_input_tokens"]) for row in attempts), "progress_event_count": sum(bool(row["progress_event"]) for row in attempts), "attempts_by_reasoning": {level: sum(row["effective_reasoning"] == level for row in attempts) for level in REASONING_LEVELS}, "success_rate_by_reasoning": {level: (sum(row["effective_reasoning"] == level and row["success"] == 1 for row in completed_attempts) / max(1, sum(row["effective_reasoning"] == level for row in completed_attempts))) for level in REASONING_LEVELS}, "credits_by_reasoning": group_sum(attempts, "effective_reasoning", "credits"), "escalation_count": sum(row["escalated"] == 1 for row in attempts), "handoff_generated": len(technical_handoffs), "handoff_tokens": sum(row["handoff_tokens"] for row in technical_handoffs), "handoff_duration_ms": sum(row["handoff_duration_ms"] for row in technical_handoffs), "handoff_levels": {level: sum(row["classification"] == level for row in technical_handoffs) for level in KNOWLEDGE_TRANSFER_CLASSES[1:]}, "teachback_required": sum(row["teachback_required"] for row in technical_handoffs), "teachback_questions": sum(row["teachback_questions"] for row in technical_handoffs), "teachback_correct": sum(row["result"] == "CORRECT" for row in teachback), "teachback_partial": sum(row["result"] == "PARTIAL" for row in teachback), "teachback_incorrect": sum(row["result"] == "INCORRECT" for row in teachback), "teachback_duration_ms": sum(row["duration_ms"] for row in teachback), "developer_requested_deeper_explanation": sum(row["developer_requested_deeper_explanation"] for row in teachback), "agent_metrics": agent_metrics, "stop_reason_distribution": {reason: stops.count(reason) for reason in STOP_REASONS}, "human_rejection_reason_distribution": {code: sum(row["reason_code"] == code for row in gates if row["decision"] != "APPROVED") for code in GATE_REASON_CODES if code != "APPROVED_AS_PLANNED"}}
 
 
+def dashboard(args: argparse.Namespace) -> dict[str, Any]:
+    result = _dashboard_base(args)
+    db_path = Path(result["telemetry_db"])
+    if not db_path.is_file():
+        return result
+    with connect_db(db_path) as connection:
+        queries = [dict(row) for row in connection.execute("SELECT * FROM rag_queries")]
+        hits = [dict(row) for row in connection.execute("SELECT * FROM rag_hits")]
+        team_invocations = [dict(row) for row in connection.execute("SELECT * FROM agent_invocations WHERE team IS NOT NULL")]
+    latencies = [row["latency_ms"] for row in queries]
+    result["rag"] = {
+        "queries_count": len(queries), "selected_chunks": len(hits),
+        "context_tokens": sum(row["estimated_tokens"] for row in queries),
+        "latency_ms_p50": percentile(latencies, .5), "latency_ms_p95": percentile(latencies, .95),
+        "zero_result_rate": sum(row["selected"] == 0 for row in queries) / len(queries) if queries else 0,
+        "source_diversity": len({(row["repo"], row["path"]) for row in hits}),
+    }
+    result["teams"] = {
+        team: {
+            "model_calls": sum(row["team"] == team for row in team_invocations),
+            "credits": round(sum(row["credits"] for row in team_invocations if row["team"] == team), 4),
+            "input_tokens": sum(row["input_tokens"] for row in team_invocations if row["team"] == team),
+            "output_tokens": sum(row["output_tokens"] for row in team_invocations if row["team"] == team),
+            "agents": sorted({row["agent"] for row in team_invocations if row["team"] == team}),
+            "rag_queries": sum(row.get("team") == team for row in queries),
+        }
+        for team in TEAMS
+    }
+    return result
+
+
 def report_cost(args: argparse.Namespace) -> dict[str, Any]:
     db_path = Path(getattr(args, "telemetry_db", None) or telemetry_db_for_runs(Path(args.runs_dir))).resolve()
     if not db_path.is_file():
@@ -1321,7 +1516,7 @@ def report_cost(args: argparse.Namespace) -> dict[str, Any]:
         return {"calls": len(items), "input_tokens": input_tokens, "cached_input_tokens": cached, "uncached_input_tokens": max(0, input_tokens - cached), "output_tokens": output, "credits": round(credits, 4), "cache_hit_ratio": cached / input_tokens if input_tokens else 0.0}
 
     grouped: dict[str, list[dict[str, Any]]] = {}
-    group_field = "agent" if args.group_by == "agent" else "stage"
+    group_field = args.group_by
     for item in invocations:
         grouped.setdefault(item[group_field], []).append(item)
     group_summary = {key: summarize(items) for key, items in grouped.items()}
@@ -1342,7 +1537,7 @@ def report_cost(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-EXPORT_TABLES = ("runs", "agent_invocations", "execution_attempts", "transitions", "handoffs", "technical_handoffs", "teachback_evaluations", "findings", "human_gates", "decisions", "routing_snapshots", "release_evals")
+EXPORT_TABLES = ("runs", "agent_invocations", "execution_attempts", "transitions", "handoffs", "technical_handoffs", "teachback_evaluations", "findings", "human_gates", "decisions", "routing_snapshots", "release_evals", "rag_queries", "rag_hits")
 
 
 def export_telemetry(args: argparse.Namespace) -> dict[str, Any]:
@@ -1394,18 +1589,26 @@ def parser() -> argparse.ArgumentParser:
     teachback = sub.add_parser("teachback-evaluate"); teachback.add_argument("--handoff-id", required=True); teachback.add_argument("--question-id", required=True); teachback.add_argument("--answer", required=True); teachback.add_argument("--duration-ms", type=int, default=0); teachback.add_argument("--deeper-explanation", action="store_true"); teachback.add_argument("--telemetry-db", type=Path, default=DEFAULT_TELEMETRY_DB)
     pack = sub.add_parser("context-pack"); pack.add_argument("--run-dir", required=True); pack.add_argument("--kind", choices=("requirement", "database", "contract", "git-baseline"), required=True); pack.add_argument("--baseline", required=True); pack.add_argument("--ref", action="append", required=True)
     discovery = sub.add_parser("discovery"); discovery.add_argument("--run-dir", required=True); discovery.add_argument("--baseline", required=True); discovery.add_argument("--query", required=True); discovery.add_argument("--ref", action="append", required=True)
+    retrieval = sub.add_parser("retrieve"); retrieval.add_argument("--run-dir", required=True); retrieval.add_argument("--query", required=True); retrieval.add_argument("--database", type=Path, default=DEFAULT_RAG_DB); retrieval.add_argument("--domain"); retrieval.add_argument("--agent"); retrieval.add_argument("--path-filter")
     sm = sub.add_parser("summary"); sm.add_argument("--run-dir", required=True)
     metrics = sub.add_parser("dashboard"); metrics.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); metrics.add_argument("--telemetry-db", type=Path)
     cost_report = sub.add_parser("report-cost"); cost_report.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); cost_report.add_argument("--telemetry-db", type=Path); cost_report.add_argument("--run-id"); cost_report.add_argument("--last", type=int, default=20); cost_report.add_argument("--group-by", choices=("agent", "stage"), default="agent")
     eval_parser = sub.add_parser("eval-result"); eval_parser.add_argument("--telemetry-db", type=Path, default=DEFAULT_TELEMETRY_DB); eval_parser.add_argument("--eval-id"); eval_parser.add_argument("--jarvis-version"); eval_parser.add_argument("--config-hash"); eval_parser.add_argument("--routing-score", type=float, required=True); eval_parser.add_argument("--over-routing-score", type=float, required=True); eval_parser.add_argument("--under-routing-score", type=float, required=True); eval_parser.add_argument("--sequence-score", type=float, required=True); eval_parser.add_argument("--source-ref")
     compare = sub.add_parser("compare-releases"); compare.add_argument("--telemetry-db", type=Path, default=DEFAULT_TELEMETRY_DB)
     export = sub.add_parser("export"); export.add_argument("--telemetry-db", type=Path, default=DEFAULT_TELEMETRY_DB); export.add_argument("--format", choices=("json", "csv"), required=True); export.add_argument("--output", required=True)
+    sub.choices["invocation-start"].add_argument("--team", choices=TEAMS)
+    sub.choices["retrieve"].add_argument("--team", choices=TEAMS)
+    team_routing = sub.add_parser("team-route")
+    team_routing.add_argument("--pattern", required=True)
+    team_routing.add_argument("--include-optional", action="store_true")
+    next(action for action in sub.choices["report-cost"]._actions if action.dest == "group_by").choices = ("agent", "stage", "team")
     return root
 
 
 def main() -> int:
     args = parser().parse_args()
-    handlers = {"reasoning-decide": reasoning_decide, "init": initialize, "transition": transition, "invocation-start": invocation_start, "invocation-finish": invocation_finish, "evaluate": evaluate_attempt, "record": record, "finding": finding, "route": route, "decision": decision, "handoff": create_handoff, "validate-handoff": validate_handoff, "technical-handoff": create_technical_handoff, "technical-handoff-get": get_technical_handoff, "teachback-evaluate": evaluate_teachback, "context-pack": context_pack, "discovery": discovery_record, "summary": summary, "dashboard": dashboard, "report-cost": report_cost, "eval-result": release_eval, "compare-releases": compare_releases, "export": export_telemetry}
+    handlers = {"reasoning-decide": reasoning_decide, "init": initialize, "transition": transition, "invocation-start": invocation_start, "invocation-finish": invocation_finish, "evaluate": evaluate_attempt, "record": record, "finding": finding, "route": route, "decision": decision, "handoff": create_handoff, "validate-handoff": validate_handoff, "technical-handoff": create_technical_handoff, "technical-handoff-get": get_technical_handoff, "teachback-evaluate": evaluate_teachback, "context-pack": context_pack, "discovery": discovery_record, "retrieve": rag_retrieve, "summary": summary, "dashboard": dashboard, "report-cost": report_cost, "eval-result": release_eval, "compare-releases": compare_releases, "export": export_telemetry}
+    handlers["team-route"] = team_route
     try: result = handlers[args.command](args)
     except (RuntimeErrorSafe, OSError, sqlite3.Error) as exc:
         print(json.dumps({"error": str(exc)}, ensure_ascii=False), file=sys.stderr); return 2

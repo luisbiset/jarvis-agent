@@ -66,6 +66,18 @@
       "category": "flow_policy",
       "summary": "Mudanças relevantes geram transferência de conhecimento proporcional, baseada em evidências e recuperável por tarefa.",
       "enforced_by": ["contracts/knowledge-transfer-policy.json", "contracts/technical-handoff.schema.json", "scripts/jarvis_runtime.py", "scripts/validate.py"]
+    },
+    {
+      "id": "FLOW-005",
+      "category": "flow_policy",
+      "summary": "O runtime seleciona times lógicos antes do menor conjunto de agentes, preservando escrita e revisão independente.",
+      "enforced_by": ["contracts/teams-policy.json", "contracts/protocol.md", "scripts/jarvis_runtime.py", "scripts/validate.py"]
+    },
+    {
+      "id": "RAG-001",
+      "category": "knowledge_policy",
+      "summary": "Retrieval local usa provenance, respeita o context budget, recusa conteúdo sensível antes da indexação e exige confirmação na fonte para decisões críticas.",
+      "enforced_by": ["contracts/rag-policy.json", "rag/security.py", "rag/retriever.py", "scripts/jarvis_runtime.py", "scripts/validate.py"]
     }
   ]
 }

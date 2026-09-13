@@ -1,4 +1,6 @@
 name = "aghuse_frontend"
+team = "DESENVOLVIMENTO"
+role = "FRONTEND"
 description = "Especialista no frontend server-side do AGHUse com Java 17, JSF 2.3, Facelets, PrimeFaces 12 e CDI. Use para XHTML, componentes, controllers de apresentação, navegação, CSS e JavaScript dos módulos web."
 
 developer_instructions = """

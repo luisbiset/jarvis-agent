@@ -32,6 +32,7 @@ def frontmatter(path: Path) -> dict[str, str]:
 
 def render() -> str:
     version = json.loads((ROOT / "contracts/version.json").read_text(encoding="utf-8"))
+    teams_policy = json.loads((ROOT / "contracts/teams-policy.json").read_text(encoding="utf-8"))
     lines = [
         "# Topologia gerada do Jarvis Agent",
         "",
@@ -57,17 +58,19 @@ def render() -> str:
     lines.extend(
         [
             "",
-            "## Agentes",
+            "## Times de agentes",
             "",
-            "| Agente | Reasoning padrão | Sandbox | Responsabilidade |",
-            "|---|---|---|---|",
+            "| Time | Agente | Papel | Reasoning padrão | Sandbox | Responsabilidade |",
+            "|---|---|---|---|---|---|",
         ]
     )
     for path in sorted((ROOT / "agents").glob("*.toml")):
         with path.open("rb") as stream:
             agent = tomllib.load(stream)
+        declared = agent.get("allowed_teams") or [agent.get("team")]
+        team_names = ", ".join(teams_policy["teams"][team]["display_name"] for team in declared if team)
         lines.append(
-            f"| {escape(agent['name'])} | {escape(agent.get('model_reasoning_effort', 'adaptive'))} | "
+            f"| {escape(team_names)} | {escape(agent['name'])} | {escape(agent.get('role', 'especialista'))} | {escape(agent.get('model_reasoning_effort', 'adaptive'))} | "
             f"{escape(agent.get('sandbox_mode', 'workspace-write'))} | {escape(agent['description'])} |"
         )
 

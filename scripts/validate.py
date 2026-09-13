@@ -269,6 +269,9 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
     required = {
         "version.json",
         "reasoning-policy.json",
+        "rag-policy.json",
+        "rag-context.schema.json",
+        "teams-policy.json",
         "knowledge-transfer-policy.json",
         "policy-registry.json",
         "handoff.schema.json",
@@ -285,7 +288,7 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
         return
 
     version = load_json(contract_dir / "version.json")
-    if version.get("jarvis_version") != "3.1.0" or version.get("execution_state_schema_version") != "3.1.0" or version.get("telemetry_schema_version") != "3.1.0" or version.get("reasoning_policy_version") != "3.1.0" or version.get("technical_handoff_schema_version") != "1.0.0" or version.get("knowledge_transfer_policy_version") != "1.0.0" or version.get("routing_schema_version") != 2:
+    if version.get("jarvis_version") != "3.1.0" or version.get("execution_state_schema_version") != "3.1.0" or version.get("telemetry_schema_version") != "3.1.0" or version.get("reasoning_policy_version") != "3.1.0" or version.get("technical_handoff_schema_version") != "1.0.0" or version.get("knowledge_transfer_policy_version") != "1.0.0" or version.get("rag_policy_version") != "1.0.0" or version.get("rag_context_schema_version") != "1.0.0" or version.get("teams_policy_version") != "1.0.0" or version.get("routing_schema_version") != 2:
         fail("contracts/version.json não declara Jarvis/runtime/policy 3.1.0 e routing schema 2")
 
     handoff = load_json(contract_dir / "handoff.schema.json")
@@ -399,7 +402,7 @@ def validate_aghuse_automation() -> None:
 
 
 def validate_jarvis_runtime() -> None:
-    scripts = [ROOT / "scripts/jarvis_runtime.py", ROOT / "scripts/run_evals.py", ROOT / "scripts/generate_topology.py"]
+    scripts = [ROOT / "scripts/jarvis_runtime.py", ROOT / "scripts/jarvis_rag.py", ROOT / "scripts/run_rag_evals.py", ROOT / "scripts/run_evals.py", ROOT / "scripts/generate_topology.py"]
     for script in scripts:
         if not script.is_file():
             fail(f"Script V3 ausente: {script.relative_to(ROOT)}")
@@ -477,6 +480,29 @@ def validate_reasoning_policy() -> None:
         fail("Cost limits devem iniciar em OBSERVE_ONLY")
 
 
+def validate_rag_policy() -> None:
+    policy = load_json(ROOT / "contracts/rag-policy.json")
+    if policy.get("policy_version") != "1.0.0" or policy.get("enabled") is not True:
+        fail("RAG policy deve estar habilitada e versionada em 1.0.0")
+    if policy.get("retrieval", {}).get("fallback_mode") != "LEXICAL_ONLY":
+        fail("RAG deve possuir fallback LEXICAL_ONLY")
+    reasoning = load_json(ROOT / "contracts/reasoning-policy.json")
+    previous = {"candidate_k": 0, "top_k": 0, "max_tokens": 0, "max_sources": 0}
+    for level in ("SMALL", "MEDIUM", "LARGE"):
+        current = policy.get("budgets", {}).get(level, {})
+        for key in previous:
+            value = current.get(key, 0)
+            if not isinstance(value, int) or value < 1 or value < previous[key]:
+                fail(f"RAG budget inválido ou não monotônico: {level}.{key}")
+            previous[key] = value
+        maximum = reasoning.get("context_limits", {}).get(level, {}).get("max_context_tokens", 0)
+        if current.get("max_tokens", 0) > maximum:
+            fail(f"RAG excede max_context_tokens global em {level}")
+    schema = load_json(ROOT / "contracts/rag-context.schema.json")
+    if schema.get("additionalProperties") is not False or schema.get("properties", {}).get("schema_version", {}).get("const") != "1.0.0":
+        fail("rag-context.schema.json deve ser fechado e versionado em 1.0.0")
+
+
 def validate_knowledge_transfer_policy() -> None:
     policy = load_json(ROOT / "contracts/knowledge-transfer-policy.json")
     if policy.get("policy_id") != "FLOW-004" or policy.get("policy_version") != "1.0.0":
@@ -500,6 +526,41 @@ def validate_knowledge_transfer_policy() -> None:
     schema = load_json(ROOT / "contracts/technical-handoff.schema.json")
     if schema.get("additionalProperties") is not False or schema.get("$id") != "jarvis://contracts/technical-handoff/1.0.0":
         fail("technical-handoff.schema.json deve ser fechado e versionado em 1.0.0")
+
+
+def validate_teams_policy(agent_names: set[str]) -> None:
+    policy = load_json(ROOT / "contracts/teams-policy.json")
+    teams = policy.get("teams", {})
+    expected = {"ANALISE", "DESENVOLVIMENTO", "REVISAO_QUALIDADE"}
+    if policy.get("schema_version") != "1.0.0" or set(teams) != expected:
+        fail("Teams policy deve declarar os três times oficiais na versão 1.0.0")
+        return
+    states_seen: set[str] = set()
+    for team, config in teams.items():
+        unknown = set(config.get("agents", [])) - agent_names
+        if unknown:
+            fail(f"Time {team} referencia agentes desconhecidos: {sorted(unknown)}")
+        overlap = states_seen & set(config.get("allowed_states", []))
+        if overlap:
+            fail(f"Estados pertencem a mais de um time: {sorted(overlap)}")
+        states_seen.update(config.get("allowed_states", []))
+    for path in sorted((ROOT / "agents").glob("*.toml")):
+        with path.open("rb") as stream:
+            agent = tomllib.load(stream)
+        declared = [agent["team"]] if "team" in agent else agent.get("allowed_teams", [])
+        if not declared or not set(declared) <= expected:
+            fail(f"{path.relative_to(ROOT)} não declara team/allowed_teams válido")
+        for team in declared:
+            if agent.get("name") not in teams[team]["agents"]:
+                fail(f"{agent.get('name')} declara {team}, mas não consta no time")
+    patterns = load_json(ROOT / "contracts/task-patterns.json")
+    if patterns.get("schema_version") != 2 or not patterns.get("compatibility", {}).get("legacy_agents_field"):
+        fail("task-patterns deve usar times com fallback agents legado")
+    for pattern in patterns.get("patterns", []):
+        for stage in pattern.get("teams", []):
+            team = stage.get("team")
+            if team not in teams or not set(stage.get("agents", [])) <= set(teams.get(team, {}).get("agents", [])):
+                fail(f"Pattern {pattern.get('id')} possui composição de time inválida")
 
 
 def validate_critical_contracts() -> None:
@@ -626,7 +687,9 @@ def main() -> int:
     validate_aghuse_automation()
     validate_jarvis_runtime()
     validate_reasoning_policy()
+    validate_rag_policy()
     validate_knowledge_transfer_policy()
+    validate_teams_policy(agents)
     validate_critical_contracts()
     scan_secrets()
     if ERRORS:

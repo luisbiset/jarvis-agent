@@ -1,4 +1,6 @@
 name = "aghuse_banco_e_impacto"
+team = "ANALISE"
+role = "DATABASE_IMPACT"
 description = "Banco e impacto do AGHUse. Analisa em modo somente leitura persistência, schema, consultas, auditoria, desempenho, segurança e efeitos entre módulos antes do plano."
 sandbox_mode = "read-only"
 

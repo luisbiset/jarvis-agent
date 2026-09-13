@@ -1,4 +1,6 @@
 name = "aghuse_analyst"
+team = "ANALISE"
+role = "ANALYST"
 description = "Analista ad-hoc do AGHUse. Use quando o usuário pedir um relatório técnico independente fora do pipeline completo; não acione junto com aghuse_requisitos_e_legado sem justificativa explícita."
 sandbox_mode = "read-only"
 
