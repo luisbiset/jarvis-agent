@@ -2,6 +2,16 @@
 
 Use `$nome-da-skill` no início do pedido quando quiser forçar um fluxo específico. Commit, push, Redmine, banco e deploy continuam exigindo autorização própria.
 
+## Interface local
+
+```bash
+python3 scripts/jarvis.py auditar
+python3 scripts/jarvis.py resumo-git
+python3 scripts/jarvis.py simular --task-id TESTE
+python3 scripts/jarvis.py rag search --query "regra de negócio"
+python3 scripts/jarvis.py executar dashboard
+```
+
 ## Coordenação
 
 ### `$aghuse-development`

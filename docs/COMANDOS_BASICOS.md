@@ -12,6 +12,27 @@ Modelo para copiar:
 
 ## Comandos mais usados
 
+## Interface unificada local
+
+Execute a partir da raiz do projeto:
+
+```bash
+python3 scripts/jarvis.py auditar
+python3 scripts/jarvis.py resumo-git
+python3 scripts/jarvis.py simular --task-id TESTE --task-type SECURITY --security-sensitive
+python3 scripts/jarvis.py simular-redmine --task-id 55315
+python3 scripts/jarvis.py rag search --query "frequencia aprazamento"
+python3 scripts/jarvis.py executar dashboard
+```
+
+`auditar` verifica credenciais, URLs privadas e dados clínicos detectáveis. `resumo-git` é somente leitura. `simular` não cria estado nem acessa serviços externos. `rag` indexa ou consulta o conhecimento local. `executar` encaminha comandos avançados ao runtime.
+
+Para bloquear automaticamente commits inseguros nesta cópia:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ### Trabalhar no AGHUse
 
 > `$aghuse-development` Corrija **[problema]** no módulo **[módulo]**. Não use subagentes. Execute somente os testes diretamente afetados. Não faça commit.

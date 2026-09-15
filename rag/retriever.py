@@ -25,7 +25,7 @@ def _fts_query(values: list[str]) -> str:
     return " OR ".join('"' + value.replace('"', '""') + '"' for value in values)
 
 
-def search(index: RagIndex, query: str, limit: int, path_filter: str | None = None, repo_filter: str | None = None) -> list[RetrievalHit]:
+def search(index: RagIndex, query: str, limit: int, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None) -> list[RetrievalHit]:
     query_terms = terms(query)
     if not query_terms:
         return []
@@ -49,6 +49,12 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
     if repo_filter:
         sql += " AND d.repo LIKE ?"
         params.append(f"%{repo_filter}%")
+    if branch_filter:
+        sql += " AND d.git_branch LIKE ?"
+        params.append(f"%{branch_filter}%")
+    if source_type_filter:
+        sql += " AND d.source_type = ?"
+        params.append(source_type_filter)
     rows = index.connection.execute(sql + " LIMIT ?", (*params, max(limit * 4, limit))).fetchall()
     lowered_query = query.casefold()
     scored: list[RetrievalHit] = []
@@ -78,14 +84,14 @@ def _dedupe_and_budget(hits: list[RetrievalHit], top_k: int, max_tokens: int, ma
     return selected, tokens, duplicates
 
 
-def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget: str, run_id: str | None = None, path_filter: str | None = None, repo_filter: str | None = None) -> dict[str, Any]:
+def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget: str, run_id: str | None = None, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None) -> dict[str, Any]:
     started = time.monotonic()
     budget = policy["budgets"][context_budget]
     with RagIndex(database) as index:
-        candidates = search(index, query, budget["candidate_k"], path_filter, repo_filter)
+        candidates = search(index, query, budget["candidate_k"], path_filter, repo_filter, branch_filter, source_type_filter)
     selected, estimated_tokens, duplicates = _dedupe_and_budget(candidates, budget["top_k"], budget["max_tokens"], budget.get("max_sources", budget["top_k"]))
     query_id = "ragq-" + secrets.token_hex(8)
-    filters_hash = hashlib.sha256(json.dumps({"path": path_filter, "repo": repo_filter}, sort_keys=True).encode()).hexdigest()
+    filters_hash = hashlib.sha256(json.dumps({"path": path_filter, "repo": repo_filter, "branch": branch_filter, "source_type": source_type_filter}, sort_keys=True).encode()).hexdigest()
     return {
         "schema_version": "1.0.0", "run_id": run_id, "query_id": query_id,
         "query_hash": hashlib.sha256(query.encode()).hexdigest(), "filters_hash": filters_hash, "created_at": utc_now(),

@@ -86,6 +86,39 @@ Depois de alterar um plugin, valide-o, atualize o cachebuster e reinstale-o ante
 
 ## Qualidade e diagnóstico
 
+Também é possível usar a interface unificada:
+
+```bash
+python3 scripts/jarvis.py auditar
+python3 scripts/jarvis.py resumo-git
+python3 scripts/jarvis.py simular --task-id TESTE --task-type SECURITY --security-sensitive
+python3 scripts/jarvis.py simular-redmine --task-id 55315
+python3 scripts/jarvis.py rag search --query "frequencia aprazamento"
+python3 scripts/jarvis.py executar dashboard
+```
+
+Antes de publicar uma alteração, use os comandos somente leitura:
+
+```bash
+python3 scripts/jarvis_guard.py audit
+python3 scripts/jarvis_guard.py git-summary
+```
+
+O primeiro recusa credenciais, URLs privadas e identificadores clínicos detectáveis; o segundo mostra branch, commit e arquivos pendentes sem executar commit ou push.
+Na busca do RAG, use também `--branch-filter` e `--source-type-filter` para restringir a origem do conhecimento.
+
+Para habilitar a mesma auditoria automaticamente antes de cada commit nesta cópia:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Para simular uma tarefa sem criar estado, modificar arquivos ou acessar serviços externos:
+
+```bash
+python3 scripts/jarvis_simulate.py --task-id TESTE --task-type SECURITY --security-sensitive
+```
+
 ```bash
 python3 scripts/validate.py
 python3 scripts/doctor.py --strict

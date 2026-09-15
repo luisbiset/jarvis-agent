@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
@@ -17,7 +18,7 @@ PRAGMA foreign_keys=ON;
 CREATE TABLE IF NOT EXISTS documents(
  document_id TEXT PRIMARY KEY, source_type TEXT NOT NULL, repo TEXT NOT NULL,
  path TEXT NOT NULL, language TEXT NOT NULL, content_hash TEXT NOT NULL,
- git_commit TEXT, indexed_at TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1
+ git_commit TEXT, git_branch TEXT, indexed_at TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS chunks(
  chunk_id TEXT PRIMARY KEY, document_id TEXT NOT NULL REFERENCES documents(document_id),
@@ -39,6 +40,22 @@ def digest(value: bytes | str) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def git_revision(root: Path) -> str | None:
+    try:
+        result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, text=True, capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return result.stdout.strip() or None
+
+
+def git_branch(root: Path) -> str | None:
+    try:
+        result = subprocess.run(["git", "branch", "--show-current"], cwd=root, text=True, capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return result.stdout.strip() or None
+
+
 class RagIndex:
     def __init__(self, database: Path):
         self.database = database.resolve()
@@ -46,7 +63,13 @@ class RagIndex:
         self.connection = sqlite3.connect(self.database)
         self.connection.row_factory = sqlite3.Row
         self.connection.executescript(SCHEMA)
+        self._ensure_column("documents", "git_branch", "TEXT")
         self.fts5 = self._ensure_fts()
+
+    def _ensure_column(self, table: str, column: str, definition: str) -> None:
+        columns = {row[1] for row in self.connection.execute(f"PRAGMA table_info({table})")}
+        if column not in columns:
+            self.connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def _ensure_fts(self) -> bool:
         try:
@@ -76,6 +99,8 @@ class RagIndex:
         if not root.is_dir():
             raise ValueError(f"repositório inexistente: {root}")
         seen: set[str] = set()
+        revision = git_revision(root)
+        branch = git_branch(root)
         stats = {"scanned": 0, "indexed": 0, "unchanged": 0, "refused": 0, "removed": 0, "chunks": 0}
         for path in self._files(root):
             relative = path.relative_to(root).as_posix()
@@ -101,8 +126,8 @@ class RagIndex:
                 if previous:
                     self._delete_chunks(document_id)
                 self.connection.execute(
-                    "INSERT OR REPLACE INTO documents(document_id,source_type,repo,path,language,content_hash,git_commit,indexed_at,active) VALUES(?,?,?,?,?,?,?,?,1)",
-                    (document_id, source_type, root.name, relative, path.suffix.lstrip("."), content_hash, None, utc_now()),
+                    "INSERT OR REPLACE INTO documents(document_id,source_type,repo,path,language,content_hash,git_commit,git_branch,indexed_at,active) VALUES(?,?,?,?,?,?,?,?,?,1)",
+                    (document_id, source_type, root.name, relative, path.suffix.lstrip("."), content_hash, revision, branch, utc_now()),
                 )
                 for ordinal, chunk in enumerate(chunks):
                     chunk_id = "chunk-" + digest(f"{document_id}:{chunk.start_line}:{chunk.end_line}:{digest(chunk.text)}")[:24]

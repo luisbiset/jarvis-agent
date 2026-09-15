@@ -1332,7 +1332,7 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeErrorSafe(f"índice RAG inexistente: {database}; execute scripts/jarvis_rag.py index")
     context_budget = state["reasoning"]["context_budget"]
     query_hash = hashlib.sha256(args.query.encode()).hexdigest()
-    filters_hash = hashlib.sha256(json.dumps({"path": args.path_filter, "repo": args.domain}, sort_keys=True).encode()).hexdigest()
+    filters_hash = hashlib.sha256(json.dumps({"path": args.path_filter, "repo": args.domain, "branch": None, "source_type": None}, sort_keys=True).encode()).hexdigest()
     destination = root / "context-packs" / f"rag-context-{team.lower().replace('_', '-')}.json"
     if destination.is_file():
         cached = load_json(destination)
