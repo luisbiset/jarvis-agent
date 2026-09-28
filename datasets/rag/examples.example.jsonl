@@ -1,0 +1,4 @@
+{"query":"alterar regra de cálculo da conta","candidate":{"path":"modulo/src/main/java/exemplo/ContaON.java","symbol":"calcular"},"relevant":true,"reason":"regra de negócio"}
+{"query":"alterar regra de cálculo da conta","candidate":{"path":"modulo/src/main/webapp/conta.xhtml","symbol":"formulario"},"relevant":false,"reason":"camada de apresentação"}
+{"query":"corrigir filtro da tela de profissionais","candidate":{"path":"modulo/src/main/webapp/profissionais.xhtml","symbol":"filtro"},"relevant":true,"reason":"tela"}
+{"query":"corrigir filtro da tela de profissionais","candidate":{"path":"modulo/src/test/java/exemplo/ContaONTest.java","symbol":"calcular"},"relevant":false,"reason":"arquivo não relacionado"}
