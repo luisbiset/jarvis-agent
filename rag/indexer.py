@@ -12,6 +12,7 @@ from typing import Iterable
 
 from .chunkers import chunk_text
 from .security import eligible, safe_text
+from .taxonomy import classify
 
 SCHEMA = """
 PRAGMA foreign_keys=ON;
@@ -133,7 +134,7 @@ class RagIndex:
                     chunk_id = "chunk-" + digest(f"{document_id}:{chunk.start_line}:{chunk.end_line}:{digest(chunk.text)}")[:24]
                     self.connection.execute(
                         "INSERT INTO chunks VALUES(?,?,?,?,?,?,?,?,?,?)",
-                        (chunk_id, document_id, chunk.symbol, chunk.chunk_type, chunk.start_line, chunk.end_line, chunk.text, digest(chunk.text), max(1, len(chunk.text) // 4), json.dumps(chunk.metadata, sort_keys=True)),
+                        (chunk_id, document_id, chunk.symbol, chunk.chunk_type, chunk.start_line, chunk.end_line, chunk.text, digest(chunk.text), max(1, len(chunk.text) // 4), json.dumps({**classify(relative, chunk.text, source_type), **chunk.metadata}, sort_keys=True)),
                     )
                     if self.fts5:
                         self.connection.execute("INSERT INTO chunks_fts(chunk_id,text,symbol,path) VALUES(?,?,?,?)", (chunk_id, chunk.text, chunk.symbol or "", relative))

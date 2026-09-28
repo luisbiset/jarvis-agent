@@ -30,7 +30,7 @@ def _fts_query(values: list[str]) -> str:
     return " OR ".join('"' + value.replace('"', '""') + '"' for value in values)
 
 
-def search(index: RagIndex, query: str, limit: int, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None) -> list[RetrievalHit]:
+def search(index: RagIndex, query: str, limit: int, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None, taxonomy: dict[str, str] | None = None) -> list[RetrievalHit]:
     raw_terms = list(dict.fromkeys(match.group(0) for match in TOKEN.finditer(query)))
     query_terms = [_fold(value) for value in raw_terms]
     if not query_terms:
@@ -61,6 +61,11 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
     if source_type_filter:
         sql += " AND d.source_type = ?"
         params.append(source_type_filter)
+    for key, value in (taxonomy or {}).items():
+        if key not in {"domain", "layer", "artifact"}:
+            raise ValueError(f"filtro taxonômico inválido: {key}")
+        sql += " AND json_extract(c.metadata_json, ?) = ?"
+        params.extend([f"$.{key}", value])
     rows = index.connection.execute(sql + " LIMIT ?", (*params, max(limit * 4, limit))).fetchall()
     lowered_query = _fold(query)
     phrase = _fold(" ".join(query_terms))
@@ -101,11 +106,11 @@ def _dedupe_and_budget(hits: list[RetrievalHit], top_k: int, max_tokens: int, ma
     return selected, tokens, duplicates
 
 
-def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget: str, run_id: str | None = None, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None) -> dict[str, Any]:
+def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget: str, run_id: str | None = None, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None, taxonomy: dict[str, str] | None = None) -> dict[str, Any]:
     started = time.monotonic()
     budget = policy["budgets"][context_budget]
     with RagIndex(database) as index:
-        candidates = search(index, query, budget["candidate_k"], path_filter, repo_filter, branch_filter, source_type_filter)
+        candidates = search(index, query, budget["candidate_k"], path_filter, repo_filter, branch_filter, source_type_filter, taxonomy)
     selected, estimated_tokens, duplicates = _dedupe_and_budget(candidates, budget["top_k"], budget["max_tokens"], budget.get("max_sources", budget["top_k"]))
     query_id = "ragq-" + secrets.token_hex(8)
     filters_hash = hashlib.sha256(json.dumps({"path": path_filter, "repo": repo_filter, "branch": branch_filter, "source_type": source_type_filter}, sort_keys=True).encode()).hexdigest()

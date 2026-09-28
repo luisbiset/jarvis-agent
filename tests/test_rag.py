@@ -11,6 +11,7 @@ from rag.chunkers import chunk_text
 from rag.indexer import RagIndex
 from rag.retriever import retrieve
 from rag.security import safe_text
+from rag.taxonomy import classify
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -107,6 +108,24 @@ class RagTest(unittest.TestCase):
         self.assertFalse(safe_text("Authorization: Bearer abcdefghijklmnopqrstuvwxyz"))
         self.assertTrue(safe_text("A variável REDMINE_API_KEY não deve ser exibida"))
 
+
+    def test_taxonomy_classifies_aghuse_layers(self):
+        self.assertEqual(classify("src/main/java/ContaON.java", "public class ContaON {}", "CODE")["layer"], "backend")
+        self.assertEqual(classify("src/main/webapp/conta.xhtml", "<p:inputText/>", "CODE")["layer"], "frontend")
+        self.assertEqual(classify("src/test/ContaONTest.java", "class ContaONTest {}", "TEST")["layer"], "testes")
+
+    def test_taxonomy_filter_restricts_search(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "repo"; root.mkdir()
+            (root / "ContaON.java").write_text("public class ContaON { void calcular() {} }\n", encoding="utf-8")
+            (root / "conta.xhtml").write_text("<html>calcular</html>\n", encoding="utf-8")
+            database = Path(temporary) / "index.db"
+            with RagIndex(database) as index:
+                index.index_repo(root)
+                from rag.retriever import search
+                hits = search(index, "calcular", 10, taxonomy={"layer": "backend"})
+                self.assertTrue(hits)
+                self.assertTrue(all(".java" in hit.path for hit in hits))
 
 if __name__ == "__main__":
     unittest.main()
