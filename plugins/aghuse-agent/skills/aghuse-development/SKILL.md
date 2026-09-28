@@ -19,7 +19,7 @@ Organize o fluxo nos times lógicos definidos pelo runtime: Time de Análise par
 
 Antes de rotear, declare no handoff V3: `complexity`, `risk_class`, `operational_mode`, sinais da tarefa, reasoning decidido, `max_agents` e `max_parallel_agents`. Use `TRIVIAL` (um especialista e Auditor opcional, até 2 agentes), `LOCALIZED` (até 3), `TRANSVERSAL` (até 6) ou `CRITICAL` (até 8); exceder o budget exige justificativa. Um especialista único pode implementar diretamente uma correção trivial, sem camada adicional de Desenvolvedor. O Reviewer não participa de tarefa trivial e torna-se obrigatório somente por risco sistêmico alto/crítico.
 
-Use o policy engine central do Jarvis V3 para obter `INSTANT`, `MEDIUM` ou `HIGH` e propague `model`, `reasoning_effort`, `context_budget` e limites retornados a cada subagente. Não fixe modelo ou reasoning por perfil. Todo retry exige progresso verificável e consome o budget agregado da tarefa. Somente `MEDIUM` pode escalar uma vez para `HIGH`, após sinal verificável aceito pelo evaluator e dentro do budget; `HIGH` nunca escala novamente. Não acione `aghuse_analyst` e `aghuse_requisitos_e_legado` juntos sem justificativa explícita.
+Use o policy engine central do Jarvis V3 para obter `INSTANT`, `MEDIUM` ou `HIGH` e propague `model`, `reasoning_effort`, `context_budget` e limites retornados a cada subagente. Não fixe modelo ou reasoning por perfil. Todo retry exige progresso verificável e consome o budget agregado da tarefa. Somente `MEDIUM` pode escalar uma vez para `HIGH`, após sinal verificável aceito pelo evaluator e dentro do budget; `HIGH` nunca escala novamente. Não acione `aghuse_analise` e `aghuse_analise` juntos sem justificativa explícita.
 
 Para uma tarefa completa, conduzir este fluxo:
 
@@ -44,11 +44,11 @@ Análise paralela
 Os nomes do fluxo correspondem a estes contratos:
 
 - **Coordenador:** esta skill; delimita a tarefa, preserva o baseline, distribui o trabalho e integra os handoffs.
-- **Requisitos e legado:** `aghuse_requisitos_e_legado`; confirma requisitos, critérios de aceite, comportamento e histórico sem editar.
-- **Banco e impacto:** `aghuse_banco_e_impacto`; avalia persistência, schema e impactos transversais sem editar.
-- **Desenvolvedor:** `aghuse_desenvolvedor`; executa o plano e integra somente os especialistas técnicos necessários.
-- **QA:** `aghuse_qa`; valida requisitos, testes, build e roteiro funcional sem corrigir a implementação avaliada.
-- **Auditor do diff:** `aghuse_auditor_do_diff`; revisa baseline, escopo, hunks, arquivos inesperados, EOL/encoding, segredos e higiene da worktree em modo somente leitura.
+- **Requisitos e legado:** `aghuse_analise`; confirma requisitos, critérios de aceite, comportamento e histórico sem editar.
+- **Banco e impacto:** `aghuse_banco`; avalia persistência, schema e impactos transversais sem editar.
+- **Desenvolvedor:** `aghuse_backend`; executa o plano e integra somente os especialistas técnicos necessários.
+- **QA:** `aghuse_qualidade`; valida requisitos, testes, build e roteiro funcional sem corrigir a implementação avaliada.
+- **Auditor do diff:** `aghuse_revisor`; revisa baseline, escopo, hunks, arquivos inesperados, EOL/encoding, segredos e higiene da worktree em modo somente leitura.
 - **Gate humano:** o usuário; decide aceitar, pedir correções, autorizar commit/push ou liberar qualquer ação externa. Nunca substituir este gate por um agente.
 
 Na **Análise paralela**, acionar Requisitos e legado e Banco e impacto simultaneamente quando as frentes puderem ser investigadas sem sobreposição. Consolidar os dois resultados em um único plano com escopo, critérios de aceite, arquivos ou módulos prováveis, contratos, responsáveis, validações, riscos e pendências. Não iniciar a implementação até o usuário aprovar esse plano. Um pedido direto de implementação que já contenha escopo e decisões suficientes vale como aprovação do plano descrito no próprio pedido; não criar uma confirmação cerimonial para correções pequenas e inequívocas.
@@ -78,23 +78,23 @@ Para diagnóstico ou correção restrita, o Coordenador pode reduzir o fluxo aos
 
 Os perfis do fluxo governam os handoffs; os especialistas abaixo executam responsabilidades técnicas dentro do estágio Desenvolvedor:
 
-- `aghuse_analyst`: análise somente leitura de chamados e requisitos, com relatório de escopo, abordagem, alternativas, prós, contras, riscos, testes e recomendação.
+- `aghuse_analise`: análise somente leitura de chamados e requisitos, com relatório de escopo, abordagem, alternativas, prós, contras, riscos, testes e recomendação.
 - `aghuse_frontend`: JSF/Facelets, PrimeFaces, XHTML, controllers de apresentação, navegação e recursos dos WARs de interface.
 - `aghuse_backend`: Java 17, EJB/CDI, manutenção de RNs existentes, novas ONs, Facades, APIs, services, integrações, contratos `*-client` e empacotamento EAR.
-- `aghuse_database`: entidades JPA, DAOs, consultas, Oracle/PostgreSQL, JTA, Envers, Search, cache e desempenho.
-- `aghuse_tests`: criação e manutenção de testes unitários exclusivamente para ONs e RNs existentes, com JUnit 5, Mockito, Surefire, fixtures, isolamento, diagnóstico e cobertura. Pode executar outros testes para diagnóstico, mas não deve criá-los nem modificá-los.
+- `aghuse_banco`: entidades JPA, DAOs, consultas, Oracle/PostgreSQL, JTA, Envers, Search, cache e desempenho.
+- `aghuse_testes`: criação e manutenção de testes unitários exclusivamente para ONs e RNs existentes, com JUnit 5, Mockito, Surefire, fixtures, isolamento, diagnóstico e cobertura. Pode executar outros testes para diagnóstico, mas não deve criá-los nem modificá-los.
 
-Ao criar ou revisar scripts de banco com o `aghuse_database`, aplicar também a skill `aghuse-idempotent-database-scripts`. Scripts de aplicação e rollback devem ser idempotentes.
+Ao criar ou revisar scripts de banco com o `aghuse_banco`, aplicar também a skill `aghuse-idempotent-database-scripts`. Scripts de aplicação e rollback devem ser idempotentes.
 
-Acionar o `aghuse_analyst` quando o usuário pedir análise, triagem, entendimento, planejamento ou relatório de uma tarefa. Ele deve permanecer somente leitura e entregar o relatório antes que qualquer especialista de implementação seja acionado. Não exigir essa etapa quando o pedido já estiver suficientemente especificado e for apenas uma correção pequena e direta.
+Acionar o `aghuse_analise` quando o usuário pedir análise, triagem, entendimento, planejamento ou relatório de uma tarefa. Ele deve permanecer somente leitura e entregar o relatório antes que qualquer especialista de implementação seja acionado. Não exigir essa etapa quando o pedido já estiver suficientemente especificado e for apenas uma correção pequena e direta.
 
 Para tarefa restrita, delegar apenas ao perfil correspondente. Para tarefa transversal, delegar a análise aos especialistas relevantes e definir handoffs explícitos antes da implementação. Permitir trabalho paralelo somente com arquivos sem sobreposição. Se contrato, schema ou comportamento ainda estiver ambíguo, sequenciar banco -> backend -> frontend -> testes, adaptando a ordem à tarefa.
 
-Ao solicitar cobertura ao `aghuse_tests`, identifique a ON ou RN responsável. Antes de autorizar uma nova classe `*ONTest` ou `*RNTest`, exija a busca por testes do mesmo fluxo no módulo, em todo o repositório e nas branches relacionadas, usando `git log --all`, `git ls-tree` e `git show` sem trocar de branch. Prefira ampliar ou portar a classe de teste existente, preservando seus cenários compatíveis; uma nova classe só deve ser criada quando a busca demonstrar que não há teste adequado. Não importe produção alheia apenas para fazer compilar um teste encontrado em outra branch.
+Ao solicitar cobertura ao `aghuse_testes`, identifique a ON ou RN responsável. Antes de autorizar uma nova classe `*ONTest` ou `*RNTest`, exija a busca por testes do mesmo fluxo no módulo, em todo o repositório e nas branches relacionadas, usando `git log --all`, `git ls-tree` e `git show` sem trocar de branch. Prefira ampliar ou portar a classe de teste existente, preservando seus cenários compatíveis; uma nova classe só deve ser criada quando a busca demonstrar que não há teste adequado. Não importe produção alheia apenas para fazer compilar um teste encontrado em outra branch.
 
-Não delegue ao `aghuse_tests` a criação ou alteração de testes de controller/action, facade, EJB/service, DAO/repository, entidade, VO, converter, listener, resource ou integração. Se o comportamento ainda não estiver em uma ON/RN coerente, encaminhe primeiro a decisão de desenho ao `aghuse_backend`, sem criar produção apenas para acomodar o teste.
+Não delegue ao `aghuse_testes` a criação ou alteração de testes de controller/action, facade, EJB/service, DAO/repository, entidade, VO, converter, listener, resource ou integração. Se o comportamento ainda não estiver em uma ON/RN coerente, encaminhe primeiro a decisão de desenho ao `aghuse_backend`, sem criar produção apenas para acomodar o teste.
 
-O coordenador deve integrar os handoffs, mas a revisão independente do diff pertence ao `aghuse_auditor_do_diff`. Não ocupar todos os perfis quando um fluxo reduzido for proporcional ao pedido.
+O coordenador deve integrar os handoffs, mas a revisão independente do diff pertence ao `aghuse_revisor`. Não ocupar todos os perfis quando um fluxo reduzido for proporcional ao pedido.
 
 ## Acionar automações especializadas
 
@@ -106,7 +106,7 @@ Use somente as skills necessárias ao estágio atual:
 - `aghuse-mapeamento-seguranca`: diagnóstico de página negada, permissões, perfis, menus e orientação do atualizador.
 - `aghuse-validacao-direcionada`: seleção proporcional de módulos Maven, testes, XHTML e mensagens.
 - `aghuse-diagnostico-logs`: causa raiz de logs e stack traces, sem implementar a correção automaticamente.
-- `aghuse-roteiro-homologacao`: roteiro manual reproduzível com `qa_homologacao`; não usar computer use por padrão.
+- `aghuse-roteiro-homologacao`: roteiro manual reproduzível com `aghuse_qualidade`; não usar computer use por padrão.
 - `aghuse-verificacao-entrega`: portão final de diff, tarefa, validações, scripts externos e prontidão.
 
 As automações são complementares e não formam uma sequência obrigatória. Diagnóstico e preparação permanecem somente leitura; qualquer alteração compartilhada continua exigindo autorização própria.

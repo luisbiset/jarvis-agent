@@ -46,7 +46,7 @@ python3 scripts/jarvis_runtime.py init \
   --tests-required \
   --complexity-score 3 \
   --agent-planned aghuse_backend \
-  --agent-planned aghuse_qa
+  --agent-planned aghuse_qualidade
 ```
 
 Para cada chamada de agente, inicie e finalize uma invocação própria:
@@ -54,7 +54,7 @@ Para cada chamada de agente, inicie e finalize uma invocação própria:
 ```bash
 python3 scripts/jarvis_runtime.py invocation-start \
   --run-dir .jarvis/runs/<run_id> \
-  --agent aghuse_qa \
+  --agent aghuse_qualidade \
   --stage VALIDATING \
   --reasoning-effort medium \
   --parallel-batch validation-1
@@ -120,12 +120,22 @@ python3 scripts/jarvis_runtime.py transition \
 
 ## Roteamento, dashboard e exportação
 
+Para abrir o painel visual local, execute:
+
+```bash
+python3 scripts/jarvis.py painel
+```
+
+Depois acesse `http://127.0.0.1:8765`. O servidor é somente leitura, escuta
+apenas em loopback por padrão e exibe exclusivamente metadados já presentes
+na telemetria SQLite. Use `--port` ou `--telemetry-db` para personalizar.
+
 ```bash
 python3 scripts/jarvis_runtime.py route \
   --run-dir .jarvis/runs/<run_id> \
   --routing-outcome CORRECT \
   --agent-planned aghuse_backend \
-  --agent-planned aghuse_qa
+  --agent-planned aghuse_qualidade
 
 python3 scripts/jarvis_runtime.py dashboard
 python3 scripts/jarvis_runtime.py export \

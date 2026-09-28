@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import os
+import sys
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -15,8 +17,13 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="jarvis-agent-home-") as temp_dir:
         codex_home = Path(temp_dir)
         env = {**os.environ, "CODEX_HOME": str(codex_home)}
+        command = [str(ROOT / "scripts/install.sh")]
+        if sys.platform == "win32":
+            bash = shutil.which("bash") or r"C:\Program Files\Git\bin\bash.exe"
+            command = [bash, "scripts/install.sh"]
+            env["PATH"] = str(Path(sys.executable).parent) + os.pathsep + env.get("PATH", "")
         subprocess.run(
-            [str(ROOT / "scripts/install.sh")],
+            command,
             cwd=ROOT,
             env=env,
             check=True,

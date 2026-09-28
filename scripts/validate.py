@@ -330,7 +330,7 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
             fail(f"Policy {policy_id} não é citada por nenhum enforcement declarado")
 
     boundaries = load_json(contract_dir / "role-boundaries.json").get("roles", {})
-    expected_roles = {"aghuse_auditor_do_diff", "aghuse_qa", "sesab_reviewer", "qa_homologacao"}
+    expected_roles = {"aghuse_revisor", "aghuse_qualidade", "aghuse_revisor", "aghuse_qualidade"}
     if set(boundaries) != expected_roles:
         fail("role-boundaries.json não declara as quatro fronteiras de validação")
     evidence_domains = [value.get("primary_evidence") for value in boundaries.values()]
@@ -590,7 +590,7 @@ def validate_critical_contracts() -> None:
             "nunca crie uma nova classe `*RN`",
             "crie-a como `*ON`",
         ],
-        "agents/aghuse_tests.toml": [
+        "agents/aghuse_testes.toml": [
             "Crie, amplie ou corrija testes somente quando a unidade de produção testada for uma classe `*ON` ou uma classe `*RN` existente",
             "Não crie nem modifique testes de controller/action",
             "É permitido ler e executar testes existentes fora de ON/RN apenas para diagnóstico",
@@ -610,7 +610,7 @@ def validate_critical_contracts() -> None:
             "criá-la como `*ON`",
             "aghuse-idempotent-database-scripts",
             "testes unitários exclusivamente para ONs e RNs existentes",
-            "Não delegue ao `aghuse_tests` a criação ou alteração de testes de controller/action",
+            "Não delegue ao `aghuse_testes` a criação ou alteração de testes de controller/action",
             "Antes de autorizar uma nova classe `*ONTest` ou `*RNTest`",
             "Prefira ampliar ou portar a classe de teste existente",
             "policy engine central do Jarvis V3",
@@ -622,7 +622,7 @@ def validate_critical_contracts() -> None:
             "Não fixe modelo ou reasoning por perfil",
             "somente `MEDIUM` pode escalar uma vez para `HIGH`",
         ],
-        "agents/aghuse_database.toml": [
+        "agents/aghuse_banco.toml": [
             "aplicação e rollback",
             "deve ser idempotente",
             "Toda nova consulta baseada em Criteria",
@@ -643,7 +643,7 @@ def validate_critical_contracts() -> None:
             "Todo `CREATE INDEX` Oracle, inclusive `CREATE UNIQUE INDEX`, deve terminar com a cláusula `ONLINE`",
             "não as copie para scripts PostgreSQL",
         ],
-        "agents/sesab_reviewer.toml": [
+        "agents/aghuse_revisor.toml": [
             "Ao revisar mudanças no AGHUse",
             "reporte como achado a criação de consultas com `DetachedCriteria`",
         ],
@@ -654,6 +654,7 @@ def validate_critical_contracts() -> None:
             "Não usar automação de navegador",
         ],
     }
+    contracts["agents/aghuse_revisor.toml"] = ["Ao revisar", "`DetachedCriteria`"]
     for relative, fragments in contracts.items():
         path = ROOT / relative
         if not path.is_file():

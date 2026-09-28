@@ -32,7 +32,7 @@ class TeamRoutingTest(unittest.TestCase):
     def test_optional_analysis_is_not_selected_by_default(self):
         result = RUNTIME.team_route(argparse.Namespace(pattern="aghuse-dao-criteria", include_optional=False))
         self.assertEqual([item["team"] for item in result["teams"]], ["DESENVOLVIMENTO", "REVISAO_QUALIDADE"])
-        self.assertEqual(result["agents"], ["aghuse_database", "aghuse_qa"])
+        self.assertEqual(result["agents"], ["aghuse_banco", "aghuse_qualidade"])
 
 
 if __name__ == "__main__":

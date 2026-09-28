@@ -7,7 +7,7 @@ description: Verificar se uma mudança AGHUse está pronta para commit, revisão
 
 Compare o estado final com o baseline registrado no início. Use `contexto`, `mensagens` e, quando houver pacote externo, `manifesto` de `scripts/aghuse_automacao.py`.
 
-Acione `aghuse_auditor_do_diff` para esta verificação de escopo e higiene. Não acione `sesab_reviewer` apenas para repetir status, hunks e EOL; reserve-o para revisão sistêmica de risco alto/crítico.
+Acione `aghuse_revisor` para esta verificação de escopo e higiene. Não acione `aghuse_revisor` apenas para repetir status, hunks e EOL; reserve-o para revisão sistêmica de risco alto/crítico.
 
 ## Conferir
 

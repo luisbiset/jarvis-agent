@@ -36,8 +36,8 @@ Estou trabalhando no chamado 51093.
 4. Implemente o que estiver faltando, preservando minhas alterações.
 5. Crie ou ajuste testes.
 6. Execute as validações proporcionais ao risco.
-7. Acione QA e Auditor com evidências distintas; use sesab_reviewer apenas por risco alto/crítico.
-8. Peça ao QA técnico o roteiro e use qa_homologacao somente para executá-lo em ambiente autorizado.
+7. Acione QA e Auditor com evidências distintas; use aghuse_revisor apenas por risco alto/crítico.
+8. Peça ao QA técnico o roteiro e use aghuse_qualidade somente para executá-lo em ambiente autorizado.
 9. Entregue resultado, evidências, arquivos, testes, riscos e pendências.
 
 Não altere o Redmine, não registre horas, não faça commit e não execute deploy.
@@ -116,11 +116,11 @@ O usuário chama apenas o Aghuse Agent; não precisa memorizar os perfis interno
 | Nome no fluxo | Perfil | Responsabilidade |
 |---|---|---|
 | Coordenador | `$aghuse-development` | Delimitar escopo, preservar baseline, distribuir e integrar os handoffs |
-| Requisitos e legado | `aghuse_requisitos_e_legado` | Confirmar requisito, aceite, comportamento atual e histórico em leitura |
-| Banco e impacto | `aghuse_banco_e_impacto` | Avaliar persistência, schema, dialetos, segurança e impactos em leitura |
-| Desenvolvedor | `aghuse_desenvolvedor` | Executar o plano usando apenas os especialistas técnicos necessários |
-| QA | `aghuse_qa` | Validar requisito, testes, build e roteiro funcional sem corrigir o avaliado |
-| Auditor do diff | `aghuse_auditor_do_diff` | Revisar baseline, escopo, hunks, arquivos, EOL/encoding, segredos e higiene em leitura |
+| Requisitos e legado | `aghuse_analise` | Confirmar requisito, aceite, comportamento atual e histórico em leitura |
+| Banco e impacto | `aghuse_banco` | Avaliar persistência, schema, dialetos, segurança e impactos em leitura |
+| Desenvolvedor | `aghuse_backend` | Executar o plano usando apenas os especialistas técnicos necessários |
+| QA | `aghuse_qualidade` | Validar requisito, testes, build e roteiro funcional sem corrigir o avaliado |
+| Auditor do diff | `aghuse_revisor` | Revisar baseline, escopo, hunks, arquivos, EOL/encoding, segredos e higiene em leitura |
 | Gate humano | usuário | Aprovar, pedir correção e autorizar separadamente ações externas |
 
 `Análise paralela` e `Validação paralela` são estágios de coordenação. `Plano aprovado` e `Gate humano` são decisões reais do usuário, não subagentes. Um pedido direto, inequívoco e já delimitado de implementação pode funcionar como plano aprovado; ações como Redmine, banco, deploy, commit e push continuam exigindo autorização explícita própria.
@@ -186,7 +186,7 @@ Resultado esperado: linha do tempo, commits relevantes, arquivos afetados, motiv
 Use para montar o pacote que será anexado ao Redmine. Scripts de implantação permanecem fora do repositório AGHUse.
 
 ```text
-Use $aghuse-entrega-banco com o aghuse_database para revisar os scripts da
+Use $aghuse-entrega-banco com o aghuse_banco para revisar os scripts da
 tarefa 51093. Confira aplicação e rollback idempotentes, comentários,
 restrições, índices, grants e ordem. Gere o manifesto com resumos SHA-256,
 mas não execute no banco e não adicione os SQL ao Git.
@@ -236,7 +236,7 @@ Resultado esperado: categoria da falha, causa mais provável, evidências, hipó
 Use quando a tela será testada pelo próprio usuário. Por padrão, o QA gera o roteiro e não controla a interface.
 
 ```text
-Use $aghuse-roteiro-homologacao e o aghuse_qa para criar somente o
+Use $aghuse-roteiro-homologacao e o aghuse_qualidade para criar somente o
 roteiro manual da tarefa 51093. Inclua pré-condições de banco e segurança,
 perfil, dados fictícios, passos, resultados, regressões e evidências.
 Eu executarei o teste em tela.
@@ -313,22 +313,22 @@ Uma tarefa pequena e bem delimitada pode chamar apenas o responsável.
 
 | Agente | Quando usar |
 |---|---|
-| `aghuse_requisitos_e_legado` | Requisitos, aceite, comportamento atual e histórico antes do plano |
-| `aghuse_banco_e_impacto` | Persistência, schema, dialetos, segurança e impacto antes do plano |
-| `aghuse_desenvolvedor` | Execução integrada de um plano aprovado |
-| `aghuse_qa` | Validação técnica independente de requisito, testes, build e preparação do roteiro |
-| `aghuse_auditor_do_diff` | Auditoria independente do diff e da worktree |
-| `aghuse_analyst` | Relatório técnico ad-hoc; não usar junto com discovery formal sem justificativa |
+| `aghuse_analise` | Requisitos, aceite, comportamento atual e histórico antes do plano |
+| `aghuse_banco` | Persistência, schema, dialetos, segurança e impacto antes do plano |
+| `aghuse_backend` | Execução integrada de um plano aprovado |
+| `aghuse_qualidade` | Validação técnica independente de requisito, testes, build e preparação do roteiro |
+| `aghuse_revisor` | Auditoria independente do diff e da worktree |
+| `aghuse_analise` | Relatório técnico ad-hoc; não usar junto com discovery formal sem justificativa |
 | `aghuse_frontend` | XHTML, JSF, PrimeFaces, mensagens, navegação e controllers de apresentação |
 | `aghuse_backend` | RN existente, nova ON, EJB, Facade, API, service e contrato Java |
-| `aghuse_database` | Entidades, DAOs, consultas, Oracle/PostgreSQL, Envers e scripts |
-| `aghuse_tests` | JUnit, Mockito, fixtures, diagnóstico e cobertura do AGHUse |
+| `aghuse_banco` | Entidades, DAOs, consultas, Oracle/PostgreSQL, Envers e scripts |
+| `aghuse_testes` | JUnit, Mockito, fixtures, diagnóstico e cobertura do AGHUse |
 | `sfa_frontend` | Angular, formulários, rotas, models, services HTTP e Karma/Jasmine |
 | `sfa_backend` | Spring MVC, services, VOs, segurança, integrações e regras BPA |
 | `sfa_database` | JPA, repositories, datasources, transações e SQL do SFA |
 | `sfa_tests` | Testes Java e Angular, regressão, fixtures e cobertura do SFA |
-| `sesab_reviewer` | Revisão sistêmica de contratos, transações, segurança e regressão para risco alto/crítico |
-| `qa_homologacao` | Execução funcional do roteiro em ambiente autorizado e evidências de tela |
+| `aghuse_revisor` | Revisão sistêmica de contratos, transações, segurança e regressão para risco alto/crítico |
+| `aghuse_qualidade` | Execução funcional do roteiro em ambiente autorizado e evidências de tela |
 
 Exemplos:
 
@@ -342,7 +342,7 @@ caso não exista, crie uma ON.
 ```
 
 ```text
-Use o aghuse_database para preparar aplicação e rollback idempotentes para
+Use o aghuse_banco para preparar aplicação e rollback idempotentes para
 Oracle e PostgreSQL. Não execute no banco.
 ```
 
@@ -352,7 +352,7 @@ alterar o código de produção.
 ```
 
 ```text
-Use o aghuse_analyst em modo somente leitura para analisar o chamado e gerar
+Use o aghuse_analise em modo somente leitura para analisar o chamado e gerar
 o relatório técnico antes de qualquer implementação.
 ```
 
@@ -379,9 +379,9 @@ Não acionar todos os agentes apenas por disponibilidade. Subagentes aumentam us
 Quando a implementação estiver aparentemente pronta:
 
 ```text
-Acione o aghuse_auditor_do_diff para conferir baseline, escopo, hunks,
+Acione o aghuse_revisor para conferir baseline, escopo, hunks,
 arquivos inesperados, EOL/encoding, segredos e scripts indevidos.
-Se o risco for alto ou crítico, depois acione o sesab_reviewer para revisar
+Se o risco for alto ou crítico, depois acione o aghuse_revisor para revisar
 arquitetura, contratos, transações, segurança e regressões sistêmicas.
 ```
 
@@ -392,13 +392,13 @@ Cada perfil deve informar achados por severidade, evidência, impacto e correç�
 Depois da revisão, para gerar somente o roteiro manual:
 
 ```text
-Use $aghuse-roteiro-homologacao e acione o aghuse_qa. Crie um roteiro
+Use $aghuse-roteiro-homologacao e acione o aghuse_qualidade. Crie um roteiro
 completo em tela com pré-condições, perfil necessário, massa fictícia,
 passos, resultados esperados e evidências. Não use produção nem controle
 a interface; eu executarei o roteiro.
 ```
 
-Quando o usuário pedir a execução no ambiente autorizado, entregue o roteiro pronto ao `qa_homologacao`.
+Quando o usuário pedir a execução no ambiente autorizado, entregue o roteiro pronto ao `aghuse_qualidade`.
 
 O QA deve validar, quando aplicável:
 

@@ -5,7 +5,7 @@ description: Preparar ou revisar o pacote de scripts Oracle e PostgreSQL de uma 
 
 # Entrega de banco do AGHUse
 
-Acione `aghuse_database` e aplique também `aghuse-idempotent-database-scripts`. Mantenha scripts de implantação fora do Git do AGHUse, preferencialmente em diretório temporário dedicado à tarefa.
+Acione `aghuse_banco` e aplique também `aghuse-idempotent-database-scripts`. Mantenha scripts de implantação fora do Git do AGHUse, preferencialmente em diretório temporário dedicado à tarefa.
 
 ## Revisar o pacote
 

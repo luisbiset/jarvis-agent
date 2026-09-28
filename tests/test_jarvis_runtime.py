@@ -4,6 +4,7 @@ import argparse
 import importlib.util
 import json
 import sqlite3
+from contextlib import closing
 import tempfile
 import unittest
 from pathlib import Path
@@ -75,7 +76,7 @@ class JarvisRuntimeTest(unittest.TestCase):
             state = result["state"]
             RUNTIME._register_agent(state, "aghuse_frontend", None)
             with self.assertRaises(RUNTIME.RuntimeErrorSafe):
-                RUNTIME._register_agent(state, "aghuse_auditor_do_diff", None)
+                RUNTIME._register_agent(state, "aghuse_revisor", None)
 
     def test_handoff_requires_requirement_mapping_and_not_executed(self):
         with tempfile.TemporaryDirectory() as root:
@@ -177,7 +178,7 @@ class JarvisRuntimeTest(unittest.TestCase):
             created = self.create_technical_handoff(result, workspace, handoff_tokens=120)
             recovered = RUNTIME.get_technical_handoff(argparse.Namespace(task_id="TASK-KT-1", telemetry_db=Path(result["telemetry_db"])))
             self.assertEqual(recovered["handoff_id"], created["handoff_id"])
-            with sqlite3.connect(result["telemetry_db"]) as connection:
+            with closing(sqlite3.connect(result["telemetry_db"])) as connection:
                 row = connection.execute("SELECT handoff_tokens,handoff_duration_ms FROM technical_handoffs").fetchone()
             self.assertEqual(row, (120, 10))
 
@@ -194,7 +195,7 @@ class JarvisRuntimeTest(unittest.TestCase):
                 answer=partial_answer, duration_ms=5, telemetry_db=Path(result["telemetry_db"]),
             ))
             self.assertIn(evaluation["result"], {"PARTIAL", "CORRECT"})
-            with sqlite3.connect(result["telemetry_db"]) as connection:
+            with closing(sqlite3.connect(result["telemetry_db"])) as connection:
                 columns = [row[1] for row in connection.execute("PRAGMA table_info(teachback_evaluations)")]
             self.assertNotIn("answer", columns)
             for _ in range(5):
@@ -227,7 +228,7 @@ class JarvisRuntimeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             result = self.initialize(root)
             start = RUNTIME.invocation_start(argparse.Namespace(
-                run_dir=result["run_dir"], invocation_id=None, agent="aghuse_qa", stage="VALIDATING",
+                run_dir=result["run_dir"], invocation_id=None, agent="aghuse_qualidade", stage="VALIDATING",
                 model=None, reasoning_effort="medium", parallel_batch="validation-1",
                 budget_justification=None,
             ))
@@ -245,7 +246,7 @@ class JarvisRuntimeTest(unittest.TestCase):
             self.assertEqual(state["metrics"]["agent_invocation_count"], 1)
             self.assertEqual(state["metrics"]["cached_input_tokens"], 40)
             self.assertEqual(state["routing"]["parallel_batches"], 1)
-            with sqlite3.connect(result["telemetry_db"]) as connection:
+            with closing(sqlite3.connect(result["telemetry_db"])) as connection:
                 row = connection.execute(
                     "SELECT model,reasoning_effort,findings_count,critical_findings_count FROM agent_invocations"
                 ).fetchone()
@@ -303,10 +304,10 @@ class JarvisRuntimeTest(unittest.TestCase):
             result = self.initialize(root)
             routed = RUNTIME.route(argparse.Namespace(
                 run_dir=result["run_dir"], routing_outcome="UNDER_ROUTED",
-                agents_planned=["aghuse_backend", "aghuse_qa"], agents_skipped=["aghuse_qa"],
-                agents_rejected_by_budget=None, unnecessary_agents=None, missing_agents=["aghuse_qa"],
+                agents_planned=["aghuse_backend", "aghuse_qualidade"], agents_skipped=["aghuse_qualidade"],
+                agents_rejected_by_budget=None, unnecessary_agents=None, missing_agents=["aghuse_qualidade"],
             ))
-            self.assertEqual(routed["missing_agents"], ["aghuse_qa"])
+            self.assertEqual(routed["missing_agents"], ["aghuse_qualidade"])
             evaluation = RUNTIME.release_eval(argparse.Namespace(
                 telemetry_db=Path(result["telemetry_db"]), eval_id=None, jarvis_version=None,
                 config_hash=None, routing_score=.8, over_routing_score=.9,
@@ -318,7 +319,7 @@ class JarvisRuntimeTest(unittest.TestCase):
             self.assertEqual(evaluation["routing_score"], .8)
             self.assertEqual(len(comparison["releases"]), 1)
             self.assertEqual(len(comparison["eval_results"]), 1)
-            with sqlite3.connect(result["telemetry_db"]) as connection:
+            with closing(sqlite3.connect(result["telemetry_db"])) as connection:
                 self.assertEqual(connection.execute("SELECT COUNT(*) FROM routing_snapshots").fetchone()[0], 1)
 
     def test_v3_reasoning_scoring_boundaries_and_incomplete_fallback(self):
@@ -391,7 +392,7 @@ class JarvisRuntimeTest(unittest.TestCase):
                 tests_passed=1, tests_failed=0, review_findings=0, success=True,
                 termination_reason="SUCCESS", blocker=None,
             ))
-            with sqlite3.connect(result["telemetry_db"]) as connection:
+            with closing(sqlite3.connect(result["telemetry_db"])) as connection:
                 row = connection.execute("SELECT model_requested,model_effective,context_budget FROM execution_attempts").fetchone()
             self.assertEqual(row, ("gpt-5.6-terra", "gpt-5.6-terra", "MEDIUM"))
 
@@ -476,7 +477,7 @@ class JarvisRuntimeTest(unittest.TestCase):
                 tests_run=2, tests_passed=2, tests_failed=0, review_findings=0,
                 success=True, termination_reason="SUCCESS", blocker=None,
             ))
-            with sqlite3.connect(result["telemetry_db"]) as connection:
+            with closing(sqlite3.connect(result["telemetry_db"])) as connection:
                 row = connection.execute(
                     "SELECT attempt_number,initial_reasoning,effective_reasoning,total_tokens,files_changed,tests_passed,success,termination_reason,child_depth FROM execution_attempts"
                 ).fetchone()
@@ -503,7 +504,7 @@ class JarvisRuntimeTest(unittest.TestCase):
             state["budget"]["max_model_calls"] = state["budget"]["hard_max_model_calls"]
             RUNTIME.write_json(Path(result["run_dir"], "state.json"), state)
             attempts = []
-            for agent in ("aghuse_backend", "aghuse_database", "aghuse_tests"):
+            for agent in ("aghuse_backend", "aghuse_banco", "aghuse_testes"):
                 started = RUNTIME.invocation_start(argparse.Namespace(
                     run_dir=result["run_dir"], invocation_id=None, agent=agent, stage="IMPLEMENTING",
                     model=None, reasoning_effort=None, attempt_number=None, task_type=None,
@@ -513,13 +514,13 @@ class JarvisRuntimeTest(unittest.TestCase):
                 attempts.append(started["attempt_number"])
             self.assertEqual(attempts, [1, 1, 1])
             fourth = RUNTIME.invocation_start(argparse.Namespace(
-                    run_dir=result["run_dir"], invocation_id=None, agent="aghuse_qa", stage="VALIDATING",
+                    run_dir=result["run_dir"], invocation_id=None, agent="aghuse_qualidade", stage="VALIDATING",
                     model=None, reasoning_effort=None, attempt_number=None, task_type=None,
                     parent_execution_id=None, child_depth=0, parallel_batch=None,
                     budget_justification=None,
                 ))
             self.assertEqual(fourth["attempt_number"], 1)
-            for agent in ("aghuse_backend", "aghuse_database", "aghuse_tests"):
+            for agent in ("aghuse_backend", "aghuse_banco", "aghuse_testes"):
                 retry = RUNTIME.invocation_start(argparse.Namespace(
                     run_dir=result["run_dir"], invocation_id=None, agent=agent, stage="IMPLEMENTING",
                     model=None, reasoning_effort=None, attempt_number=None, task_type=None,
@@ -529,7 +530,7 @@ class JarvisRuntimeTest(unittest.TestCase):
                 self.assertEqual(retry["attempt_number"], 2)
             with self.assertRaises(RUNTIME.RuntimeErrorSafe):
                 RUNTIME.invocation_start(argparse.Namespace(
-                    run_dir=result["run_dir"], invocation_id=None, agent="aghuse_qa", stage="VALIDATING",
+                    run_dir=result["run_dir"], invocation_id=None, agent="aghuse_qualidade", stage="VALIDATING",
                     model=None, reasoning_effort=None, attempt_number=None, task_type=None,
                     parent_execution_id=None, child_depth=0, parallel_batch=None,
                     budget_justification=None, progress_event="NEW_TEST_RESULT",

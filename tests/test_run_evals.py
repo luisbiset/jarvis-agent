@@ -17,7 +17,7 @@ class RoutingEvalTest(unittest.TestCase):
             "expected_skills": ["aghuse-development"],
             "expected_agents": ["aghuse_frontend"],
             "allowed_agents": [],
-            "forbidden_agents": ["aghuse_database"],
+            "forbidden_agents": ["aghuse_banco"],
             "expected_stages": [{"mode": "sequential", "agents": ["aghuse_frontend"]}],
             "complexity": "TRIVIAL",
             "risk_class": "LOW",
@@ -55,7 +55,7 @@ class RoutingEvalTest(unittest.TestCase):
 
     def test_detects_over_routing_even_when_required_agent_exists(self):
         actual = self.actual()
-        actual["agents"].append("aghuse_database")
+        actual["agents"].append("aghuse_banco")
         errors, scores = EVALS.compare(self.case(), actual)
         self.assertTrue(any("over-routing" in error for error in errors))
         self.assertFalse(scores["over_routing"])

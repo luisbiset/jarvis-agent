@@ -21,11 +21,11 @@ Comece pelos [comandos básicos para economizar créditos](docs/COMANDOS_BASICOS
 - `agents/sfa_tests.toml`: especialista de testes Java e Angular do SFA.
 - `agents/aghuse_frontend.toml`: especialista JSF/PrimeFaces do AGHUse.
 - `agents/aghuse_backend.toml`: especialista Java EE/EJB do AGHUse.
-- `agents/aghuse_database.toml`: especialista Oracle/PostgreSQL do AGHUse.
-- `agents/aghuse_tests.toml`: especialista em testes unitários exclusivamente de ONs e RNs do AGHUse.
-- `agents/aghuse_analyst.toml`: analista somente leitura de tarefas e requisitos do AGHUse.
-- `agents/sesab_reviewer.toml`: revisão final independente e somente leitura.
-- `agents/qa_homologacao.toml`: execução de roteiros e evidências de homologação em tela.
+- `agents/aghuse_banco.toml`: especialista Oracle/PostgreSQL do AGHUse.
+- `agents/aghuse_testes.toml`: especialista em testes unitários exclusivamente de ONs e RNs do AGHUse.
+- `agents/aghuse_analise.toml`: analista somente leitura de tarefas e requisitos do AGHUse.
+- `agents/aghuse_revisor.toml`: revisão final independente e somente leitura.
+- `agents/aghuse_qualidade.toml`: execução de roteiros e evidências de homologação em tela.
 - `.agents/plugins/marketplace.json`: marketplace local deste projeto.
 - `scripts/validate.py`: valida manifests, agents, skills, evals e segredos literais.
 - `scripts/doctor.py`: diagnostica instalação, duplicidades e MCP sem mostrar credenciais; `--strict` falha em inconsistências.
@@ -95,6 +95,7 @@ python3 scripts/jarvis.py simular --task-id TESTE --task-type SECURITY --securit
 python3 scripts/jarvis.py simular-redmine --task-id 55315
 python3 scripts/jarvis.py rag search --query "frequencia aprazamento"
 python3 scripts/jarvis.py executar dashboard
+python3 scripts/jarvis.py aghuse-analisar --project /caminho/do/aghuse --requisito "Permitir alterar o campo X na tela Y"
 ```
 
 Antes de publicar uma alteração, use os comandos somente leitura:

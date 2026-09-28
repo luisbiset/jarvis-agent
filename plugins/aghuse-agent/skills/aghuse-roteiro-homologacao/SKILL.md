@@ -5,7 +5,7 @@ description: Criar roteiro manual e reproduzível de homologação para tarefas 
 
 # Roteiro de homologação do AGHUse
 
-Acione `aghuse_qa` para preparar tecnicamente o roteiro a partir de requisito, diff, mensagens, permissões e scripts relacionados. Acione `qa_homologacao` somente quando o usuário solicitar a execução funcional em tela e houver ambiente autorizado no escopo.
+Acione `aghuse_qualidade` para preparar tecnicamente o roteiro a partir de requisito, diff, mensagens, permissões e scripts relacionados. Acione `aghuse_qualidade` somente quando o usuário solicitar a execução funcional em tela e houver ambiente autorizado no escopo.
 
 ## Estruturar
 

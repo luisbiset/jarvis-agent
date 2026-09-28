@@ -21,6 +21,8 @@ def main() -> int:
         ("simular-redmine", "consulta uma tarefa Redmine e simula seu fluxo"),
         ("rag", "indexa ou consulta o RAG local"),
         ("executar", "executa um comando do runtime Jarvis"),
+        ("painel", "abre o painel local de observabilidade"),
+        ("aghuse-analisar", "analisa o impacto de uma tarefa AGHUse"),
     ):
         sub.add_parser(name, help=help_text)
     args, forwarded = parser.parse_known_args()
@@ -31,6 +33,8 @@ def main() -> int:
         "simular-redmine": ("jarvis_redmine_simulate.py",),
         "rag": ("jarvis_rag.py",),
         "executar": ("jarvis_runtime.py",),
+        "painel": ("jarvis_dashboard.py",),
+        "aghuse-analisar": ("jarvis_aghuse.py",),
     }
     command = scripts[args.command]
     return subprocess.run([sys.executable, str(ROOT / "scripts" / command[0]), *command[1:], *forwarded], cwd=ROOT).returncode

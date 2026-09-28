@@ -3,6 +3,10 @@ set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 codex_home="${CODEX_HOME:-$HOME/.codex}"
+if command -v cygpath >/dev/null 2>&1; then
+  [[ "$project_root" == *:* ]] && project_root="$(cygpath -u "$project_root")"
+  [[ "$codex_home" == *:* ]] && codex_home="$(cygpath -u "$codex_home")"
+fi
 marketplace_name="codex-agents"
 dry_run=false
 
@@ -40,7 +44,7 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-python3 "$project_root/scripts/validate.py"
+python "${project_root}/scripts/validate.py"
 run mkdir -p "$codex_home/agents"
 
 global_instructions_source="$project_root/config/AGENTS.md"

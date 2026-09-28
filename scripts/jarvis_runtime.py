@@ -5,13 +5,18 @@ from __future__ import annotations
 
 import argparse
 import csv
-import fcntl
+try:
+    import fcntl
+except ModuleNotFoundError:  # Windows
+    fcntl = None
+    import msvcrt
 import functools
 import hashlib
 import json
 import re
 import secrets
 import sqlite3
+from contextlib import contextmanager
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -377,11 +382,23 @@ def locked_run(function):
         root = run_path(args.run_dir)
         lock_path = root / ".runtime.lock"
         with lock_path.open("a", encoding="utf-8") as lock:
-            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            if fcntl is not None:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            else:
+                lock.seek(0)
+                if lock.tell() == 0 and lock_path.stat().st_size == 0:
+                    lock.write("0")
+                    lock.flush()
+                    lock.seek(0)
+                msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
             try:
                 return function(args)
             finally:
-                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+                if fcntl is not None:
+                    fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+                else:
+                    lock.seek(0)
+                    msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
     return wrapper
 
 
@@ -413,7 +430,8 @@ CREATE TABLE IF NOT EXISTS rag_hits(query_id TEXT NOT NULL REFERENCES rag_querie
 """
 
 
-def connect_db(path: Path) -> sqlite3.Connection:
+@contextmanager
+def connect_db(path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(path)
     connection.row_factory = sqlite3.Row
@@ -434,7 +452,11 @@ def connect_db(path: Path) -> sqlite3.Connection:
         for column, definition in columns.items():
             if column not in existing:
                 connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
-    return connection
+    try:
+        yield connection
+    finally:
+        connection.commit()
+        connection.close()
 
 
 def bool_int(value: bool | None) -> int | None:
@@ -1338,12 +1360,15 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
         cached = load_json(destination)
         fresh = cached.get("query_hash") == query_hash and cached.get("filters_hash") == filters_hash and cached.get("context_budget") == context_budget
         if fresh:
-            with sqlite3.connect(database) as connection:
+            connection = sqlite3.connect(database)
+            try:
                 for hit in cached.get("hits", []):
                     row = connection.execute("SELECT content_hash,active FROM documents WHERE repo=? AND path=?", (hit.get("repo"), hit.get("path"))).fetchone()
                     if row is None or row[0] != hit.get("content_hash") or not row[1]:
                         fresh = False
                         break
+            finally:
+                connection.close()
         if fresh:
             state["rag"]["cache_hits"] += 1
             state["rag"]["last_query_id"] = cached["query_id"]

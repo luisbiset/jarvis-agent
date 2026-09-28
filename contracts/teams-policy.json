@@ -20,19 +20,19 @@
       "display_name": "Time de Análise",
       "allowed_states": ["DISCOVERY", "PLAN_READY"],
       "can_write": false,
-      "agents": ["aghuse_requisitos_e_legado", "aghuse_banco_e_impacto", "aghuse_analyst", "sfa_backend", "sfa_frontend", "sfa_database"]
+      "agents": ["aghuse_analise", "aghuse_banco", "aghuse_analise", "sfa_backend", "sfa_frontend", "sfa_database"]
     },
     "DESENVOLVIMENTO": {
       "display_name": "Time de Desenvolvimento",
       "allowed_states": ["IMPLEMENTING"],
       "can_write": true,
-      "agents": ["aghuse_desenvolvedor", "aghuse_backend", "aghuse_frontend", "aghuse_database", "aghuse_tests", "sfa_backend", "sfa_frontend", "sfa_database", "sfa_tests"]
+      "agents": ["aghuse_backend", "aghuse_backend", "aghuse_frontend", "aghuse_banco", "aghuse_testes", "sfa_backend", "sfa_frontend", "sfa_database", "sfa_tests"]
     },
     "REVISAO_QUALIDADE": {
       "display_name": "Time de Revisão e Qualidade",
       "allowed_states": ["VALIDATING", "REVIEW_READY", "HOMOLOGATION_READY"],
       "can_write": false,
-      "agents": ["aghuse_qa", "aghuse_auditor_do_diff", "sesab_reviewer", "qa_homologacao", "sfa_tests"]
+      "agents": ["aghuse_qualidade", "aghuse_revisor", "aghuse_revisor", "aghuse_qualidade", "sfa_tests"]
     }
   },
   "rules": {
