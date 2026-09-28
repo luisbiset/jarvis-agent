@@ -8,6 +8,7 @@ import math
 import re
 import secrets
 import time
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -17,8 +18,12 @@ from .models import RetrievalHit
 TOKEN = re.compile(r"[A-Za-zÀ-ÿ_][\wÀ-ÿ.$-]{1,}")
 
 
+def _fold(value: str) -> str:
+    return "".join(char for char in unicodedata.normalize("NFKD", value.casefold()) if not unicodedata.combining(char))
+
+
 def terms(query: str) -> list[str]:
-    return list(dict.fromkeys(match.group(0) for match in TOKEN.finditer(query)))
+    return list(dict.fromkeys(_fold(match.group(0)) for match in TOKEN.finditer(query)))
 
 
 def _fts_query(values: list[str]) -> str:
@@ -26,7 +31,8 @@ def _fts_query(values: list[str]) -> str:
 
 
 def search(index: RagIndex, query: str, limit: int, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None) -> list[RetrievalHit]:
-    query_terms = terms(query)
+    raw_terms = list(dict.fromkeys(match.group(0) for match in TOKEN.finditer(query)))
+    query_terms = [_fold(value) for value in raw_terms]
     if not query_terms:
         return []
     params: list[Any] = []
@@ -35,7 +41,7 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
                  FROM chunks_fts JOIN chunks c ON c.chunk_id=chunks_fts.chunk_id
                  JOIN documents d ON d.document_id=c.document_id
                  WHERE chunks_fts MATCH ? AND d.active=1"""
-        params.append(_fts_query(query_terms))
+        params.append(_fts_query(raw_terms))
     else:
         clauses = " OR ".join("(c.text LIKE ? OR COALESCE(c.symbol,'') LIKE ? OR d.path LIKE ?)" for _ in query_terms)
         sql = f"""SELECT c.*,d.source_type,d.repo,d.path,d.language,d.content_hash,0.0 raw_score
@@ -56,13 +62,24 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
         sql += " AND d.source_type = ?"
         params.append(source_type_filter)
     rows = index.connection.execute(sql + " LIMIT ?", (*params, max(limit * 4, limit))).fetchall()
-    lowered_query = query.casefold()
+    lowered_query = _fold(query)
+    phrase = _fold(" ".join(query_terms))
     scored: list[RetrievalHit] = []
     for row in rows:
-        lexical = 1 / (1 + max(0.0, float(row["raw_score"]))) if index.fts5 else sum(value.casefold() in row["text"].casefold() for value in query_terms) / len(query_terms)
-        symbol_bonus = 0.12 if row["symbol"] and row["symbol"].casefold() in lowered_query else 0.0
-        path_bonus = 0.08 if any(value.casefold() in row["path"].casefold() for value in query_terms) else 0.0
-        final = min(1.0, 0.9 * lexical + symbol_bonus + path_bonus)
+        text = _fold(row["text"])
+        symbol = _fold(row["symbol"] or "")
+        path = _fold(row["path"])
+        searchable = f"{text} {symbol} {path}"
+        coverage = sum(term in searchable for term in query_terms) / len(query_terms)
+        exact = 1.0 if phrase and phrase in text else 0.0
+        symbol_bonus = 0.22 if symbol and symbol in lowered_query else 0.0
+        path_bonus = 0.24 if any(value in path for value in query_terms) else 0.0
+        path_exact_bonus = 0.18 if any(value.replace("_", "-") in path for value in query_terms) else 0.0
+        # SQLite FTS5 bm25 is lower-is-better and may be negative; normalize it
+        # relative to the candidate set instead of collapsing all negatives to 1.
+        raw = float(row["raw_score"])
+        lexical = 1 / (1 + math.exp(min(20.0, max(-20.0, raw)))) if index.fts5 else coverage
+        final = min(1.0, 0.48 * coverage + 0.22 * lexical + 0.12 * exact + symbol_bonus + path_bonus + path_exact_bonus)
         scored.append(RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], round(lexical, 6), 0.0, round(final, 6), row["text"]))
     return sorted(scored, key=lambda hit: (-hit.final_score, hit.path, hit.start_line))[:limit]
 
