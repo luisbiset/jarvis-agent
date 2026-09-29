@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -35,6 +36,33 @@ def dashboard(db: Path) -> dict:
             con.close()
     return data
 
+def models(root: Path = ROOT) -> dict:
+    """Resumo somente leitura dos modelos, feedback e fila de treinamento."""
+    rag = root / ".jarvis" / "rag"
+    result = {"active": {}, "feedback": {}, "queue": {"pending": 0, "running": 0, "done": 0, "failed": 0}, "last_training": None}
+    for name in ("reranker", "taxonomy"):
+        path = rag / f"{name}.json"; item = {"status": "ACTIVE" if path.is_file() else "NONE", "updated_at": None, "examples": None}
+        if path.is_file():
+            item["updated_at"] = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(timespec="seconds")
+            try: item["examples"] = json.loads(path.read_text(encoding="utf-8")).get("examples")
+            except (OSError, json.JSONDecodeError): item["status"] = "INVALID"
+        result["active"][name] = item
+    feedback = rag / "feedback.jsonl"
+    if feedback.is_file():
+        for line in feedback.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                status = json.loads(line).get("status", "UNKNOWN"); result["feedback"][status] = result["feedback"].get(status, 0) + 1
+    queue = rag / "training-queue.jsonl"
+    if queue.is_file():
+        for line in queue.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                status = json.loads(line).get("status", "UNKNOWN").lower(); result["queue"][status] = result["queue"].get(status, 0) + 1
+    manifest = rag / "training-manifest.json"
+    if manifest.is_file():
+        try: result["last_training"] = json.loads(manifest.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError): result["last_training"] = {"status": "INVALID"}
+    return result
+
 class Handler(BaseHTTPRequestHandler):
     db: Path
     def send(self, status, content, kind="text/html; charset=utf-8"):
@@ -44,6 +72,7 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/": return self.send(200, HTML)
         if path == "/api/dashboard": return self.send(200, json.dumps(dashboard(self.db), ensure_ascii=False), "application/json; charset=utf-8")
+        if path == "/api/models": return self.send(200, json.dumps(models(), ensure_ascii=False), "application/json; charset=utf-8")
         if path.startswith("/run/"):
             run_id = path.rsplit('/', 1)[-1]
             con = sqlite3.connect(self.db)
