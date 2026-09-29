@@ -30,7 +30,22 @@ def _fts_query(values: list[str]) -> str:
     return " OR ".join('"' + value.replace('"', '""') + '"' for value in values)
 
 
-def search(index: RagIndex, query: str, limit: int, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None, taxonomy: dict[str, str] | None = None) -> list[RetrievalHit]:
+def load_reranker(path: Path | None) -> dict[str, Any] | None:
+    if path is None or not path.is_file():
+        return None
+    model = json.loads(path.read_text(encoding="utf-8"))
+    if model.get("schema_version") != "1.0.0" or model.get("method") != "term_log_odds":
+        raise ValueError("reranker incompatível")
+    return model
+
+
+def reranker_score(model: dict[str, Any], query: str, hit: RetrievalHit) -> float:
+    values = set(_fold(query).split()) | {"path:" + value for value in _fold(hit.path).replace("/", " ").split()} | {"symbol:" + value for value in _fold(hit.symbol or "").split()}
+    weights = model.get("weights", {})
+    return sum(float(weights.get(value, 0.0)) for value in values)
+
+
+def search(index: RagIndex, query: str, limit: int, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None, taxonomy: dict[str, str] | None = None, reranker: dict[str, Any] | None = None) -> list[RetrievalHit]:
     raw_terms = list(dict.fromkeys(match.group(0) for match in TOKEN.finditer(query)))
     query_terms = [_fold(value) for value in raw_terms]
     if not query_terms:
@@ -86,7 +101,10 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
         lexical = 1 / (1 + math.exp(min(20.0, max(-20.0, raw)))) if index.fts5 else coverage
         final = min(1.0, 0.48 * coverage + 0.22 * lexical + 0.12 * exact + symbol_bonus + path_bonus + path_exact_bonus)
         scored.append(RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], round(lexical, 6), 0.0, round(final, 6), row["text"]))
-    return sorted(scored, key=lambda hit: (-hit.final_score, hit.path, hit.start_line))[:limit]
+    ordered = sorted(scored, key=lambda hit: (-hit.final_score, hit.path, hit.start_line))
+    if reranker:
+        ordered.sort(key=lambda hit: (-reranker_score(reranker, query, hit), -hit.final_score, hit.path, hit.start_line))
+    return ordered[:limit]
 
 
 def _dedupe_and_budget(hits: list[RetrievalHit], top_k: int, max_tokens: int, max_sources: int) -> tuple[list[RetrievalHit], int, int]:
@@ -106,18 +124,19 @@ def _dedupe_and_budget(hits: list[RetrievalHit], top_k: int, max_tokens: int, ma
     return selected, tokens, duplicates
 
 
-def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget: str, run_id: str | None = None, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None, taxonomy: dict[str, str] | None = None) -> dict[str, Any]:
+def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget: str, run_id: str | None = None, path_filter: str | None = None, repo_filter: str | None = None, branch_filter: str | None = None, source_type_filter: str | None = None, taxonomy: dict[str, str] | None = None, reranker_path: Path | None = None) -> dict[str, Any]:
     started = time.monotonic()
     budget = policy["budgets"][context_budget]
+    reranker = load_reranker(reranker_path)
     with RagIndex(database) as index:
-        candidates = search(index, query, budget["candidate_k"], path_filter, repo_filter, branch_filter, source_type_filter, taxonomy)
+        candidates = search(index, query, budget["candidate_k"], path_filter, repo_filter, branch_filter, source_type_filter, taxonomy, reranker)
     selected, estimated_tokens, duplicates = _dedupe_and_budget(candidates, budget["top_k"], budget["max_tokens"], budget.get("max_sources", budget["top_k"]))
     query_id = "ragq-" + secrets.token_hex(8)
     filters_hash = hashlib.sha256(json.dumps({"path": path_filter, "repo": repo_filter, "branch": branch_filter, "source_type": source_type_filter}, sort_keys=True).encode()).hexdigest()
     return {
         "schema_version": "1.0.0", "run_id": run_id, "query_id": query_id,
         "query_hash": hashlib.sha256(query.encode()).hexdigest(), "filters_hash": filters_hash, "created_at": utc_now(),
-        "context_budget": context_budget, "retrieval_mode": "LEXICAL_ONLY",
+        "context_budget": context_budget, "retrieval_mode": "LEXICAL_RERANKED" if reranker else "LEXICAL_ONLY",
         "candidates": len(candidates), "hits": [hit.as_dict() for hit in selected],
         "estimated_tokens": estimated_tokens, "duplicate_chunks_removed": duplicates,
         "latency_ms": round((time.monotonic() - started) * 1000),

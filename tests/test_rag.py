@@ -9,7 +9,7 @@ from pathlib import Path
 
 from rag.chunkers import chunk_text
 from rag.indexer import RagIndex
-from rag.retriever import retrieve
+from rag.retriever import retrieve, load_reranker
 from rag.security import safe_text
 from rag.taxonomy import classify
 
@@ -126,6 +126,18 @@ class RagTest(unittest.TestCase):
                 hits = search(index, "calcular", 10, taxonomy={"layer": "backend"})
                 self.assertTrue(hits)
                 self.assertTrue(all(".java" in hit.path for hit in hits))
+
+    def test_optional_reranker_changes_reported_mode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "repo"; root.mkdir()
+            (root / "ContaON.java").write_text("public class ContaON { void calcular() {} }\n", encoding="utf-8")
+            database = Path(temporary) / "index.db"
+            model = Path(temporary) / "reranker.json"
+            model.write_text(json.dumps({"schema_version":"1.0.0", "method":"term_log_odds", "weights":{"symbol:contaon":2.0}}), encoding="utf-8")
+            with RagIndex(database) as index: index.index_repo(root)
+            payload = retrieve(database, "ContaON", self.policy(), "SMALL", reranker_path=model)
+            self.assertEqual(payload["retrieval_mode"], "LEXICAL_RERANKED")
+            self.assertTrue(load_reranker(model))
 
 if __name__ == "__main__":
     unittest.main()
