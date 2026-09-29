@@ -120,6 +120,7 @@ class RagTest(unittest.TestCase):
     def test_taxonomy_classifies_aghuse_components(self):
         cases = {
             "ContaON.java": ("ON", "public class ContaON {}"),
+            "ContaEJB.java": ("EJB", "@Stateless public class ContaEJB {}"),
             "ContaRN.java": ("RN", "public class ContaRN {}"),
             "ContaFacade.java": ("Facade", "public class ContaFacade {}"),
             "ContaDAO.java": ("DAO", "public class ContaDAO {}"),
@@ -138,6 +139,10 @@ class RagTest(unittest.TestCase):
                 result = classify(path, text, "CODE")
                 self.assertIn(expected, result["categories"])
                 self.assertEqual(result["category"], expected)
+        documentation = classify("README.md", "Security e configuration são conceitos documentados.", "CODE")
+        self.assertNotIn("ON", documentation["categories"])
+        self.assertNotIn("Security", documentation["categories"])
+        self.assertNotIn("Configuration", documentation["categories"])
 
     def test_taxonomy_filter_restricts_search(self):
         with tempfile.TemporaryDirectory() as temporary:
