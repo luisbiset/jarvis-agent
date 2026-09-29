@@ -117,8 +117,8 @@ class RagIndex:
                 continue
             seen.add(relative)
             content_hash = digest(raw)
-            previous = self.connection.execute("SELECT document_id,content_hash,active FROM documents WHERE repo=? AND path=?", (root.name, relative)).fetchone()
-            if previous and previous["content_hash"] == content_hash and previous["active"]:
+            previous = self.connection.execute("SELECT document_id,content_hash,active,git_commit,git_branch FROM documents WHERE repo=? AND path=?", (root.name, relative)).fetchone()
+            if previous and previous["content_hash"] == content_hash and previous["active"] and previous["git_commit"] == revision and previous["git_branch"] == branch:
                 stats["unchanged"] += 1
                 continue
             document_id = previous["document_id"] if previous else "doc-" + digest(str(root) + ":" + relative)[:24]

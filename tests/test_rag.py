@@ -53,6 +53,25 @@ class RagTest(unittest.TestCase):
                 self.assertEqual(third["indexed"], 1)
                 self.assertEqual(third["unchanged"], 1)
 
+    def test_index_provenance_reindexes_when_revision_changes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "repo"; root.mkdir()
+            source = root / "Foo.java"; source.write_text("public class Foo {}\n", encoding="utf-8")
+            with RagIndex(Path(temporary) / "index.db") as index:
+                first = index.index_repo(root)
+                original = __import__("rag.indexer", fromlist=["git_revision", "git_branch"])
+                old_revision, old_branch = original.git_revision, original.git_branch
+                try:
+                    original.git_revision = lambda _root: "commit-2"
+                    original.git_branch = lambda _root: "feature-x"
+                    second = index.index_repo(root)
+                    row = index.connection.execute("SELECT git_commit,git_branch FROM documents WHERE path='Foo.java'").fetchone()
+                    self.assertEqual(first["indexed"], 1)
+                    self.assertEqual(second["indexed"], 1)
+                    self.assertEqual((row["git_commit"], row["git_branch"]), ("commit-2", "feature-x"))
+                finally:
+                    original.git_revision, original.git_branch = old_revision, old_branch
+
     def test_removed_and_sensitive_files_do_not_leave_active_chunks(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "repo"; root.mkdir()
