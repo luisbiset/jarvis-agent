@@ -25,7 +25,7 @@ load();
 async function loadControl(){const r=await fetch('/api/control');const d=await r.json();const box=document.createElement('div');box.className='section';box.innerHTML=`<h2>Controle do RAG</h2><p class="muted">Feedback pendente: ${d.feedback.pending.length} · Fila: ${d.queue.pending} · Modelos ativos: ${Object.values(d.models.active).filter(x=>x.status==='ACTIVE').length}</p><table><thead><tr><th>Consulta</th><th>Arquivo</th><th>Ação</th></tr></thead><tbody>${d.feedback.pending.map(x=>`<tr><td>${esc(x.query)}</td><td>${esc(x.candidate?.path)}</td><td><button onclick="decide('${x.id}',true)">Relevante</button> <button onclick="decide('${x.id}',false)">Irrelevante</button></td></tr>`).join('')||'<tr><td colspan="3">Nenhum feedback pendente.</td></tr>'}</tbody></table><p><button onclick="enqueue()">Enfileirar treinamento</button> <button onclick="loadControl()">Atualizar</button></p>`;document.querySelector('main').appendChild(box)}
 async function decide(id,relevant){await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action:relevant?'approve':'reject'})});location.reload()}
 async function enqueue(){await fetch('/api/training',{method:'POST'});location.reload()}
-loadControl();
+const renderControl=loadControl;loadControl=async function(){document.querySelectorAll('main>#control-panel').forEach(node=>node.remove());await renderControl();const panels=document.querySelectorAll('main>.section');if(panels.length)panels[panels.length-1].id='control-panel'};loadControl();
 </script></main></body></html>"""
 
 def dashboard(db: Path) -> dict:
