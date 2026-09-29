@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import subprocess
+import sys
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -20,6 +22,10 @@ HTML = """<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta na
 const fmtMs=v=>v?`${Math.round(v)} ms`:'—'; const pct=v=>`${Math.round((v||0)*100)}%`; const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function load(){const r=await fetch('/api/dashboard');const d=await r.json();if(d.error){app.innerHTML=`<p class="bad">${esc(d.error)}</p>`;return}app.innerHTML=`<div class="grid">${[['Execuções',d.total_runs],['Sucesso',d.successful_runs],['Bloqueadas',d.failed_runs],['Duração média',fmtMs(d.average_duration_ms)],['Primeira tentativa',pct(d.first_pass_success_rate)],['Retries médios',d.average_rework_cycles?.toFixed(2)||'0'],['Agentes/execução',d.average_agent_invocations?.toFixed(1)||'0'],['Escaladas',d.escalation_count||0]].map(x=>`<div class="card"><div class="muted">${x[0]}</div><div class="value">${x[1]}</div></div>`).join('')}</div><div class="section"><h2>Execuções recentes</h2><table><thead><tr><th>Tarefa</th><th>Status</th><th>Complexidade</th><th>Risco</th><th>Início</th><th>Duração</th></tr></thead><tbody>${(d.recent_runs||[]).map(x=>`<tr><td><a href="/run/${encodeURIComponent(x.run_id)}">${esc(x.task_id||x.run_id)}</a></td><td class="${x.status==='DONE'?'ok':'bad'}">${esc(x.status)}</td><td>${esc(x.complexity)}</td><td>${esc(x.risk_class)}</td><td>${esc((x.started_at||'').replace('T',' ').replace('Z',''))}</td><td>${fmtMs(x.duration_ms)}</td></tr>`).join('')||'<tr><td colspan="6">Nenhuma execução registrada.</td></tr>'}</tbody></table></div><div class="section"><h2>Agentes</h2><table><thead><tr><th>Agente</th><th>Chamadas</th><th>Com findings</th><th>Findings acionáveis</th><th>Créditos observados</th></tr></thead><tbody>${Object.entries(d.agent_metrics||{}).map(([n,x])=>`<tr><td>${esc(n)}</td><td>${x.invocations}</td><td>${pct(x.finding_rate)}</td><td>${x.actionable_findings}</td><td>${x.credits}</td></tr>`).join('')||'<tr><td colspan="5">Sem chamadas.</td></tr>'}</tbody></table></div><p class="muted section">Banco: ${esc(d.telemetry_db)}</p>`}
 load();
+async function loadControl(){const r=await fetch('/api/control');const d=await r.json();const box=document.createElement('div');box.className='section';box.innerHTML=`<h2>Controle do RAG</h2><p class="muted">Feedback pendente: ${d.feedback.pending.length} · Fila: ${d.queue.pending} · Modelos ativos: ${Object.values(d.models.active).filter(x=>x.status==='ACTIVE').length}</p><table><thead><tr><th>Consulta</th><th>Arquivo</th><th>Ação</th></tr></thead><tbody>${d.feedback.pending.map(x=>`<tr><td>${esc(x.query)}</td><td>${esc(x.candidate?.path)}</td><td><button onclick="decide('${x.id}',true)">Relevante</button> <button onclick="decide('${x.id}',false)">Irrelevante</button></td></tr>`).join('')||'<tr><td colspan="3">Nenhum feedback pendente.</td></tr>'}</tbody></table><p><button onclick="enqueue()">Enfileirar treinamento</button> <button onclick="loadControl()">Atualizar</button></p>`;document.querySelector('main').appendChild(box)}
+async function decide(id,relevant){await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action:relevant?'approve':'reject'})});location.reload()}
+async function enqueue(){await fetch('/api/training',{method:'POST'});location.reload()}
+loadControl();
 </script></main></body></html>"""
 
 def dashboard(db: Path) -> dict:
@@ -73,6 +79,10 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/": return self.send(200, HTML)
         if path == "/api/dashboard": return self.send(200, json.dumps(dashboard(self.db), ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/models": return self.send(200, json.dumps(models(), ensure_ascii=False), "application/json; charset=utf-8")
+        if path == "/api/control":
+            feedback_path = ROOT / ".jarvis/rag/feedback.jsonl"; rows = []
+            if feedback_path.is_file(): rows = [json.loads(line) for line in feedback_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            return self.send(200, json.dumps({"models": models(), "feedback": {"pending": [row for row in rows if row.get("status") == "PENDING"]}, "queue": models().get("queue", {})}, ensure_ascii=False), "application/json; charset=utf-8")
         if path.startswith("/run/"):
             run_id = path.rsplit('/', 1)[-1]
             con = sqlite3.connect(self.db)
@@ -83,6 +93,22 @@ class Handler(BaseHTTPRequestHandler):
                 con.close()
             return self.send(200, json.dumps(dict(row) if row else {"error":"execução não encontrada"}), "application/json; charset=utf-8")
         return self.send(404, "Não encontrado")
+    def do_POST(self):
+        path = urlparse(self.path).path
+        try: payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0")) or 0) or b"{}")
+        except json.JSONDecodeError: return self.send(400, json.dumps({"error": "JSON inválido"}), "application/json; charset=utf-8")
+        if path == "/api/feedback":
+            from aghuse_rag_feedback import read, write
+            feedback_path = ROOT / ".jarvis/rag/feedback.jsonl"; rows = read(feedback_path); item = next((row for row in rows if row.get("id") == payload.get("id") and row.get("status") == "PENDING"), None)
+            if not item: return self.send(404, json.dumps({"error": "feedback pendente não encontrado"}), "application/json; charset=utf-8")
+            action = payload.get("action")
+            if action not in {"approve", "reject"}: return self.send(400, json.dumps({"error": "ação inválida"}), "application/json; charset=utf-8")
+            item["status"] = "APPROVED" if action == "approve" else "REJECTED"; item["relevant"] = action == "approve"; item["decided_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds"); write(feedback_path, rows)
+            return self.send(200, json.dumps({"ok": True, "id": item["id"], "status": item["status"]}), "application/json; charset=utf-8")
+        if path == "/api/training":
+            result = subprocess.run([sys.executable, str(ROOT / "scripts/aghuse_rag_queue.py"), "enqueue"], cwd=ROOT, text=True, capture_output=True)
+            return self.send(200 if result.returncode == 0 else 500, result.stdout or result.stderr, "application/json; charset=utf-8")
+        return self.send(404, "Not found")
     def log_message(self, *_): pass
 
 def main():
