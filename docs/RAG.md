@@ -1,6 +1,6 @@
 # RAG local-first do Jarvis
 
-O RAG seleciona evidências antes da leitura aprofundada dos agentes. Ele não substitui a fonte original e não é um novo agente.
+O RAG seleciona evidências antes da leitura aprofundada dos agentes. Ele não substitui a fonte original e não é um novo agente. A recuperação pode usar reranker local e taxonomia AGHUse; o aprendizado é assistido e exige aprovação humana.
 
 ## Contexto por time
 
@@ -24,6 +24,17 @@ python3 scripts/jarvis_rag.py search \
 ```
 
 SQLite FTS5 é usado quando disponível. Caso contrário, a busca degrada para um fallback lexical. O modo reportado é `LEXICAL_ONLY` até existir um `EmbeddingProvider` configurado. As interfaces de provider e vector store já impedem acoplamento a SDK ou serviço externo.
+
+## Taxonomia, reranker e feedback
+
+As camadas principais são `backend`, `frontend`, `banco`, `testes`, `seguranca` e `documentacao`. Para usar classificação e reranker local:
+
+```bash
+python3 scripts/jarvis_rag.py index --repo /caminho/do/repositorio --taxonomy-model .jarvis/rag/taxonomy.json
+python3 scripts/jarvis_rag.py search --query "regra de negócio" --reranker .jarvis/rag/reranker.json --taxonomy layer=backend
+```
+
+Correções podem ser registradas pelo fluxo de [RAG_FEEDBACK.md](RAG_FEEDBACK.md), mas só feedback aprovado entra no treino. O manual completo está em [MANUAL_TREINO_RAG_AGHUSE.md](MANUAL_TREINO_RAG_AGHUSE.md).
 
 ## Integração ao runtime
 
