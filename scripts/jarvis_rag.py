@@ -29,7 +29,7 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--policy", type=Path, default=POLICY); root.add_argument("--reranker", type=Path, default=None)
     sub = root.add_subparsers(dest="command", required=True)
     index = sub.add_parser("index"); index.add_argument("--repo", type=Path, required=True); index.add_argument("--source-type", default="CODE"); index.add_argument("--taxonomy-model", type=Path)
-    search = sub.add_parser("search"); search.add_argument("--query", required=True); search.add_argument("--context-budget", choices=("SMALL", "MEDIUM", "LARGE"), default="MEDIUM"); search.add_argument("--path-filter"); search.add_argument("--repo-filter"); search.add_argument("--branch-filter"); search.add_argument("--source-type-filter"); search.add_argument("--taxonomy", action="append"); search.add_argument("--output", type=Path)
+    search = sub.add_parser("search"); search.add_argument("--query", required=True); search.add_argument("--context-budget", choices=("SMALL", "MEDIUM", "LARGE"), default="MEDIUM"); search.add_argument("--path-filter"); search.add_argument("--repo-filter"); search.add_argument("--branch-filter"); search.add_argument("--source-type-filter"); search.add_argument("--taxonomy", action="append"); search.add_argument("--semantic", action="store_true"); search.add_argument("--output", type=Path)
     sub.add_parser("status")
     return root
 
@@ -46,7 +46,7 @@ def main() -> int:
                 result = index.status()
         else:
             taxonomy = dict(item.split("=", 1) for item in (args.taxonomy or []) if "=" in item)
-            result = retrieve(args.database, args.query, load_policy(args.policy), args.context_budget, path_filter=args.path_filter, repo_filter=args.repo_filter, branch_filter=args.branch_filter, source_type_filter=args.source_type_filter, taxonomy=taxonomy, reranker_path=args.reranker or (DEFAULT_RERANKER if DEFAULT_RERANKER.is_file() else None))
+            result = retrieve(args.database, args.query, load_policy(args.policy), args.context_budget, path_filter=args.path_filter, repo_filter=args.repo_filter, branch_filter=args.branch_filter, source_type_filter=args.source_type_filter, taxonomy=taxonomy, reranker_path=args.reranker or (DEFAULT_RERANKER if DEFAULT_RERANKER.is_file() else None), semantic=args.semantic)
             if args.output:
                 write_context_pack(args.output, result)
                 result = {**result, "output": str(args.output.resolve())}

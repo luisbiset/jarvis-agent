@@ -12,6 +12,7 @@ from rag.indexer import RagIndex
 from rag.retriever import retrieve, load_reranker
 from rag.security import safe_text
 from rag.taxonomy import classify
+from rag.semantic import cosine
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -180,6 +181,10 @@ class RagTest(unittest.TestCase):
             payload = retrieve(database, "ContaON", self.policy(), "SMALL", reranker_path=model)
             self.assertEqual(payload["retrieval_mode"], "LEXICAL_RERANKED")
             self.assertTrue(load_reranker(model))
+
+    def test_local_semantic_similarity_is_deterministic(self):
+        self.assertGreater(cosine("regra de cálculo da conta", "calculo conta regra"), 0.5)
+        self.assertEqual(cosine("abc", "xyz"), 0.0)
 
     def test_runtime_uses_default_reranker_when_present(self):
         with tempfile.TemporaryDirectory() as temporary:
