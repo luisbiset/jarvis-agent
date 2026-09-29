@@ -34,6 +34,9 @@ class RetrievalHit:
     semantic_score: float
     final_score: float
     text: str
+    taxonomy: dict[str, Any] = field(default_factory=dict)
+    match_reasons: list[str] = field(default_factory=list)
+    selection_reason: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)

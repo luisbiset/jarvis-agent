@@ -1,4 +1,6 @@
 <!-- managed-by: jarvis-agent -->
+
+- Para toda solicitação de tarefa não trivial, consultar automaticamente a ponte `python scripts/jarvis_chat_rag.py "<mensagem do usuário>"` antes do planejamento, análise ou execução, usando a própria mensagem como consulta. Não exigir flags ou comandos adicionais do usuário. O bypass fica restrito a conversa geral, saudações e perguntas sem relação com o repositório; persistir somente hashes, metadados e context packs permitidos.
 # Política global do Jarvis V3
 
 - Aplicar `FLOW-003` a toda tarefa solicitada, inclusive consultas e explicações: antes do trabalho substantivo, classificar `complexity`, `risk_class`, `operational_mode`, budget e sinais objetivos da tarefa.

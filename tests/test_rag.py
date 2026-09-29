@@ -76,6 +76,9 @@ class RagTest(unittest.TestCase):
             self.assertEqual(len(payload["hits"][0]["content_hash"]), 64)
             self.assertLessEqual(payload["estimated_tokens"], 3000)
             self.assertEqual(payload["retrieval_mode"], "LEXICAL_ONLY")
+            self.assertEqual(payload["hits"][0]["taxonomy"]["artifact"], "codigo")
+            self.assertIn("query_term_in_symbol", payload["hits"][0]["match_reasons"])
+            self.assertEqual(payload["hits"][0]["selection_reason"], "selected_by_ranked_relevance")
 
     def test_runtime_writes_rag_context_without_counting_model_call(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -114,6 +117,28 @@ class RagTest(unittest.TestCase):
         self.assertEqual(classify("src/main/webapp/conta.xhtml", "<p:inputText/>", "CODE")["layer"], "frontend")
         self.assertEqual(classify("src/test/ContaONTest.java", "class ContaONTest {}", "TEST")["layer"], "testes")
 
+    def test_taxonomy_classifies_aghuse_components(self):
+        cases = {
+            "ContaON.java": ("ON", "public class ContaON {}"),
+            "ContaRN.java": ("RN", "public class ContaRN {}"),
+            "ContaFacade.java": ("Facade", "public class ContaFacade {}"),
+            "ContaDAO.java": ("DAO", "public class ContaDAO {}"),
+            "ContaEntity.java": ("Entity", "@Entity class ContaEntity {}"),
+            "ContaController.java": ("Controller", "class ContaController {}"),
+            "ContaService.java": ("Service", "class ContaService {}"),
+            "ContaTest.java": ("Test", "class ContaTest {}"),
+            "schema.sql": ("SQL", "select 1"),
+            "SecurityConfig.java": ("Security", "class SecurityConfig {}"),
+            "Messages.properties": ("Message", "menu.label=Conta"),
+            "application.yml": ("Configuration", "server:\n  port: 8080"),
+            "conta.xhtml": ("XHTML", "<h:form/>")
+        }
+        for path, (expected, text) in cases.items():
+            with self.subTest(path=path):
+                result = classify(path, text, "CODE")
+                self.assertIn(expected, result["categories"])
+                self.assertEqual(result["category"], expected)
+
     def test_taxonomy_filter_restricts_search(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "repo"; root.mkdir()
@@ -126,6 +151,18 @@ class RagTest(unittest.TestCase):
                 hits = search(index, "calcular", 10, taxonomy={"layer": "backend"})
                 self.assertTrue(hits)
                 self.assertTrue(all(".java" in hit.path for hit in hits))
+
+    def test_taxonomy_category_filter_restricts_search(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "repo"; root.mkdir()
+            (root / "ContaON.java").write_text("public class ContaON {}\n", encoding="utf-8")
+            (root / "conta.xhtml").write_text("<html/>\n", encoding="utf-8")
+            database = Path(temporary) / "index.db"
+            with RagIndex(database) as index:
+                index.index_repo(root)
+                from rag.retriever import search
+                hits = search(index, "ContaON", 10, taxonomy={"category": "ON"})
+                self.assertEqual([hit.path for hit in hits], ["ContaON.java"])
 
     def test_optional_reranker_changes_reported_mode(self):
         with tempfile.TemporaryDirectory() as temporary:

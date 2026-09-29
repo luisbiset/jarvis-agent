@@ -576,7 +576,15 @@ def initialize(args: argparse.Namespace) -> dict[str, Any]:
     append_jsonl(root / "events.jsonl", {"event": "RUN_INITIALIZED", "at": state["created_at"], "run_id": state["run_id"], "state": "NEW"})
     with connect_db(db_path) as connection:
         connection.execute("INSERT INTO transitions(run_id,source,target,at,reason) VALUES(?,?,?,?,?)", (state["run_id"], None, "NEW", state["created_at"], "run initialized"))
-    return {"run_dir": str(root), "telemetry_db": str(db_path), "state": state}
+    result = {"run_dir": str(root), "telemetry_db": str(db_path), "state": state}
+    task_query = getattr(args, "task_query", None)
+    database = Path(getattr(args, "rag_database", DEFAULT_RAG_DB)).resolve()
+    if task_query and getattr(args, "auto_rag", True) and database.is_file() and load_rag_policy()["enabled"]:
+        retrieval = rag_retrieve(argparse.Namespace(run_dir=str(root), query=task_query, database=database, path_filter=None, domain=None, agent=None, taxonomy=None, collect_feedback=True, feedback_file=getattr(args, "feedback_file", ROOT / ".jarvis/rag/feedback.jsonl"), team=None))
+        result["automatic_rag"] = retrieval
+    else:
+        result["automatic_rag"] = {"status": "SKIPPED", "reason": "missing_task_query_or_index_or_disabled"}
+    return result
 
 
 def transition(args: argparse.Namespace) -> dict[str, Any]:
@@ -1384,6 +1392,14 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
     except (ValueError, sqlite3.Error) as exc:
         raise RuntimeErrorSafe(f"retrieval RAG falhou: {exc}") from exc
     write_context_pack(destination, payload)
+    if getattr(args, "collect_feedback", False):
+        from aghuse_rag_feedback import read as read_feedback, suggest_from_pack, write as write_feedback
+        feedback_file = Path(getattr(args, "feedback_file", ROOT / ".jarvis/rag/feedback.jsonl"))
+        feedback_rows = read_feedback(feedback_file)
+        suggestions = suggest_from_pack(destination, args.query, feedback_rows)
+        if suggestions:
+            write_feedback(feedback_file, feedback_rows)
+        payload["feedback_suggestions"] = len(suggestions)
     state["rag"].update({
         "queries": state["rag"]["queries"] + 1,
         "selected_chunks": state["rag"]["selected_chunks"] + len(payload["hits"]),
@@ -1396,7 +1412,7 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
     with connect_db(telemetry_db_for_state(state, root)) as connection:
         connection.execute("INSERT INTO rag_queries(query_id,run_id,team,query_hash,retrieval_mode,context_budget,candidates,selected,estimated_tokens,latency_ms,cache_hit,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (payload["query_id"], state["run_id"], team, payload["query_hash"], payload["retrieval_mode"], context_budget, payload["candidates"], len(payload["hits"]), payload["estimated_tokens"], payload["latency_ms"], 0, payload["created_at"]))
         connection.executemany("INSERT INTO rag_hits VALUES(?,?,?,?,?,?,?,?,?,?)", ((payload["query_id"], hit["chunk_id"], hit["repo"], hit["path"], hit["symbol"], hit["content_hash"], hit["lexical_score"], hit["semantic_score"], hit["final_score"], rank) for rank, hit in enumerate(payload["hits"], 1)))
-    return {"context_pack": str(destination), "query_id": payload["query_id"], "retrieval_mode": payload["retrieval_mode"], "selected_chunks": len(payload["hits"]), "estimated_tokens": payload["estimated_tokens"], "cache_hit": False}
+    return {"context_pack": str(destination), "query_id": payload["query_id"], "retrieval_mode": payload["retrieval_mode"], "selected_chunks": len(payload["hits"]), "estimated_tokens": payload["estimated_tokens"], "feedback_suggestions": payload.get("feedback_suggestions", 0), "cache_hit": False}
 
 
 def summary(args: argparse.Namespace) -> dict[str, Any]:
@@ -1601,7 +1617,7 @@ def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
     sub = root.add_subparsers(dest="command", required=True)
     decide = sub.add_parser("reasoning-decide"); add_signal_arguments(decide)
-    init = sub.add_parser("init"); init.add_argument("--task-id", required=True); init.add_argument("--complexity", choices=COMPLEXITIES, required=True); init.add_argument("--risk-class", choices=RISKS, required=True); init.add_argument("--operational-mode", choices=MODES, required=True); init.add_argument("--reasoning-class", choices=REASONING); init.add_argument("--budget-justification"); init.add_argument("--agent-planned", action="append", dest="agents_planned", default=[]); init.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); init.add_argument("--telemetry-db", type=Path); add_signal_arguments(init)
+    init = sub.add_parser("init"); init.add_argument("--task-id", required=True); init.add_argument("--complexity", choices=COMPLEXITIES, required=True); init.add_argument("--risk-class", choices=RISKS, required=True); init.add_argument("--operational-mode", choices=MODES, required=True); init.add_argument("--reasoning-class", choices=REASONING); init.add_argument("--budget-justification"); init.add_argument("--agent-planned", action="append", dest="agents_planned", default=[]); init.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); init.add_argument("--telemetry-db", type=Path); init.add_argument("--task-query"); init.add_argument("--rag-database", type=Path, default=DEFAULT_RAG_DB); init.add_argument("--feedback-file", type=Path, default=ROOT / ".jarvis/rag/feedback.jsonl"); init.add_argument("--no-auto-rag", action="store_false", dest="auto_rag", default=True); add_signal_arguments(init)
     move = sub.add_parser("transition"); move.add_argument("--run-dir", required=True); move.add_argument("--to", choices=STATES, required=True); move.add_argument("--reason", required=True); move.add_argument("--stop-reason", choices=STOP_REASONS); move.add_argument("--gate-decision", choices=GATE_DECISIONS); move.add_argument("--gate-reason-code", choices=GATE_REASON_CODES); move.add_argument("--gate-reason-detail"); move.add_argument("--rework-origin", choices=REWORK_ORIGINS); move.add_argument("--rework-reason", choices=REWORK_REASONS)
     start = sub.add_parser("invocation-start"); start.add_argument("--run-dir", required=True); start.add_argument("--invocation-id"); start.add_argument("--agent", required=True); start.add_argument("--stage", choices=STATES, required=True); start.add_argument("--model"); start.add_argument("--reasoning-effort", choices=REASONING_EFFORTS); start.add_argument("--attempt-number", type=int); start.add_argument("--task-type"); start.add_argument("--parent-execution-id"); start.add_argument("--child-depth", type=int, default=0); start.add_argument("--progress-event", choices=PROGRESS_EVENTS); start.add_argument("--parallel-batch"); start.add_argument("--budget-justification")
     finish = sub.add_parser("invocation-finish"); finish.add_argument("--run-dir", required=True); finish.add_argument("--invocation-id", required=True); finish.add_argument("--status", required=True); finish.add_argument("--agent-result", choices=AGENT_RESULTS, required=True); finish.add_argument("--model-effective"); finish.add_argument("--reasoning-effort-effective", choices=REASONING_EFFORTS); finish.add_argument("--input-tokens", type=int, default=0); finish.add_argument("--cached-input-tokens", type=int, default=0); finish.add_argument("--output-tokens", type=int, default=0); finish.add_argument("--credits", type=float, default=0); finish.add_argument("--retry-count", type=int, default=0); finish.add_argument("--files-read", type=int, default=0); finish.add_argument("--files-changed", type=int, default=0); finish.add_argument("--tool-calls", type=int, default=0); finish.add_argument("--tests-run", type=int, default=0); finish.add_argument("--tests-passed", type=int, default=0); finish.add_argument("--tests-failed", type=int, default=0); finish.add_argument("--review-findings", type=int, default=0); finish.add_argument("--success", action=argparse.BooleanOptionalAction); finish.add_argument("--termination-reason", choices=TERMINATION_REASONS); finish.add_argument("--blocker")
@@ -1617,7 +1633,7 @@ def parser() -> argparse.ArgumentParser:
     teachback = sub.add_parser("teachback-evaluate"); teachback.add_argument("--handoff-id", required=True); teachback.add_argument("--question-id", required=True); teachback.add_argument("--answer", required=True); teachback.add_argument("--duration-ms", type=int, default=0); teachback.add_argument("--deeper-explanation", action="store_true"); teachback.add_argument("--telemetry-db", type=Path, default=DEFAULT_TELEMETRY_DB)
     pack = sub.add_parser("context-pack"); pack.add_argument("--run-dir", required=True); pack.add_argument("--kind", choices=("requirement", "database", "contract", "git-baseline"), required=True); pack.add_argument("--baseline", required=True); pack.add_argument("--ref", action="append", required=True)
     discovery = sub.add_parser("discovery"); discovery.add_argument("--run-dir", required=True); discovery.add_argument("--baseline", required=True); discovery.add_argument("--query", required=True); discovery.add_argument("--ref", action="append", required=True)
-    retrieval = sub.add_parser("retrieve"); retrieval.add_argument("--run-dir", required=True); retrieval.add_argument("--query", required=True); retrieval.add_argument("--database", type=Path, default=DEFAULT_RAG_DB); retrieval.add_argument("--domain"); retrieval.add_argument("--agent"); retrieval.add_argument("--path-filter"); retrieval.add_argument("--taxonomy", action="append")
+    retrieval = sub.add_parser("retrieve"); retrieval.add_argument("--run-dir", required=True); retrieval.add_argument("--query", required=True); retrieval.add_argument("--database", type=Path, default=DEFAULT_RAG_DB); retrieval.add_argument("--domain"); retrieval.add_argument("--agent"); retrieval.add_argument("--path-filter"); retrieval.add_argument("--taxonomy", action="append"); retrieval.add_argument("--collect-feedback", action="store_true"); retrieval.add_argument("--feedback-file", type=Path, default=ROOT / ".jarvis/rag/feedback.jsonl")
     sm = sub.add_parser("summary"); sm.add_argument("--run-dir", required=True)
     metrics = sub.add_parser("dashboard"); metrics.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); metrics.add_argument("--telemetry-db", type=Path)
     cost_report = sub.add_parser("report-cost"); cost_report.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); cost_report.add_argument("--telemetry-db", type=Path); cost_report.add_argument("--run-id"); cost_report.add_argument("--last", type=int, default=20); cost_report.add_argument("--group-by", choices=("agent", "stage"), default="agent")

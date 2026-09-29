@@ -77,7 +77,7 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
         sql += " AND d.source_type = ?"
         params.append(source_type_filter)
     for key, value in (taxonomy or {}).items():
-        if key not in {"domain", "layer", "artifact"}:
+        if key not in {"domain", "layer", "artifact", "category"}:
             raise ValueError(f"filtro taxonômico inválido: {key}")
         sql += " AND json_extract(c.metadata_json, ?) = ?"
         params.extend([f"$.{key}", value])
@@ -100,7 +100,15 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
         raw = float(row["raw_score"])
         lexical = 1 / (1 + math.exp(min(20.0, max(-20.0, raw)))) if index.fts5 else coverage
         final = min(1.0, 0.48 * coverage + 0.22 * lexical + 0.12 * exact + symbol_bonus + path_bonus + path_exact_bonus)
-        scored.append(RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], round(lexical, 6), 0.0, round(final, 6), row["text"]))
+        metadata = json.loads(row["metadata_json"] or "{}")
+        reasons = []
+        if any(term in symbol for term in query_terms): reasons.append("query_term_in_symbol")
+        if any(term in path for term in query_terms): reasons.append("query_term_in_path")
+        if any(term in text for term in query_terms): reasons.append("query_term_in_content")
+        if exact: reasons.append("exact_phrase_in_content")
+        if taxonomy: reasons.append("taxonomy_filter_match")
+        if reranker and reranker_score(reranker, query, RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], 0.0, 0.0, 0.0, row["text"])) != 0: reasons.append("reranker_weight_match")
+        scored.append(RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], round(lexical, 6), 0.0, round(final, 6), row["text"], metadata, reasons, "selected_by_ranked_relevance"))
     ordered = sorted(scored, key=lambda hit: (-hit.final_score, hit.path, hit.start_line))
     if reranker:
         ordered.sort(key=lambda hit: (-reranker_score(reranker, query, hit), -hit.final_score, hit.path, hit.start_line))
