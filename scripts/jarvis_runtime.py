@@ -32,6 +32,7 @@ TEAMS_POLICY_PATH = ROOT / "contracts/teams-policy.json"
 DEFAULT_RUNS_DIR = ROOT / ".jarvis/runs"
 DEFAULT_TELEMETRY_DB = ROOT / ".jarvis/telemetry/jarvis.db"
 DEFAULT_RAG_DB = ROOT / ".jarvis/rag/index.db"
+DEFAULT_RAG_RERANKER = ROOT / ".jarvis/rag/reranker.json"
 COMPLEXITIES = ("TRIVIAL", "LOCALIZED", "TRANSVERSAL", "CRITICAL")
 RISKS = ("LOW", "MEDIUM", "HIGH", "CRITICAL")
 MODES = ("COPILOT", "ASSISTED_AUTOPILOT", "READ_ONLY_AUDIT")
@@ -1353,8 +1354,10 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
     if not database.is_file():
         raise RuntimeErrorSafe(f"índice RAG inexistente: {database}; execute scripts/jarvis_rag.py index")
     context_budget = state["reasoning"]["context_budget"]
+    reranker_path = DEFAULT_RAG_RERANKER if DEFAULT_RAG_RERANKER.is_file() else None
+    taxonomy = dict(item.split("=", 1) for item in (getattr(args, "taxonomy", None) or []) if "=" in item)
     query_hash = hashlib.sha256(args.query.encode()).hexdigest()
-    filters_hash = hashlib.sha256(json.dumps({"path": args.path_filter, "repo": args.domain, "branch": None, "source_type": None}, sort_keys=True).encode()).hexdigest()
+    filters_hash = hashlib.sha256(json.dumps({"path": args.path_filter, "repo": args.domain, "branch": None, "source_type": None, "taxonomy": taxonomy, "reranker": str(reranker_path) if reranker_path else None}, sort_keys=True).encode()).hexdigest()
     destination = root / "context-packs" / f"rag-context-{team.lower().replace('_', '-')}.json"
     if destination.is_file():
         cached = load_json(destination)
@@ -1377,7 +1380,7 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
             append_jsonl(root / "events.jsonl", {"event": "RAG_RETRIEVAL_CACHE_HIT", "at": now(), "run_id": state["run_id"], "query_id": cached["query_id"], "selected_chunks": len(cached["hits"]), "estimated_tokens": cached["estimated_tokens"]})
             return {"context_pack": str(destination), "query_id": cached["query_id"], "retrieval_mode": cached["retrieval_mode"], "selected_chunks": len(cached["hits"]), "estimated_tokens": cached["estimated_tokens"], "cache_hit": True}
     try:
-        payload = retrieve(database, args.query, policy, context_budget, state["run_id"], args.path_filter, args.domain)
+        payload = retrieve(database, args.query, policy, context_budget, state["run_id"], args.path_filter, args.domain, taxonomy=taxonomy, reranker_path=reranker_path)
     except (ValueError, sqlite3.Error) as exc:
         raise RuntimeErrorSafe(f"retrieval RAG falhou: {exc}") from exc
     write_context_pack(destination, payload)
@@ -1614,7 +1617,7 @@ def parser() -> argparse.ArgumentParser:
     teachback = sub.add_parser("teachback-evaluate"); teachback.add_argument("--handoff-id", required=True); teachback.add_argument("--question-id", required=True); teachback.add_argument("--answer", required=True); teachback.add_argument("--duration-ms", type=int, default=0); teachback.add_argument("--deeper-explanation", action="store_true"); teachback.add_argument("--telemetry-db", type=Path, default=DEFAULT_TELEMETRY_DB)
     pack = sub.add_parser("context-pack"); pack.add_argument("--run-dir", required=True); pack.add_argument("--kind", choices=("requirement", "database", "contract", "git-baseline"), required=True); pack.add_argument("--baseline", required=True); pack.add_argument("--ref", action="append", required=True)
     discovery = sub.add_parser("discovery"); discovery.add_argument("--run-dir", required=True); discovery.add_argument("--baseline", required=True); discovery.add_argument("--query", required=True); discovery.add_argument("--ref", action="append", required=True)
-    retrieval = sub.add_parser("retrieve"); retrieval.add_argument("--run-dir", required=True); retrieval.add_argument("--query", required=True); retrieval.add_argument("--database", type=Path, default=DEFAULT_RAG_DB); retrieval.add_argument("--domain"); retrieval.add_argument("--agent"); retrieval.add_argument("--path-filter")
+    retrieval = sub.add_parser("retrieve"); retrieval.add_argument("--run-dir", required=True); retrieval.add_argument("--query", required=True); retrieval.add_argument("--database", type=Path, default=DEFAULT_RAG_DB); retrieval.add_argument("--domain"); retrieval.add_argument("--agent"); retrieval.add_argument("--path-filter"); retrieval.add_argument("--taxonomy", action="append")
     sm = sub.add_parser("summary"); sm.add_argument("--run-dir", required=True)
     metrics = sub.add_parser("dashboard"); metrics.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); metrics.add_argument("--telemetry-db", type=Path)
     cost_report = sub.add_parser("report-cost"); cost_report.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); cost_report.add_argument("--telemetry-db", type=Path); cost_report.add_argument("--run-id"); cost_report.add_argument("--last", type=int, default=20); cost_report.add_argument("--group-by", choices=("agent", "stage"), default="agent")

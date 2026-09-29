@@ -132,7 +132,7 @@ def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget:
         candidates = search(index, query, budget["candidate_k"], path_filter, repo_filter, branch_filter, source_type_filter, taxonomy, reranker)
     selected, estimated_tokens, duplicates = _dedupe_and_budget(candidates, budget["top_k"], budget["max_tokens"], budget.get("max_sources", budget["top_k"]))
     query_id = "ragq-" + secrets.token_hex(8)
-    filters_hash = hashlib.sha256(json.dumps({"path": path_filter, "repo": repo_filter, "branch": branch_filter, "source_type": source_type_filter}, sort_keys=True).encode()).hexdigest()
+    filters_hash = hashlib.sha256(json.dumps({"path": path_filter, "repo": repo_filter, "branch": branch_filter, "source_type": source_type_filter, "taxonomy": taxonomy, "reranker": str(reranker_path) if reranker_path else None}, sort_keys=True).encode()).hexdigest()
     return {
         "schema_version": "1.0.0", "run_id": run_id, "query_id": query_id,
         "query_hash": hashlib.sha256(query.encode()).hexdigest(), "filters_hash": filters_hash, "created_at": utc_now(),

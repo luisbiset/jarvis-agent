@@ -139,5 +139,21 @@ class RagTest(unittest.TestCase):
             self.assertEqual(payload["retrieval_mode"], "LEXICAL_RERANKED")
             self.assertTrue(load_reranker(model))
 
+    def test_runtime_uses_default_reranker_when_present(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary); repo = base / "repo"; repo.mkdir()
+            (repo / "ContaON.java").write_text("public class ContaON { void calcular() {} }\n", encoding="utf-8")
+            database = base / "index.db"
+            model = base / "reranker.json"
+            model.write_text(json.dumps({"schema_version":"1.0.0", "method":"term_log_odds", "weights":{}}), encoding="utf-8")
+            with RagIndex(database) as index: index.index_repo(repo)
+            initialized = RUNTIME.initialize(argparse.Namespace(task_id="RAG-RERANK", complexity="LOCALIZED", risk_class="LOW", operational_mode="COPILOT", reasoning_class=None, budget_justification=None, agents_planned=[], runs_dir=base / "runs", telemetry_db=base / "telemetry.db", task_type="GENERAL", estimated_files=1, estimated_modules=1, architectural=False, production_critical=False, database_migration=False, security_sensitive=False, tests_required=True, ambiguity_score=0, complexity_score=2))
+            previous = RUNTIME.DEFAULT_RAG_RERANKER; RUNTIME.DEFAULT_RAG_RERANKER = model
+            try:
+                result = RUNTIME.rag_retrieve(argparse.Namespace(run_dir=initialized["run_dir"], query="ContaON", database=database, path_filter=None, domain=None, agent=None, taxonomy=None))
+                self.assertEqual(result["retrieval_mode"], "LEXICAL_RERANKED")
+            finally:
+                RUNTIME.DEFAULT_RAG_RERANKER = previous
+
 if __name__ == "__main__":
     unittest.main()
