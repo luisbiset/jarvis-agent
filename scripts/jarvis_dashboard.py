@@ -76,7 +76,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status); self.send_header("Content-Type", kind); self.send_header("Content-Length", str(len(raw))); self.end_headers(); self.wfile.write(raw)
     def do_GET(self):
         path = urlparse(self.path).path
-        if path == "/": return self.send(200, HTML)
+        if path == "/":
+            compact_css = "<style>:root{--bg:#f4f7fb;--surface:#fff;--line:#e5eaf2;--text:#172033;--muted:#718096;--blue:#2563eb;--green:#059669;--red:#dc2626;--shadow:0 8px 24px rgba(30,55,90,.07)}*{box-sizing:border-box}body{font:14px Inter,ui-sans-serif,system-ui;background:var(--bg);color:var(--text)}main{max-width:1440px;padding:22px 28px;margin:auto}.grid{grid-template-columns:repeat(8,minmax(110px,1fr));gap:10px;margin:16px 0}.card,table{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}.card{padding:13px}.value{font-size:22px;margin-top:5px}.section{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}.section h2{font-size:15px;margin:0 0 11px}.section table{box-shadow:none;display:block;max-height:245px;overflow:auto}th,td{padding:9px 10px;white-space:nowrap}th{position:sticky;top:0;background:var(--surface)}button{border-radius:7px;padding:7px 10px;font-weight:600}@media(max-width:1050px){.grid{grid-template-columns:repeat(4,1fr)}}@media(max-width:600px){main{padding:14px}.grid{grid-template-columns:repeat(2,1fr)}}</style>"
+            return self.send(200, HTML.replace("</head>", compact_css + "</head>"))
         if path == "/api/dashboard": return self.send(200, json.dumps(dashboard(self.db), ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/models": return self.send(200, json.dumps(models(), ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/control":
