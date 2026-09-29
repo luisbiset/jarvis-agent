@@ -28,7 +28,7 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--database", type=Path, default=DEFAULT_DATABASE)
     root.add_argument("--policy", type=Path, default=POLICY); root.add_argument("--reranker", type=Path, default=None)
     sub = root.add_subparsers(dest="command", required=True)
-    index = sub.add_parser("index"); index.add_argument("--repo", type=Path, required=True); index.add_argument("--source-type", default="CODE")
+    index = sub.add_parser("index"); index.add_argument("--repo", type=Path, required=True); index.add_argument("--source-type", default="CODE"); index.add_argument("--taxonomy-model", type=Path)
     search = sub.add_parser("search"); search.add_argument("--query", required=True); search.add_argument("--context-budget", choices=("SMALL", "MEDIUM", "LARGE"), default="MEDIUM"); search.add_argument("--path-filter"); search.add_argument("--repo-filter"); search.add_argument("--branch-filter"); search.add_argument("--source-type-filter"); search.add_argument("--taxonomy", action="append"); search.add_argument("--output", type=Path)
     sub.add_parser("status")
     return root
@@ -39,7 +39,8 @@ def main() -> int:
     try:
         if args.command == "index":
             with RagIndex(args.database) as index:
-                result = index.index_repo(args.repo, args.source_type)
+                model = json.loads(args.taxonomy_model.read_text(encoding="utf-8")) if args.taxonomy_model else None
+                result = index.index_repo(args.repo, args.source_type, model)
         elif args.command == "status":
             with RagIndex(args.database) as index:
                 result = index.status()
