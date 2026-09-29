@@ -8,6 +8,7 @@ from pathlib import Path
 from aghuse_rag_dataset import read_examples
 from train_rag_reranker import train as train_reranker
 from train_taxonomy_classifier import train as train_taxonomy
+from train_rag_reranker import features
 
 def now() -> str: return datetime.now(timezone.utc).isoformat(timespec="seconds")
 def load(path: Path) -> list[dict]: return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()] if path.exists() else []
@@ -16,6 +17,12 @@ def write(path: Path, rows: list[dict]) -> None:
 def promote(source: Path, target: Path, backup: Path) -> None:
     if target.exists(): backup.mkdir(parents=True, exist_ok=True); shutil.copy2(target, backup / target.name)
     target.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(source, target)
+def validation_accuracy(model: dict, rows: list[dict]) -> float:
+    correct = 0
+    for row in rows:
+        score = sum(float(model.get("weights", {}).get(term, 0.0)) for term in features(row))
+        if (score >= 0) == bool(row["relevant"]): correct += 1
+    return correct / max(1, len(rows))
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--feedback", type=Path, default=Path(".jarvis/rag/feedback.jsonl")); parser.add_argument("--root", type=Path, default=Path(".jarvis/rag")); parser.add_argument("--min-examples", type=int, default=2); args = parser.parse_args()
@@ -30,8 +37,11 @@ def main() -> int:
         dataset = work / "dataset"; dataset.mkdir(); write(dataset / "train.jsonl", train_rows); write(dataset / "validation.jsonl", validation_rows)
         reranker, taxonomy = work / "reranker.json", work / "taxonomy.json"
         train_reranker(dataset / "train.jsonl", reranker); train_taxonomy(approved_path, taxonomy)
+        reranker_model = json.loads(reranker.read_text(encoding="utf-8")); validation_score = validation_accuracy(reranker_model, validation_rows)
+        if validation_score < 0.5:
+            print(json.dumps({"promoted": False, "reason": "validation_quality_below_threshold", "validation_accuracy": validation_score, "approved": len(approved), "pending": pending}, ensure_ascii=False)); return 0
         backup = args.root / "backups" / datetime.now().strftime("%Y%m%dT%H%M%SZ"); promote(reranker, args.root / "reranker.json", backup); promote(taxonomy, args.root / "taxonomy.json", backup)
-        manifest = {"schema_version":"1.0.0", "promoted_at":now(), "approved":len(approved), "train":len(train_rows), "validation":len(validation_rows), "pending":pending, "backup":str(backup) if backup.exists() else None}
+        manifest = {"schema_version":"1.0.0", "promoted_at":now(), "approved":len(approved), "train":len(train_rows), "validation":len(validation_rows), "validation_accuracy":validation_score, "pending":pending, "backup":str(backup) if backup.exists() else None}
         (args.root / "training-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"promoted": True, **manifest}, ensure_ascii=False)); return 0
 if __name__ == "__main__": raise SystemExit(main())

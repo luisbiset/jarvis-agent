@@ -39,9 +39,12 @@ def classify(path: str, text: str, source_type: str, model: dict | None = None) 
     artifact = "teste" if layer == "testes" else "script_banco" if suffix == ".sql" else "tela" if suffix == ".xhtml" else "documento" if layer == "documentacao" else "codigo"
     if model:
         features = {item.casefold() for item in re.findall(r"[\w.-]{2,}", path)}
-        for field in ("layer", "artifact"):
+        for field in ("layer", "artifact", "category"):
             scores = {label: sum(float(counts.get(term, 0)) for term, counts in model.get("labels", {}).get(field, {}).items() for _ in [0] if term in features) for label in model.get("labels", {}).get(field, {})}
             if scores and max(scores.values()) > 0:
                 if field == "layer": layer = max(scores, key=scores.get)
-                else: artifact = max(scores, key=scores.get)
+                elif field == "artifact": artifact = max(scores, key=scores.get)
+                else:
+                    predicted = max(scores, key=scores.get)
+                    if predicted not in categories: categories.insert(0, predicted)
     return {"domain": "aghuse", "layer": layer, "artifact": artifact, "category": categories[0] if categories else None, "categories": categories, "source_type": source_type, "technologies": sorted(set(technologies))}

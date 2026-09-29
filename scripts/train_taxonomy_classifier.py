@@ -11,11 +11,12 @@ def features(row: dict) -> set[str]:
 
 def train(input_path: Path, output: Path) -> dict:
     rows = [json.loads(line) for line in input_path.read_text(encoding="utf-8").splitlines() if line.strip()]
-    labels = {"layer": collections.defaultdict(collections.Counter), "artifact": collections.defaultdict(collections.Counter)}
+    labels = {"layer": collections.defaultdict(collections.Counter), "artifact": collections.defaultdict(collections.Counter), "category": collections.defaultdict(collections.Counter)}
     for row in rows:
         taxonomy = row.get("taxonomy", {})
         for field in labels:
-            if field in taxonomy: labels[field][taxonomy[field]].update(features(row))
+            values = taxonomy.get("categories", [taxonomy[field]]) if field == "category" and ("categories" in taxonomy or field in taxonomy) else ([taxonomy[field]] if field in taxonomy else [])
+            for value in values: labels[field][value].update(features(row))
     model = {"schema_version":"1.0.0", "method":"taxonomy_term_counts", "labels":{field:{label:dict(counts) for label, counts in values.items()} for field, values in labels.items()}}
     output.parent.mkdir(parents=True, exist_ok=True); output.write_text(json.dumps(model, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"); return model
 

@@ -32,7 +32,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(); parser.add_argument("--file", type=Path, default=DEFAULT)
     sub = parser.add_subparsers(dest="command", required=True)
     add = sub.add_parser("add"); add.add_argument("--query", required=True); add.add_argument("--path", required=True); add.add_argument("--symbol", default=""); add.add_argument("--relevant", action="store_true"); add.add_argument("--layer", required=True); add.add_argument("--artifact", required=True); add.add_argument("--reason", default="")
-    approve = sub.add_parser("approve"); approve.add_argument("--id", required=True)
+    approve = sub.add_parser("approve"); approve.add_argument("--id", required=True); decision = approve.add_mutually_exclusive_group(required=True); decision.add_argument("--relevant", action="store_true"); decision.add_argument("--irrelevant", action="store_true")
+    reject = sub.add_parser("reject"); reject.add_argument("--id", required=True)
     export = sub.add_parser("export"); export.add_argument("--output", type=Path, required=True)
     suggest = sub.add_parser("suggest"); suggest.add_argument("--context-pack", type=Path, required=True); suggest.add_argument("--query", required=True)
     sub.add_parser("list")
@@ -45,7 +46,11 @@ def main() -> int:
     elif args.command == "approve":
         found = next((row for row in rows if row["id"] == args.id), None)
         if not found: raise SystemExit("feedback não encontrado")
-        found["status"] = "APPROVED"; found["approved_at"] = now(); write(args.file, rows); print(args.id)
+        found["status"] = "APPROVED"; found["relevant"] = bool(args.relevant); found["approved_at"] = now(); write(args.file, rows); print(args.id)
+    elif args.command == "reject":
+        found = next((row for row in rows if row["id"] == args.id), None)
+        if not found: raise SystemExit("feedback não encontrado")
+        found["status"] = "REJECTED"; found["rejected_at"] = now(); write(args.file, rows); print(args.id)
     elif args.command == "list":
         print(json.dumps(rows, ensure_ascii=False, indent=2))
     elif args.command == "suggest":
