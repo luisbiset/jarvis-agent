@@ -157,6 +157,17 @@ Compare recall@k e MRR com a versão anterior. Não substitua um modelo funciona
 - Não use dados clínicos, faturamento real ou credenciais.
 - Separe consultas de treino e validação.
 - Não aprove automaticamente o feedback coletado.
+
+## Fila e agendamento
+
+Para enfileirar um ciclo de treinamento:
+
+```bash
+python scripts/aghuse_rag_queue.py enqueue
+python scripts/aghuse_rag_queue.py run-once
+```
+
+`run-once` processa apenas um item, impede duplicidade enquanto há treinamento pendente ou em execução e registra o resultado em `.jarvis/rag/training-queue.jsonl`. Esse comando pode ser agendado pelo Task Scheduler do Windows ou pelo cron. A fila nunca aprova feedback; ela apenas dispara o pipeline que já exige exemplos aprovados e validação.
 - Registre uma justificativa curta e verificável para cada rótulo.
 
 ## 10. Troubleshooting
