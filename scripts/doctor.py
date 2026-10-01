@@ -71,7 +71,8 @@ def main() -> int:
     status(central_server in redmine_args, "MCP Redmine aponta para o projeto central")
     status(bool(os.environ.get("REDMINE_API_KEY")), "REDMINE_API_KEY disponível sem exibir o valor")
 
-    result = subprocess.run(["codex", "plugin", "list"], capture_output=True, text=True)
+    codex_command = "codex.cmd" if os.name == "nt" else "codex"
+    result = subprocess.run([codex_command, "plugin", "list"], capture_output=True, text=True)
     output = result.stdout + result.stderr
     lines = output.splitlines()
     for plugin in ("redmine-agent", "sfa-agent", "aghuse-agent"):

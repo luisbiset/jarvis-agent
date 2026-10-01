@@ -1,6 +1,6 @@
 <!-- managed-by: jarvis-agent -->
 
-- Para toda solicitação de tarefa não trivial, consultar automaticamente a ponte `python scripts/jarvis_chat_rag.py "<mensagem do usuário>"` antes do planejamento, análise ou execução, usando a própria mensagem como consulta. Não exigir flags ou comandos adicionais do usuário. O bypass fica restrito a conversa geral, saudações e perguntas sem relação com o repositório; persistir somente hashes, metadados e context packs permitidos.
+- Para toda tarefa nao trivial, consultar automaticamente a ponte RAG global antes do planejamento, analise ou execucao, usando a propria mensagem como consulta. Resolver a raiz em `~/.codex/jarvis-agent-root` e executar `python "<raiz>\\scripts\\jarvis_chat_rag.py" "<mensagem>"`; nunca depender do diretorio atual do repositorio. Se a mensagem contiver `tarefa <numero>`, `chamado <numero>`, `OS <numero>`, `Redmine <numero>` ou `#<numero>`, registrar `task_ids` e exigir consulta somente leitura `get_issue` no Redmine antes da analise. Exibir `[JARVIS] acionado`, `[JARVIS] modo RAG` ou `[JARVIS] modo FALLBACK` e `[JARVIS] finalizado`. Se houver FALLBACK por falha, indice ausente ou erro, bloquear a tarefa nao trivial e exigir autorizacao explicita para continuar sem RAG.
 # Política global do Jarvis V3
 
 - Aplicar `FLOW-003` a toda tarefa solicitada, inclusive consultas e explicações: antes do trabalho substantivo, classificar `complexity`, `risk_class`, `operational_mode`, budget e sinais objetivos da tarefa.

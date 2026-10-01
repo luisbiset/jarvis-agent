@@ -24,6 +24,7 @@ def main() -> int:
         ("painel", "abre o painel local de observabilidade"),
         ("aghuse-analisar", "analisa o impacto de uma tarefa AGHUse"),
         ("chat", "recebe mensagem e consulta o RAG antes do planejamento"),
+        ("mensagem", "gateway automático para qualquer mensagem recebida"),
     ):
         sub.add_parser(name, help=help_text)
     args, forwarded = parser.parse_known_args()
@@ -37,6 +38,7 @@ def main() -> int:
         "painel": ("jarvis_dashboard.py",),
         "aghuse-analisar": ("jarvis_aghuse.py",),
         "chat": ("jarvis_chat.py",),
+        "mensagem": ("jarvis_gateway.py",),
     }
     command = scripts[args.command]
     return subprocess.run([sys.executable, str(ROOT / "scripts" / command[0]), *command[1:], *forwarded], cwd=ROOT).returncode

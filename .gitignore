@@ -3,6 +3,7 @@ plugins/*/.mcp.json
 .env
 .env.*
 !.env.example
+.mcp.env
 
 # Artefatos locais
 .DS_Store

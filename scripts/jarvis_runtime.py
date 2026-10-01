@@ -24,6 +24,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from prompt_engineer import improve_prompt
 VERSION_PATH = ROOT / "contracts/version.json"
 REASONING_POLICY_PATH = ROOT / "contracts/reasoning-policy.json"
 KNOWLEDGE_TRANSFER_POLICY_PATH = ROOT / "contracts/knowledge-transfer-policy.json"
@@ -578,9 +579,11 @@ def initialize(args: argparse.Namespace) -> dict[str, Any]:
         connection.execute("INSERT INTO transitions(run_id,source,target,at,reason) VALUES(?,?,?,?,?)", (state["run_id"], None, "NEW", state["created_at"], "run initialized"))
     result = {"run_dir": str(root), "telemetry_db": str(db_path), "state": state}
     task_query = getattr(args, "task_query", None)
+    engineered = improve_prompt(task_query) if task_query else {"enhanced": task_query, "changed": False}
+    result["prompt_engineering"] = {"enabled": bool(task_query), "changed": bool(engineered["changed"])}
     database = Path(getattr(args, "rag_database", DEFAULT_RAG_DB)).resolve()
     if task_query and getattr(args, "auto_rag", True) and database.is_file() and load_rag_policy()["enabled"]:
-        retrieval = rag_retrieve(argparse.Namespace(run_dir=str(root), query=task_query, database=database, path_filter=None, domain=None, agent=None, taxonomy=None, collect_feedback=True, feedback_file=getattr(args, "feedback_file", ROOT / ".jarvis/rag/feedback.jsonl"), team=None))
+        retrieval = rag_retrieve(argparse.Namespace(run_dir=str(root), query=str(engineered["enhanced"]), database=database, path_filter=None, domain=None, agent=None, taxonomy=None, collect_feedback=True, feedback_file=getattr(args, "feedback_file", ROOT / ".jarvis/rag/feedback.jsonl"), team=None))
         result["automatic_rag"] = retrieval
     else:
         result["automatic_rag"] = {"status": "SKIPPED", "reason": "missing_task_query_or_index_or_disabled"}
