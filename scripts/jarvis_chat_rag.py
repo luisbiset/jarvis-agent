@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ponte de chat para consulta automÃƒÂ¡tica e segura ao RAG local."""
+"""Ponte de chat para consulta automatica e segura ao RAG local."""
 from __future__ import annotations
 import argparse, hashlib, json, re, sys
 import time
@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
 from rag.retriever import retrieve
 from prompt_engineer import improve_prompt
-SIGNALS = re.compile(r"(?i)(aghuse|c[oÃƒÂ³]digo|classe|m[oÃƒÂ³]dulo|arquivo|bug|erro|corrig|implementar|regra|ejb|jsf|primefaces|dao|facade|entity|xhtml|sql|security|teste|service|controller)")
+SIGNALS = re.compile(r"(?i)(aghuse|codigo|classe|modulo|arquivo|bug|erro|corrig|implementar|regra|ejb|jsf|primefaces|dao|facade|entity|xhtml|sql|security|teste|service|controller)")
 TASK_REFERENCE = re.compile(r"(?i)(?:tarefa|chamado|os|redmine)\s*#?\s*(\d+)|#\s*(\d+)")
 def task_ids(message: str) -> list[int]:
     return sorted({int(group) for match in TASK_REFERENCE.finditer(message) for group in match.groups() if group})
@@ -32,7 +32,7 @@ def main() -> int:
     mode = "RAG" if result.get("retrieved") else "FALLBACK"
     print(f"[JARVIS] modo {mode}: {result.get('reason', 'contexto recuperado')}", file=sys.stderr, flush=True)
     if mode == "FALLBACK" and result.get("reason") != "no_code_or_aghuse_signal":
-        print("[JARVIS] bloqueado: anÃƒÂ¡lise RAG nÃƒÂ£o disponÃƒÂ­vel; autorizaÃƒÂ§ÃƒÂ£o explÃƒÂ­cita necessÃƒÂ¡ria", file=sys.stderr, flush=True)
+        print("[JARVIS] bloqueado: analise RAG nao disponivel; autorizacao explicita necessaria", file=sys.stderr, flush=True)
         print(f"[JARVIS] finalizado em {time.monotonic() - started:.2f}s", file=sys.stderr, flush=True)
         print(json.dumps(result, ensure_ascii=False, indent=2)); return 2
     if args.output: args.output.parent.mkdir(parents=True, exist_ok=True); args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
