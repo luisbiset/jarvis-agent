@@ -29,10 +29,29 @@ STOP_REASONS = {
     "SPECIALIST_DIVERGENCE",
     "NEEDS_EXPLANATION",
 }
+TEXT_SUFFIXES = {".md", ".json", ".toml", ".yaml", ".yml", ".mjs", ".py", ".sh", ".txt", ".css"}
+ENCODING_MARKERS = ("\u00c3", "\u00c2", "\ufffd", "\u00ef\u00bf\u00bd")
 
 
 def fail(message: str) -> None:
     ERRORS.append(message)
+
+
+def validate_text_encoding() -> None:
+    for path in ROOT.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
+            continue
+        if any(part in {".git", ".jarvis", "__pycache__", "target", "node_modules"} for part in path.parts):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            fail(f"Arquivo fora de UTF-8: {path.relative_to(ROOT)} ({exc})")
+            continue
+        mojibake = any(marker in text for marker in ENCODING_MARKERS if marker not in (chr(0xC3), chr(0xC2)))
+        mojibake = mojibake or any((chr(0xC3) + chr(code)) in text or (chr(0xC2) + chr(code)) in text for code in range(0x80, 0xC0))
+        if mojibake:
+            fail(f"Possível mojibake em {path.relative_to(ROOT)}")
 
 
 def load_json(path: Path) -> dict:
@@ -95,6 +114,10 @@ def validate_plugins() -> set[str]:
 
     for plugin_dir in sorted((ROOT / "plugins").iterdir()):
         if not plugin_dir.is_dir():
+            continue
+        # O marketplace é a fonte de verdade dos plugins instaláveis. Diretórios
+        # residuais de versões removidas não devem quebrar a validação global.
+        if plugin_dir.name not in market_names:
             continue
         manifest_path = plugin_dir / ".codex-plugin/plugin.json"
         if not manifest_path.is_file():
@@ -388,7 +411,7 @@ def validate_aghuse_automation() -> None:
     except SyntaxError as exc:
         fail(f"Automação AGHUse possui Python inválido: {exc}")
         return
-    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": str(ROOT / "scripts") + os.pathsep + str(ROOT) + os.pathsep + os.environ.get("PYTHONPATH", "")}
     result = subprocess.run(
         [sys.executable, "-m", "unittest", "discover", "-s", str(tests), "-p", "test_*.py"],
         cwd=ROOT,
@@ -411,7 +434,7 @@ def validate_jarvis_runtime() -> None:
             ast.parse(script.read_text(encoding="utf-8"), filename=str(script))
         except SyntaxError as exc:
             fail(f"Script V3 possui Python inválido em {script.relative_to(ROOT)}: {exc}")
-    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": str(ROOT / "scripts") + os.pathsep + str(ROOT) + os.pathsep + os.environ.get("PYTHONPATH", "")}
     result = subprocess.run(
         [sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "tests"), "-p", "test_*.py"],
         cwd=ROOT,
@@ -476,8 +499,8 @@ def validate_reasoning_policy() -> None:
         if any(value <= 0 for value in values) or values != sorted(values):
             fail(f"Context limits inválidos ou não monotônicos para {key}")
     cost_limits = policy.get("cost_limits", {})
-    if cost_limits.get("mode") != "OBSERVE_ONLY" or not 0 < cost_limits.get("soft_limit_ratio", 0) < 1:
-        fail("Cost limits devem iniciar em OBSERVE_ONLY")
+    if cost_limits.get("mode") != "ENFORCED" or not 0 < cost_limits.get("soft_limit_ratio", 0) < 1:
+        fail("Cost limits devem usar modo ENFORCED e soft_limit_ratio entre 0 e 1")
 
 
 def validate_rag_policy() -> None:
@@ -537,6 +560,9 @@ def validate_teams_policy(agent_names: set[str]) -> None:
         return
     states_seen: set[str] = set()
     for team, config in teams.items():
+        declared_agents = config.get("agents", [])
+        if len(declared_agents) != len(set(declared_agents)):
+            fail(f"Time {team} possui agentes duplicados")
         unknown = set(config.get("agents", [])) - agent_names
         if unknown:
             fail(f"Time {team} referencia agentes desconhecidos: {sorted(unknown)}")
@@ -692,6 +718,7 @@ def main() -> int:
     validate_knowledge_transfer_policy()
     validate_teams_policy(agents)
     validate_critical_contracts()
+    validate_text_encoding()
     scan_secrets()
     if ERRORS:
         print("VALIDAÇÃO FALHOU")

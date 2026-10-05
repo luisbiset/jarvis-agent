@@ -11,7 +11,7 @@
     "router": "INSTANT",
     "documentation": "MEDIUM",
     "test": "MEDIUM",
-    "default": "HIGH"
+    "default": "MEDIUM"
   },
   "thresholds": {
     "instant_max_score": 3,
@@ -51,7 +51,7 @@
     "CRITICAL": 6
   },
   "cost_limits": {
-    "mode": "OBSERVE_ONLY",
+    "mode": "ENFORCED",
     "soft_limit_ratio": 0.8,
     "TRIVIAL": { "max_credits": 5, "max_uncached_input_tokens": 25000 },
     "LOCALIZED": { "max_credits": 15, "max_uncached_input_tokens": 80000 },

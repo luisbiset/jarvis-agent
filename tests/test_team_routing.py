@@ -34,6 +34,15 @@ class TeamRoutingTest(unittest.TestCase):
         self.assertEqual([item["team"] for item in result["teams"]], ["DESENVOLVIMENTO", "REVISAO_QUALIDADE"])
         self.assertEqual(result["agents"], ["aghuse_banco", "aghuse_qualidade"])
 
+    def test_team_policy_has_unique_agents_and_routes_within_budget(self):
+        policy = RUNTIME.load_teams_policy()
+        for config in policy["teams"].values():
+            self.assertEqual(len(config["agents"]), len(set(config["agents"])))
+        for pattern in RUNTIME.load_json(RUNTIME.ROOT / "contracts/task-patterns.json")["patterns"]:
+            result = RUNTIME.team_route(argparse.Namespace(pattern=pattern["id"], include_optional=False))
+            self.assertLessEqual(len(result["agents"]), pattern["max_agents"])
+            self.assertEqual(len(result["agents"]), len(set(result["agents"])))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse, hashlib, json, re, sys
 import time
 from pathlib import Path
-ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(Path(__file__).resolve().parent))
 from rag.retriever import retrieve
 from prompt_engineer import improve_prompt
 SIGNALS = re.compile(r"(?i)(aghuse|codigo|classe|modulo|arquivo|bug|erro|corrig|implementar|regra|ejb|jsf|primefaces|dao|facade|entity|xhtml|sql|security|teste|service|controller)")
@@ -14,7 +14,7 @@ def task_ids(message: str) -> list[int]:
 def should_retrieve(message: str) -> bool:
     text = message.strip()
     return len(text) >= 3 and (bool(SIGNALS.search(text)) or bool(TASK_REFERENCE.search(text)))
-def retrieve_message(message: str, database: Path, policy_path: Path, context_budget: str = "MEDIUM", semantic: bool = False, *, already_engineered: bool = False) -> dict:
+def retrieve_message(message: str, database: Path, policy_path: Path, context_budget: str = "SMALL", semantic: bool = False, *, already_engineered: bool = False) -> dict:
     engineered = {"enhanced": message, "changed": False} if already_engineered else improve_prompt(message)
     query = str(engineered["enhanced"])
     metadata = {"enabled": True, "changed": bool(engineered["changed"])}
@@ -25,7 +25,7 @@ def retrieve_message(message: str, database: Path, policy_path: Path, context_bu
     result = retrieve(database, query, json.loads(policy_path.read_text(encoding="utf-8")), context_budget, semantic=semantic)
     result["chat_query_hash"] = hashlib.sha256(query.encode()).hexdigest(); result["retrieved"] = True; result["prompt_engineering"] = metadata; return result
 def main() -> int:
-    parser = argparse.ArgumentParser(); parser.add_argument("message"); parser.add_argument("--database", type=Path, default=ROOT / ".jarvis/rag/index.db"); parser.add_argument("--policy", type=Path, default=ROOT / "contracts/rag-policy.json"); parser.add_argument("--output", type=Path); parser.add_argument("--context-budget", choices=("SMALL", "MEDIUM", "LARGE"), default="MEDIUM"); parser.add_argument("--semantic", action="store_true"); args = parser.parse_args()
+    parser = argparse.ArgumentParser(); parser.add_argument("message"); parser.add_argument("--database", type=Path, default=ROOT / ".jarvis/rag/index.db"); parser.add_argument("--policy", type=Path, default=ROOT / "contracts/rag-policy.json"); parser.add_argument("--output", type=Path); parser.add_argument("--context-budget", choices=("SMALL", "MEDIUM", "LARGE"), default="SMALL"); parser.add_argument("--semantic", action="store_true"); args = parser.parse_args()
     started = time.monotonic()
     print("[JARVIS] acionado", file=sys.stderr, flush=True)
     result = retrieve_message(args.message, args.database, args.policy, args.context_budget, args.semantic)

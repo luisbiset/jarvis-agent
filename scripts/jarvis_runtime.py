@@ -24,6 +24,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from prompt_engineer import improve_prompt
 VERSION_PATH = ROOT / "contracts/version.json"
 REASONING_POLICY_PATH = ROOT / "contracts/reasoning-policy.json"
@@ -162,8 +163,8 @@ def load_reasoning_policy() -> dict[str, Any]:
             raise RuntimeErrorSafe(f"model call limit inválido: {complexity}")
         if cost.get("max_credits", 0) <= 0 or cost.get("max_uncached_input_tokens", 0) <= 0:
             raise RuntimeErrorSafe(f"cost limit inválido: {complexity}")
-    if policy["cost_limits"].get("mode") != "OBSERVE_ONLY" or not 0 < policy["cost_limits"].get("soft_limit_ratio", 0) < 1:
-        raise RuntimeErrorSafe("cost limits devem iniciar em OBSERVE_ONLY com soft_limit_ratio entre 0 e 1")
+    if policy["cost_limits"].get("mode") != "ENFORCED" or not 0 < policy["cost_limits"].get("soft_limit_ratio", 0) < 1:
+        raise RuntimeErrorSafe("cost limits devem usar modo ENFORCED com soft_limit_ratio entre 0 e 1")
     return policy
 
 
@@ -523,7 +524,7 @@ def initial_state(task_id: str, complexity: str, risk_class: str, operational_mo
         "budget": {"max_agents": limit, "max_parallel_agents": parallel, "required_reviewers": REQUIRED_REVIEWERS[risk_class], "budget_limit": limit, "budget_used": 0, "budget_override": bool(budget_justification), "budget_override_reason": "EXPLICIT_OVERRIDE" if budget_justification else None, "max_model_calls": model_call_limit, "hard_max_model_calls": policy["budget"]["hard_max_model_calls"], "model_calls_used": 0, "max_duration_ms": decision["max_duration_ms"], "progress_events": 0},
         "context_usage": {"mode": "OBSERVE_ONLY", "files": 0, "estimated_tokens": 0, "tool_reads": 0, "raw_bytes": 0, "limit_hits": 0, "limits": context_limits.copy()},
         "rag": {"enabled": load_rag_policy()["enabled"], "policy_version": load_rag_policy()["policy_version"], "queries": 0, "selected_chunks": 0, "estimated_tokens": 0, "cache_hits": 0, "cache_misses": 0, "last_query_id": None, "last_context_pack": None},
-        "cost_budget": {"mode": policy["cost_limits"]["mode"], "soft_limit_ratio": policy["cost_limits"]["soft_limit_ratio"], "max_credits": cost_limits["max_credits"], "max_uncached_input_tokens": cost_limits["max_uncached_input_tokens"], "status": "ALLOW", "limit_hits": 0},
+        "cost_budget": {"mode": policy["cost_limits"]["mode"], "soft_limit_ratio": policy["cost_limits"]["soft_limit_ratio"], "max_credits": cost_limits["max_credits"], "max_uncached_input_tokens": cost_limits["max_uncached_input_tokens"], "status": "ALLOW", "limit_hits": 0, "last_event": None, "override_reason": None},
         "history": [{"from": None, "to": "NEW", "at": timestamp, "reason": "run initialized", "stop_reason": None}],
         "teams": {"planned": [], "completed": [], "current": None, "runs": {}},
         "agents_used": [],
@@ -551,8 +552,22 @@ def observe_usage(state: dict[str, Any], values: dict[str, int | float]) -> list
     cost["status"] = "HARD_LIMIT_OBSERVED" if hard else "SOFT_LIMIT_OBSERVED" if soft else "ALLOW"
     if cost["status"] != "ALLOW":
         cost["limit_hits"] += 1
+        cost["last_event"] = cost["status"]
         warnings.append(f"COST_{cost['status']}")
     return warnings
+
+
+def enforce_cost_budget(state: dict[str, Any], justification: str | None = None) -> None:
+    """Impede nova chamada após limite observado; override exige justificativa."""
+    cost = state["cost_budget"]
+    if cost.get("mode") != "ENFORCED":
+        return
+    if cost.get("status") == "HARD_LIMIT_OBSERVED":
+        if not justification or not justification.strip():
+            state["reasoning"]["termination_reason"] = "BUDGET_EXHAUSTED"
+            raise RuntimeErrorSafe("limite de custo atingido; informe --budget-justification para override explícito")
+        cost["override_reason"] = justification.strip()[:500]
+        cost["status"] = "OVERRIDE"
 
 
 def initialize(args: argparse.Namespace) -> dict[str, Any]:
@@ -709,6 +724,7 @@ def invocation_start(args: argparse.Namespace) -> dict[str, Any]:
     if model != required_model:
         raise RuntimeErrorSafe(f"modelo divergente da policy: esperado {required_model}, recebido {model}")
     budget = state["budget"]
+    enforce_cost_budget(state, getattr(args, "budget_justification", None))
     if budget.get("model_calls_used", 0) >= budget.get("max_model_calls", 1):
         reasoning["termination_reason"] = "BUDGET_EXHAUSTED"
         persist_state(root, state)

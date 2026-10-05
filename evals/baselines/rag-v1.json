@@ -1,0 +1,5 @@
+{
+  "recall_at_k": 1.0,
+  "mrr": 0.6666666666666666,
+  "source": "offline-evaluation-2026-10-05"
+}

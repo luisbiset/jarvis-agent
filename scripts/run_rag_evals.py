@@ -20,6 +20,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--database", type=Path, default=ROOT / ".jarvis/rag/index.db")
     result.add_argument("--cases", type=Path, default=ROOT / "evals/rag-cases.json")
     result.add_argument("--top-k", type=int, default=10)
+    result.add_argument("--baseline", type=Path, help="JSON com recall_at_k e mrr mínimos aceitos")
     return result
 
 
@@ -45,8 +46,12 @@ def main() -> int:
             maximum = case["expected"].get("max_rank", args.top_k)
             results.append({"case_id": case["id"], "recall_at_k": 1.0 if first and first <= maximum else 0.0, "reciprocal_rank": 1 / first if first else 0.0, "budget_compliant": len(hits) <= args.top_k, "fallback_operational": True})
     summary = {"cases": results, "recall_at_k": sum(item["recall_at_k"] for item in results) / len(results) if results else 0, "mrr": sum(item["reciprocal_rank"] for item in results) / len(results) if results else 0}
+    if args.baseline and args.baseline.is_file():
+        baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
+        summary["baseline"] = {"recall_at_k": baseline.get("recall_at_k", 0), "mrr": baseline.get("mrr", 0)}
+        summary["regression"] = summary["recall_at_k"] < summary["baseline"]["recall_at_k"] or summary["mrr"] < summary["baseline"]["mrr"]
     print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0 if all(item["recall_at_k"] for item in results) else 1
+    return 0 if all(item["recall_at_k"] for item in results) and not summary.get("regression", False) else 1
 
 
 if __name__ == "__main__":

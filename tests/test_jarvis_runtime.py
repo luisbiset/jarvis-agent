@@ -556,7 +556,7 @@ class JarvisRuntimeTest(unittest.TestCase):
             sensitive = self.initialize(Path(root, "sensitive"), complexity="TRIVIAL", risk_class="LOW", task_type="SECURITY", estimated_files=1, estimated_modules=1, security_sensitive=True)
             self.assertEqual(sensitive["state"]["execution_path"], "STANDARD")
 
-    def test_v31_observes_context_and_cost_limits_without_blocking(self):
+    def test_v31_observes_context_and_enforces_cost_limits(self):
         with tempfile.TemporaryDirectory() as root:
             state = self.initialize(root, complexity="TRIVIAL", risk_class="LOW", task_type="DOCUMENTATION", estimated_files=1, estimated_modules=1)["state"]
             warnings = RUNTIME.observe_usage(state, {
@@ -567,6 +567,16 @@ class JarvisRuntimeTest(unittest.TestCase):
             self.assertIn("COST_HARD_LIMIT_OBSERVED", warnings)
             self.assertEqual(state["context_usage"]["mode"], "OBSERVE_ONLY")
             self.assertEqual(state["cost_budget"]["status"], "HARD_LIMIT_OBSERVED")
+            with self.assertRaises(RUNTIME.RuntimeErrorSafe):
+                RUNTIME.enforce_cost_budget(state)
+            RUNTIME.enforce_cost_budget(state, "operator-approved test override")
+            self.assertEqual(state["cost_budget"]["status"], "OVERRIDE")
+
+    def test_v31_unknown_agent_uses_medium_cap(self):
+        with tempfile.TemporaryDirectory() as root:
+            result = self.initialize(root, complexity="CRITICAL", risk_class="LOW", task_type="BACKEND", complexity_score=4.0)
+            policy = RUNTIME.invocation_policy(result["state"], "unknown_agent")
+            self.assertEqual((policy["level"], policy["reasoning_effort"], policy["context_budget"]), ("MEDIUM", "medium", "MEDIUM"))
 
     def test_v31_report_cost_aggregates_agent_cache_and_retries(self):
         with tempfile.TemporaryDirectory() as root:

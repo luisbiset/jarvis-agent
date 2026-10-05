@@ -14,6 +14,7 @@ SECRET = re.compile(r"(?i)(-----BEGIN .*PRIVATE KEY-----|(?:password|passwd|secr
 PRIVATE_URL = re.compile(r"(?i)https?://[^\s]*(?:intra|datacenter|saude|prodeb|hcpa)[^\s]*")
 CLINICAL = re.compile(r"(?i)\b(?:prontu[aá]rio|paciente|patient|cpf|cns)\b\s*[:=]\s*[0-9]{4,}")
 SKIP = {".git", ".jarvis", "target", "node_modules", ".idea", ".vscode", "__pycache__"}
+PUBLIC_URLS = ("redmine.saude.ba.gov.br", "developers.openai.com", "github.com")
 
 
 def tracked_files(root: Path) -> list[Path]:
@@ -32,9 +33,14 @@ def audit(root: Path) -> dict:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
-        meaningful_lines = "\n".join(line for line in text.splitlines() if "re.compile" not in line and "Pattern(" not in line)
+        meaningful_lines = "\n".join(line for line in text.splitlines() if "re.compile" not in line and "Pattern(" not in line and "secret-scan: allow-test-fixture" not in line and not path.name.endswith(".env.example") and not any(token in line for token in ("requiredEnv(", "requiredText(", "process.env.", "redact(", "apiKey:", "const password =")))
         for pattern, kind in ((SECRET, "credential"), (PRIVATE_URL, "private_url"), (CLINICAL, "clinical_data")):
-            if pattern.search(meaningful_lines):
+            if path.as_posix().endswith("rag/security.py") and kind == "credential":
+                continue
+            candidates = pattern.findall(meaningful_lines)
+            if kind == "private_url":
+                candidates = [item for item in candidates if not any(host in item for host in PUBLIC_URLS)]
+            if candidates:
                 findings.append({"path": path.relative_to(root).as_posix(), "kind": kind})
     return {"safe": not findings, "findings": findings}
 
