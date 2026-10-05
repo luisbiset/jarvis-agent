@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from prompt_engineer import improve_prompt
+from jarvis_metrics import final as final_metric_contract, initial as initial_metric_contract
 VERSION_PATH = ROOT / "contracts/version.json"
 REASONING_POLICY_PATH = ROOT / "contracts/reasoning-policy.json"
 KNOWLEDGE_TRANSFER_POLICY_PATH = ROOT / "contracts/knowledge-transfer-policy.json"
@@ -1436,7 +1437,9 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
 
 def summary(args: argparse.Namespace) -> dict[str, Any]:
     state = load_json(run_path(args.run_dir) / "state.json")
-    return {"run_id": state["run_id"], "jarvis_version": state["jarvis_version"], "task_id": state["task_id"], "state": state["current_state"], "complexity": state["complexity"], "risk_class": state["risk_class"], "operational_mode": state["operational_mode"], "reasoning_class": state["reasoning_class"], "reasoning": state.get("reasoning"), "agents": state["agents_used"], "unique_agent_count": len(state["agents_used"]), "budget": state["budget"], "routing": state["routing"], "teams": state.get("teams", {}), "rag": state["rag"], "metrics": state["metrics"], "gate_decision": state["gate_decision"], "gate_reason_code": state["gate_reason_code"], "gate_attempts": state["gate_attempts"]}
+    initial_metrics = initial_metric_contract(state["task_id"], rag=state.get("rag"), decision={"complexity": state.get("complexity"), "risk_class": state.get("risk_class"), "operational_mode": state.get("operational_mode"), "model": state.get("reasoning", {}).get("requested_model"), "reasoning_effort": state.get("reasoning", {}).get("requested_effort"), "max_attempts": state.get("budget", {}).get("max_model_calls"), "max_agents": state.get("budget", {}).get("max_agents")})
+    final_metrics = final_metric_contract(initial_metrics, reason=state.get("reasoning", {}).get("termination_reason") or state.get("current_state", "UNKNOWN"), state=state)
+    return {"run_id": state["run_id"], "jarvis_version": state["jarvis_version"], "task_id": state["task_id"], "state": state["current_state"], "complexity": state["complexity"], "risk_class": state["risk_class"], "operational_mode": state["operational_mode"], "reasoning_class": state["reasoning_class"], "reasoning": state.get("reasoning"), "agents": state["agents_used"], "unique_agent_count": len(state["agents_used"]), "budget": state["budget"], "routing": state["routing"], "teams": state.get("teams", {}), "rag": state["rag"], "metrics": state["metrics"], "metrics_contract": {"initial": initial_metrics, "final": final_metrics}, "gate_decision": state["gate_decision"], "gate_reason_code": state["gate_reason_code"], "gate_attempts": state["gate_attempts"]}
 
 
 def percentile(values: list[int], fraction: float) -> int:

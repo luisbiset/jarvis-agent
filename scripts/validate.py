@@ -294,6 +294,7 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
         "reasoning-policy.json",
         "rag-policy.json",
         "rag-context.schema.json",
+        "chat-metrics.schema.json",
         "teams-policy.json",
         "knowledge-transfer-policy.json",
         "policy-registry.json",
