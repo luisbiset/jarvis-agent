@@ -2,8 +2,10 @@
 set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+project_root_native="$project_root"
 codex_home="${CODEX_HOME:-$HOME/.codex}"
 if command -v cygpath >/dev/null 2>&1; then
+  project_root_native="$(cygpath -w "$project_root")"
   [[ "$project_root" == *:* ]] && project_root="$(cygpath -u "$project_root")"
   [[ "$codex_home" == *:* ]] && codex_home="$(cygpath -u "$codex_home")"
 fi
@@ -59,7 +61,9 @@ fi
 if [[ "$dry_run" == true ]]; then
   printf 'DRY-RUN: gravar %q em %q\n' "$project_root" "$codex_home/jarvis-agent-root"
 else
-  printf '%s\n' "$project_root" > "$codex_home/jarvis-agent-root"
+  # Bash/Git Bash pode converter o caminho para /c/...; o runtime do Codex
+  # precisa receber o caminho nativo do Windows no ponteiro global.
+  printf '%s\n' "$project_root_native" > "$codex_home/jarvis-agent-root"
 fi
 
 for agent in "$project_root"/agents/*.toml; do

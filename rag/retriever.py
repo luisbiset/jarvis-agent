@@ -17,6 +17,8 @@ from .models import RetrievalHit
 from .semantic import cosine
 
 TOKEN = re.compile(r"[A-Za-zÀ-ÿ_][\wÀ-ÿ.$-]{1,}")
+SOURCE_PRIORITY = {"CODE": 1.0, "TEST": 0.92, "CONTRACT": 0.84, "CONFIGURATION": 0.78, "DOC": 0.68, "DOCUMENTATION": 0.68}
+RANKING_VERSION = "2.0.0"
 
 
 def _fold(value: str) -> str:
@@ -101,13 +103,15 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
         raw = float(row["raw_score"])
         lexical = 1 / (1 + math.exp(min(20.0, max(-20.0, raw)))) if index.fts5 else coverage
         semantic_score = cosine(query, row["text"]) if semantic else 0.0
-        final = min(1.0, 0.38 * coverage + 0.18 * lexical + 0.20 * semantic_score + 0.10 * exact + symbol_bonus + path_bonus + path_exact_bonus)
+        source_bonus = 0.04 * SOURCE_PRIORITY.get(str(row["source_type"]).upper(), 0.6)
+        final = min(1.0, 0.38 * coverage + 0.18 * lexical + 0.20 * semantic_score + 0.10 * exact + symbol_bonus + path_bonus + path_exact_bonus + source_bonus)
         metadata = json.loads(row["metadata_json"] or "{}")
         reasons = []
         if any(term in symbol for term in query_terms): reasons.append("query_term_in_symbol")
         if any(term in path for term in query_terms): reasons.append("query_term_in_path")
         if any(term in text for term in query_terms): reasons.append("query_term_in_content")
         if exact: reasons.append("exact_phrase_in_content")
+        reasons.append(f"source_priority_{str(row['source_type']).lower()}" )
         if taxonomy: reasons.append("taxonomy_filter_match")
         if reranker and reranker_score(reranker, query, RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], 0.0, 0.0, 0.0, row["text"])) != 0: reasons.append("reranker_weight_match")
         scored.append(RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], round(lexical, 6), semantic_score, round(final, 6), row["text"], metadata, reasons, "selected_by_ranked_relevance"))
@@ -147,6 +151,8 @@ def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget:
         "schema_version": "1.0.0", "run_id": run_id, "query_id": query_id,
         "query_hash": hashlib.sha256(query.encode()).hexdigest(), "filters_hash": filters_hash, "created_at": utc_now(),
         "context_budget": context_budget, "retrieval_mode": "HYBRID" if semantic else "LEXICAL_RERANKED" if reranker else "LEXICAL_ONLY",
+        "ranking_version": RANKING_VERSION, "taxonomy_version": "1.0.0",
+        "index_scope": {"repo": sorted({hit.repo for hit in selected}), "branches": [], "revisions": []},
         "candidates": len(candidates), "hits": [hit.as_dict() for hit in selected],
         "estimated_tokens": estimated_tokens, "duplicate_chunks_removed": duplicates,
         "latency_ms": round((time.monotonic() - started) * 1000),
