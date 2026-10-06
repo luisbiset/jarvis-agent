@@ -31,7 +31,7 @@ def suggest_from_pack(path: Path, query: str, rows: list[dict]) -> list[dict]:
 def main() -> int:
     parser = argparse.ArgumentParser(); parser.add_argument("--file", type=Path, default=DEFAULT)
     sub = parser.add_subparsers(dest="command", required=True)
-    add = sub.add_parser("add"); add.add_argument("--query", required=True); add.add_argument("--path", required=True); add.add_argument("--symbol", default=""); add.add_argument("--relevant", action="store_true"); add.add_argument("--layer", required=True); add.add_argument("--artifact", required=True); add.add_argument("--reason", default="")
+    add = sub.add_parser("add"); add.add_argument("--query", required=True); add.add_argument("--path", required=True); add.add_argument("--symbol", default=""); add_decision = add.add_mutually_exclusive_group(); add_decision.add_argument("--relevant", action="store_true"); add_decision.add_argument("--irrelevant", action="store_true"); add.add_argument("--layer", required=True); add.add_argument("--artifact", required=True); add.add_argument("--reason", default="")
     approve = sub.add_parser("approve"); approve.add_argument("--id", required=True); decision = approve.add_mutually_exclusive_group(required=True); decision.add_argument("--relevant", action="store_true"); decision.add_argument("--irrelevant", action="store_true")
     reject = sub.add_parser("reject"); reject.add_argument("--id", required=True)
     export = sub.add_parser("export"); export.add_argument("--output", type=Path, required=True)
@@ -41,12 +41,19 @@ def main() -> int:
     if args.command == "add":
         values = [args.query, args.path, args.symbol, args.reason, args.layer, args.artifact]
         if any(not safe(value) for value in values): raise SystemExit("feedback contém conteúdo não permitido")
-        item = {"id":"fb-" + secrets.token_hex(6), "query":args.query, "candidate":{"path":args.path, "symbol":args.symbol}, "relevant":args.relevant, "taxonomy":{"layer":args.layer, "artifact":args.artifact}, "reason":args.reason, "status":"PENDING", "created_at":now()}
+        if args.relevant and args.irrelevant:
+            raise SystemExit("feedback exige uma única decisão")
+        relevant = True if args.relevant else False if args.irrelevant else None
+        duplicate = next((row for row in rows if row.get("query") == args.query and row.get("candidate", {}).get("path") == args.path and row.get("candidate", {}).get("symbol", "") == args.symbol and row.get("status") != "REJECTED"), None)
+        if duplicate:
+            raise SystemExit(f"feedback duplicado: {duplicate['id']}")
+        item = {"id":"fb-" + secrets.token_hex(6), "query":args.query, "candidate":{"path":args.path, "symbol":args.symbol}, "relevant":relevant, "taxonomy":{"layer":args.layer, "artifact":args.artifact}, "reason":args.reason, "status":"PENDING", "created_at":now()}
         rows.append(item); write(args.file, rows); print(item["id"])
     elif args.command == "approve":
         found = next((row for row in rows if row["id"] == args.id), None)
         if not found: raise SystemExit("feedback não encontrado")
-        found["status"] = "APPROVED"; found["relevant"] = bool(args.relevant); found["approved_at"] = now(); write(args.file, rows); print(args.id)
+        if found.get("status") != "PENDING": raise SystemExit("somente feedback PENDING pode ser aprovado")
+        found["status"] = "APPROVED"; found["relevant"] = True if args.relevant else False; found["approved_at"] = now(); write(args.file, rows); print(args.id)
     elif args.command == "reject":
         found = next((row for row in rows if row["id"] == args.id), None)
         if not found: raise SystemExit("feedback não encontrado")
@@ -57,6 +64,7 @@ def main() -> int:
         suggestions = suggest_from_pack(args.context_pack, args.query, rows); write(args.file, rows); print(json.dumps({"created":len(suggestions), "pending":sum(row.get("status") == "PENDING" for row in rows), "ids":[row["id"] for row in suggestions]}, ensure_ascii=False))
     else:
         approved = [row for row in rows if row.get("status") == "APPROVED"]
+        if any(not isinstance(row.get("relevant"), bool) for row in approved): raise SystemExit("feedback APPROVED sem relevância booleana")
         args.output.parent.mkdir(parents=True, exist_ok=True); args.output.write_text("".join(json.dumps({key: row[key] for key in ("query", "candidate", "relevant", "taxonomy", "reason")}, ensure_ascii=False, sort_keys=True) + "\n" for row in approved), encoding="utf-8"); print(json.dumps({"approved":len(approved), "output":str(args.output)}, ensure_ascii=False))
     return 0
 if __name__ == "__main__": raise SystemExit(main())

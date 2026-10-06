@@ -28,7 +28,7 @@ def load_active(path: Path) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--feedback", type=Path, default=Path(".jarvis/rag/feedback.jsonl")); parser.add_argument("--root", type=Path, default=Path(".jarvis/rag")); parser.add_argument("--min-examples", type=int, default=2); args = parser.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--feedback", type=Path, default=Path(".jarvis/rag/feedback.jsonl")); parser.add_argument("--root", type=Path, default=Path(".jarvis/rag")); parser.add_argument("--min-examples", type=int, default=2); parser.add_argument("--approve-promotion", action="store_true", help="autoriza explicitamente substituir o modelo ativo"); args = parser.parse_args()
     rows = load(args.feedback); approved = [row for row in rows if row.get("status") == "APPROVED"]; pending = sum(row.get("status") == "PENDING" for row in rows)
     if len(approved) < args.min_examples:
         print(json.dumps({"promoted": False, "reason": "insufficient_approved_examples", "approved": len(approved), "pending": pending, "required": args.min_examples}, ensure_ascii=False)); return 0
@@ -48,6 +48,8 @@ def main() -> int:
             print(json.dumps({"promoted": False, "reason": "validation_quality_below_threshold", "validation_accuracy": validation_score, "baseline_accuracy": baseline_score, "approved": len(approved), "pending": pending}, ensure_ascii=False)); return 0
         if active_model and validation_score < baseline_score:
             print(json.dumps({"promoted": False, "reason": "candidate_below_active_baseline", "validation_accuracy": validation_score, "baseline_accuracy": baseline_score, "approved": len(approved), "pending": pending}, ensure_ascii=False)); return 0
+        if not args.approve_promotion:
+            print(json.dumps({"promoted": False, "reason": "human_approval_required", "validation_accuracy": validation_score, "baseline_accuracy": baseline_score, "approved": len(approved), "pending": pending}, ensure_ascii=False)); return 0
         backup = args.root / "backups" / datetime.now().strftime("%Y%m%dT%H%M%SZ"); promote(reranker, args.root / "reranker.json", backup); promote(taxonomy, args.root / "taxonomy.json", backup)
         manifest = {"schema_version":"1.0.0", "promoted_at":now(), "approved":len(approved), "train":len(train_rows), "validation":len(validation_rows), "validation_accuracy":validation_score, "baseline_accuracy":baseline_score, "candidate_model":"reranker.json", "pending":pending, "backup":str(backup) if backup.exists() else None}
         (args.root / "training-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

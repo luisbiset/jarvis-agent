@@ -97,7 +97,7 @@
       "type": "object",
       "required": ["mode", "files", "estimated_tokens", "tool_reads", "raw_bytes", "limit_hits", "limits"],
       "properties": {
-        "mode": { "const": "OBSERVE_ONLY" },
+        "mode": { "enum": ["OBSERVE_ONLY", "ENFORCED"] },
         "files": { "type": "integer", "minimum": 0 },
         "estimated_tokens": { "type": "integer", "minimum": 0 },
         "tool_reads": { "type": "integer", "minimum": 0 },
@@ -121,11 +121,11 @@
       "type": "object",
       "required": ["mode", "soft_limit_ratio", "max_credits", "max_uncached_input_tokens", "status", "limit_hits"],
       "properties": {
-        "mode": { "const": "OBSERVE_ONLY" },
+        "mode": { "enum": ["OBSERVE_ONLY", "ENFORCED", "OVERRIDE"] },
         "soft_limit_ratio": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
         "max_credits": { "type": "number", "exclusiveMinimum": 0 },
         "max_uncached_input_tokens": { "type": "integer", "minimum": 1 },
-        "status": { "enum": ["ALLOW", "SOFT_LIMIT_OBSERVED", "HARD_LIMIT_OBSERVED"] },
+        "status": { "enum": ["ALLOW", "SOFT_LIMIT_OBSERVED", "HARD_LIMIT_OBSERVED", "BUDGET_BLOCKED", "OVERRIDE"] },
         "limit_hits": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": false

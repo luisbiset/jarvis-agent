@@ -37,6 +37,7 @@
           "taxonomy": {"type": "object"},
           "match_reasons": {"type": "array", "items": {"type": "string"}},
           "selection_reason": {"type": "string"}
+          ,"git_branch": {"type": ["string", "null"]}, "git_commit": {"type": ["string", "null"]}, "score_breakdown": {"type": "object", "additionalProperties": {"type": "number"}}
         }
       }
     }

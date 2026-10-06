@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jarvis.local/contracts/rag-feedback.schema.json",
+  "title": "Jarvis RAG feedback",
+  "type": "object",
+  "required": ["id", "query", "candidate", "relevant", "status", "created_at"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "query": { "type": "string", "minLength": 1 },
+    "candidate": {
+      "type": "object",
+      "required": ["path"],
+      "properties": { "path": { "type": "string", "minLength": 1 }, "symbol": { "type": "string" } },
+      "additionalProperties": true
+    },
+    "relevant": { "type": ["boolean", "null"] },
+    "status": { "enum": ["PENDING", "APPROVED", "REJECTED"] },
+    "created_at": { "type": "string", "minLength": 1 },
+    "approved_at": { "type": "string" },
+    "rejected_at": { "type": "string" }
+  },
+  "allOf": [{
+    "if": { "properties": { "status": { "const": "APPROVED" } } },
+    "then": { "properties": { "relevant": { "type": "boolean" } } }
+  }],
+  "additionalProperties": true
+}

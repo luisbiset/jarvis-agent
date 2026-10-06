@@ -18,13 +18,26 @@ def _text(value: Any) -> str:
     return str(_value(value))
 
 
-def policy_decision(*, technical: bool = True) -> dict[str, Any]:
-    """Resolve apenas valores decididos pela policy, sem inventar consumo."""
-    path = Path(__file__).resolve().parents[1] / "contracts" / "reasoning-policy.json"
-    policy = json.loads(path.read_text(encoding="utf-8"))
-    level = "MEDIUM" if technical else "INSTANT"
-    selected = policy["levels"][level]
-    return {"complexity": "LOCALIZED" if technical else "TRIVIAL", "risk_class": "MEDIUM" if technical else "LOW", "operational_mode": "COPILOT", "model": selected["model"], "reasoning_effort": selected["reasoning_effort"], "max_attempts": policy["budget"]["max_attempts"], "max_agents": 2 if technical else 1}
+def policy_decision(*, technical: bool = True, message: str = "") -> dict[str, Any]:
+    """Usa o mesmo policy engine V3 do Runtime, sem duplicar thresholds."""
+    try:
+        from jarvis_runtime import reasoning_decision
+        lower = message.lower()
+        signals = {
+            "task_type": "GENERAL", "estimated_files": 0, "estimated_modules": 0,
+            "architectural": any(word in lower for word in ("arquitetura", "arquitetural", "refator")),
+            "production_critical": any(word in lower for word in ("produção", "producao", "release", "deploy")),
+            "database_migration": any(word in lower for word in ("banco", "sql", "migração", "migracao")),
+            "security_sensitive": any(word in lower for word in ("segurança", "seguranca", "credencial", "permissão", "permissao")),
+            "tests_required": any(word in lower for word in ("teste", "validar", "eval")),
+            "ambiguity_score": 0, "complexity_score": 0,
+        }
+        decision = reasoning_decision(signals)
+        return {"complexity": "TRANSVERSAL" if decision["level"] == "HIGH" else "LOCALIZED" if technical else "TRIVIAL", "risk_class": "HIGH" if decision["level"] == "HIGH" else "MEDIUM" if technical else "LOW", "operational_mode": "COPILOT", "model": decision["model"], "reasoning_effort": decision["reasoning_effort"], "max_attempts": decision["max_attempts"], "max_agents": 2 if technical else 1, "policy_version": decision["policy_version"], "context_budget": decision["context_budget"], "signals": signals}
+    except (ImportError, KeyError, ValueError):
+        path = Path(__file__).resolve().parents[1] / "contracts" / "reasoning-policy.json"
+        policy = json.loads(path.read_text(encoding="utf-8")); level = "MEDIUM" if technical else "INSTANT"; selected = policy["levels"][level]
+        return {"complexity": "LOCALIZED" if technical else "TRIVIAL", "risk_class": "MEDIUM" if technical else "LOW", "operational_mode": "COPILOT", "model": selected["model"], "reasoning_effort": selected["reasoning_effort"], "max_attempts": policy["budget"]["max_attempts"], "max_agents": 2 if technical else 1, "policy_version": policy.get("policy_version")}
 
 
 def initial(message: str, *, rag: dict[str, Any], decision: dict[str, Any] | None = None) -> dict[str, Any]:

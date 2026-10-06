@@ -55,14 +55,14 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
         return []
     params: list[Any] = []
     if index.fts5:
-        sql = """SELECT c.*,d.source_type,d.repo,d.path,d.language,d.content_hash,bm25(chunks_fts) raw_score
+        sql = """SELECT c.*,d.source_type,d.repo,d.path,d.language,d.content_hash,d.git_branch,d.git_commit,bm25(chunks_fts) raw_score
                  FROM chunks_fts JOIN chunks c ON c.chunk_id=chunks_fts.chunk_id
                  JOIN documents d ON d.document_id=c.document_id
                  WHERE chunks_fts MATCH ? AND d.active=1"""
         params.append(_fts_query(raw_terms))
     else:
         clauses = " OR ".join("(c.text LIKE ? OR COALESCE(c.symbol,'') LIKE ? OR d.path LIKE ?)" for _ in query_terms)
-        sql = f"""SELECT c.*,d.source_type,d.repo,d.path,d.language,d.content_hash,0.0 raw_score
+        sql = f"""SELECT c.*,d.source_type,d.repo,d.path,d.language,d.content_hash,d.git_branch,d.git_commit,0.0 raw_score
                   FROM chunks c JOIN documents d ON d.document_id=c.document_id
                   WHERE d.active=1 AND ({clauses})"""
         for value in query_terms:
@@ -114,7 +114,8 @@ def search(index: RagIndex, query: str, limit: int, path_filter: str | None = No
         reasons.append(f"source_priority_{str(row['source_type']).lower()}" )
         if taxonomy: reasons.append("taxonomy_filter_match")
         if reranker and reranker_score(reranker, query, RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], 0.0, 0.0, 0.0, row["text"])) != 0: reasons.append("reranker_weight_match")
-        scored.append(RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], round(lexical, 6), semantic_score, round(final, 6), row["text"], metadata, reasons, "selected_by_ranked_relevance"))
+        breakdown = {"coverage": round(0.38 * coverage, 6), "lexical": round(0.18 * lexical, 6), "semantic": round(0.20 * semantic_score, 6), "exact_phrase": round(0.10 * exact, 6), "symbol": round(symbol_bonus, 6), "path": round(path_bonus + path_exact_bonus, 6), "source_priority": round(source_bonus, 6)}
+        scored.append(RetrievalHit(row["chunk_id"], row["source_type"], row["repo"], row["path"], row["language"], row["chunk_type"], row["symbol"], row["start_line"], row["end_line"], row["content_hash"], round(lexical, 6), semantic_score, round(final, 6), row["text"], metadata, reasons, "selected_by_ranked_relevance", row["git_branch"], row["git_commit"], breakdown))
     ordered = sorted(scored, key=lambda hit: (-hit.final_score, hit.path, hit.start_line))
     if reranker:
         ordered.sort(key=lambda hit: (-reranker_score(reranker, query, hit), -hit.final_score, hit.path, hit.start_line))
@@ -152,7 +153,7 @@ def retrieve(database: Path, query: str, policy: dict[str, Any], context_budget:
         "query_hash": hashlib.sha256(query.encode()).hexdigest(), "filters_hash": filters_hash, "created_at": utc_now(),
         "context_budget": context_budget, "retrieval_mode": "HYBRID" if semantic else "LEXICAL_RERANKED" if reranker else "LEXICAL_ONLY",
         "ranking_version": RANKING_VERSION, "taxonomy_version": "1.0.0",
-        "index_scope": {"repo": sorted({hit.repo for hit in selected}), "branches": [], "revisions": []},
+        "index_scope": {"repo": sorted({hit.repo for hit in selected}), "branches": sorted({hit.git_branch for hit in selected if getattr(hit, "git_branch", None)}), "revisions": sorted({hit.git_commit for hit in selected if getattr(hit, "git_commit", None)})},
         "candidates": len(candidates), "hits": [hit.as_dict() for hit in selected],
         "estimated_tokens": estimated_tokens, "duplicate_chunks_removed": duplicates,
         "latency_ms": round((time.monotonic() - started) * 1000),

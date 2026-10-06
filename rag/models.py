@@ -37,6 +37,9 @@ class RetrievalHit:
     taxonomy: dict[str, Any] = field(default_factory=dict)
     match_reasons: list[str] = field(default_factory=list)
     selection_reason: str = ""
+    git_branch: str | None = None
+    git_commit: str | None = None
+    score_breakdown: dict[str, float] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)

@@ -12,7 +12,7 @@ from rag.indexer import RagIndex
 from rag.retriever import retrieve, load_reranker
 from rag.security import safe_text
 from rag.taxonomy import classify
-from rag.semantic import cosine
+from rag.semantic import LocalEmbeddingProvider, cosine
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,6 +31,12 @@ RUNTIME = load_runtime()
 class RagTest(unittest.TestCase):
     def policy(self) -> dict:
         return json.loads((ROOT / "contracts/rag-policy.json").read_text(encoding="utf-8"))
+
+    def test_local_embedding_provider_is_deterministic_and_offline(self):
+        provider = LocalEmbeddingProvider()
+        self.assertEqual(provider.model_id, "local-chargram-v1")
+        self.assertEqual(provider.embed_query("consulta"), provider.embed_query("consulta"))
+        self.assertEqual(len(provider.embed_query("consulta")), provider.dimensions)
 
     def test_java_chunking_preserves_symbol_and_lines(self):
         chunks = chunk_text("src/Foo.java", "public class Foo {\n  public int calcularTotal() {\n    return 1;\n  }\n}\n")
@@ -99,6 +105,7 @@ class RagTest(unittest.TestCase):
             self.assertEqual(payload["hits"][0]["taxonomy"]["artifact"], "codigo")
             self.assertIn("query_term_in_symbol", payload["hits"][0]["match_reasons"])
             self.assertEqual(payload["hits"][0]["selection_reason"], "selected_by_ranked_relevance")
+            self.assertIn("coverage", payload["hits"][0]["score_breakdown"])
 
     def test_runtime_writes_rag_context_without_counting_model_call(self):
         with tempfile.TemporaryDirectory() as temporary:

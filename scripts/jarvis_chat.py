@@ -10,10 +10,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("message"); parser.add_argument("--database", type=Path, default=ROOT / ".jarvis/rag/index.db"); parser.add_argument("--policy", type=Path, default=ROOT / "contracts/rag-policy.json"); parser.add_argument("--context-budget", choices=("SMALL", "MEDIUM", "LARGE"), default="SMALL"); parser.add_argument("--semantic", action="store_true"); parser.add_argument("--show-enhanced", action="store_true", help="exibe o prompt estruturado usado internamente"); parser.add_argument("--output", type=Path); parser.add_argument("--allow-rag-bypass", metavar="REASON"); args = parser.parse_args()
     engineered = improve_prompt(args.message)
     if args.allow_rag_bypass:
-        rag = {"retrieved": False, "required": True, "bypassed": True, "reason": "explicit_rag_bypass", "bypass_reason": args.allow_rag_bypass}
+        rag = {"retrieved": False, "required": True, "bypassed": True, "reason": "explicit_rag_bypass", "bypass_reason": "EXPLICIT_AUTHORIZATION"}
     else:
         rag = retrieve_message(str(engineered["enhanced"]), args.database, args.policy, args.context_budget, args.semantic, already_engineered=True)
-    metrics_initial = initial_metrics(args.message, rag=rag, decision=policy_decision(technical=bool(rag.get("required"))))
+    metrics_initial = initial_metrics(args.message, rag=rag, decision=policy_decision(technical=bool(rag.get("required")), message=args.message))
     metrics_reason = "RAG_BYPASS_AUTHORIZED" if args.allow_rag_bypass else "RAG_BLOCKED" if rag.get("reason") == "rag_index_not_found" else "NOT_EXECUTED"
     metrics_final = final_metrics(metrics_initial, reason=metrics_reason)
     result = {"message_received": True, "stage": "RAG_BEFORE_PLANNING", "prompt_engineering": {"enabled": True, "changed": engineered["changed"]}, "rag": rag, "metrics": {"initial": metrics_initial, "final": metrics_final}}

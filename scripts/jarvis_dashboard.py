@@ -40,6 +40,7 @@ def dashboard(db: Path) -> dict:
             data["recent_runs"] = [dict(x) for x in con.execute("SELECT * FROM runs ORDER BY started_at DESC LIMIT 30")]
         finally:
             con.close()
+    data["metrics_contract"] = {"schema_version": "1.0.0", "source": "Runtime V3", "phases": ["INITIAL", "FINAL"], "unknown_value": "UNKNOWN/NOT_OBSERVED"}
     return data
 
 def models(root: Path = ROOT) -> dict:

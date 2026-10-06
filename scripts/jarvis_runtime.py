@@ -16,6 +16,7 @@ import json
 import re
 import secrets
 import sqlite3
+import subprocess
 from contextlib import contextmanager
 import sys
 from datetime import datetime, timezone
@@ -27,6 +28,12 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from prompt_engineer import improve_prompt
 from jarvis_metrics import final as final_metric_contract, initial as initial_metric_contract
+from runtime.policy import reasoning_decision as _policy_reasoning_decision
+from runtime import persistence as _persistence
+from runtime.telemetry import telemetry_db_for_state as _telemetry_db_for_state
+from runtime.telemetry import open_connection as _open_telemetry_connection
+from runtime.telemetry import sync_run as _sync_telemetry_run
+from runtime.telemetry import ensure_migrations as _ensure_telemetry_migrations
 VERSION_PATH = ROOT / "contracts/version.json"
 REASONING_POLICY_PATH = ROOT / "contracts/reasoning-policy.json"
 KNOWLEDGE_TRANSFER_POLICY_PATH = ROOT / "contracts/knowledge-transfer-policy.json"
@@ -98,7 +105,7 @@ def elapsed_ms(started_at: str, finished_at: str) -> int:
 
 def load_json(path: Path) -> dict[str, Any]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = _persistence.load_json(path)
     except (OSError, json.JSONDecodeError) as exc:
         raise RuntimeErrorSafe(f"JSON inválido ou inacessível em {path}: {exc}") from exc
     if not isinstance(value, dict):
@@ -247,6 +254,8 @@ def task_signals_from_args(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def reasoning_decision(signals: dict[str, Any], policy: dict[str, Any] | None = None) -> dict[str, Any]:
+    return _policy_reasoning_decision(signals, policy)
+    # Mantido abaixo apenas como referência temporária para compatibilidade de diffs.
     policy = policy or load_reasoning_policy()
     limits, weights = policy["limits"], policy["weights"]
     ambiguity = signals["ambiguity_score"]
@@ -329,16 +338,11 @@ def invocation_policy(state: dict[str, Any], agent: str, task_type: str | None =
 
 
 def write_json(path: Path, value: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    _persistence.write_json(path, value)
 
 
 def append_jsonl(path: Path, value: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as stream:
-        stream.write(json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n")
+    _persistence.append_jsonl(path, value)
 
 
 def assert_safe_metadata(value: Any, key: str = "metadata") -> None:
@@ -412,7 +416,7 @@ def telemetry_db_for_runs(runs_dir: Path) -> Path:
 
 
 def telemetry_db_for_state(state: dict[str, Any], root: Path) -> Path:
-    return Path(state.get("telemetry_db", root.parent / ".telemetry/jarvis.db")).resolve()
+    return _telemetry_db_for_state(state, root)
 
 
 DDL = """
@@ -433,29 +437,13 @@ CREATE TABLE IF NOT EXISTS rag_queries(query_id TEXT PRIMARY KEY,run_id TEXT NOT
 CREATE TABLE IF NOT EXISTS rag_hits(query_id TEXT NOT NULL REFERENCES rag_queries(query_id),chunk_id TEXT NOT NULL,repo TEXT NOT NULL,path TEXT NOT NULL,symbol TEXT,content_hash TEXT NOT NULL,lexical_score REAL NOT NULL,semantic_score REAL NOT NULL,final_score REAL NOT NULL,rank INTEGER NOT NULL,PRIMARY KEY(query_id,chunk_id));
 """
 
+from runtime.telemetry_schema import DDL as DDL
+
 
 @contextmanager
 def connect_db(path: Path):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(path)
-    connection.row_factory = sqlite3.Row
-    connection.executescript(DDL)
-    for table in ("agent_invocations", "execution_attempts"):
-        existing = {row["name"] for row in connection.execute(f"PRAGMA table_info({table})")}
-        for column in ("model_requested", "model_effective", "context_budget", "progress_event", "reasoning_effort_effective"):
-            if column not in existing:
-                connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
-    migrations = {
-        "agent_invocations": {"team": "TEXT"},
-        "rag_queries": {"team": "TEXT"},
-        "technical_handoffs": {"teachback_required": "INTEGER NOT NULL DEFAULT 0", "teachback_questions": "INTEGER NOT NULL DEFAULT 0"},
-        "teachback_evaluations": {"developer_requested_deeper_explanation": "INTEGER NOT NULL DEFAULT 0"},
-    }
-    for table, columns in migrations.items():
-        existing = {row["name"] for row in connection.execute(f"PRAGMA table_info({table})")}
-        for column, definition in columns.items():
-            if column not in existing:
-                connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+    connection = _open_telemetry_connection(path, DDL)
+    _ensure_telemetry_migrations(connection)
     try:
         yield connection
     finally:
@@ -468,6 +456,8 @@ def bool_int(value: bool | None) -> int | None:
 
 
 def sync_run(connection: sqlite3.Connection, state: dict[str, Any]) -> None:
+    _sync_telemetry_run(connection, state)
+    return
     m, b, r = state["metrics"], state["budget"], state["routing"]
     values = (state["run_id"], state["task_id"], state["started_at"], state["finished_at"], m["duration_ms"], state["current_state"], state["complexity"], state["risk_class"], state["operational_mode"], state["reasoning_class"], state["jarvis_version"], state["policy_version"], state["contracts_version"], state["config_hash"], b["budget_limit"], b["budget_used"], int(b["budget_override"]), b["budget_override_reason"], m["agent_invocation_count"], len(state["agents_used"]), m["rework_cycles"], m["stop_count"], bool_int(m["first_pass_success"]), bool_int(m["human_gate_pass_on_first_attempt"]), r["routing_outcome"], m["input_tokens"], m["cached_input_tokens"], m["output_tokens"], m["credits"])
     connection.execute("""INSERT INTO runs(run_id,task_id,started_at,finished_at,duration_ms,status,complexity,risk_class,operational_mode,reasoning_class,jarvis_version,policy_version,contracts_version,config_hash,budget_limit,budget_used,budget_override,budget_override_reason,agent_invocation_count,unique_agent_count,rework_cycles,stop_count,first_pass_success,human_gate_pass_on_first_attempt,routing_outcome,input_tokens,cached_input_tokens,output_tokens,credits) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(run_id) DO UPDATE SET finished_at=excluded.finished_at,duration_ms=excluded.duration_ms,status=excluded.status,reasoning_class=excluded.reasoning_class,budget_used=excluded.budget_used,budget_override=excluded.budget_override,budget_override_reason=excluded.budget_override_reason,agent_invocation_count=excluded.agent_invocation_count,unique_agent_count=excluded.unique_agent_count,rework_cycles=excluded.rework_cycles,stop_count=excluded.stop_count,first_pass_success=excluded.first_pass_success,human_gate_pass_on_first_attempt=excluded.human_gate_pass_on_first_attempt,routing_outcome=excluded.routing_outcome,input_tokens=excluded.input_tokens,cached_input_tokens=excluded.cached_input_tokens,output_tokens=excluded.output_tokens,credits=excluded.credits""", values)
@@ -1385,11 +1375,16 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
     reranker_path = DEFAULT_RAG_RERANKER if DEFAULT_RAG_RERANKER.is_file() else None
     taxonomy = dict(item.split("=", 1) for item in (getattr(args, "taxonomy", None) or []) if "=" in item)
     query_hash = hashlib.sha256(args.query.encode()).hexdigest()
-    filters_hash = hashlib.sha256(json.dumps({"path": args.path_filter, "repo": args.domain, "branch": None, "source_type": None, "taxonomy": taxonomy, "reranker": str(reranker_path) if reranker_path else None}, sort_keys=True).encode()).hexdigest()
+    try:
+        git_branch = subprocess.run(["git", "branch", "--show-current"], cwd=ROOT, text=True, capture_output=True, check=True).stdout.strip() or None
+        git_commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=True).stdout.strip() or None
+    except (OSError, subprocess.CalledProcessError):
+        git_branch = git_commit = None
+    filters_hash = hashlib.sha256(json.dumps({"path": args.path_filter, "repo": args.domain, "branch": git_branch, "commit": git_commit, "source_type": None, "taxonomy": taxonomy, "ranking_version": "2.0.0", "taxonomy_version": "1.0.0", "policy_version": policy.get("policy_version"), "context_budget": context_budget, "reranker": str(reranker_path) if reranker_path else None}, sort_keys=True).encode()).hexdigest()
     destination = root / "context-packs" / f"rag-context-{team.lower().replace('_', '-')}.json"
     if destination.is_file():
         cached = load_json(destination)
-        fresh = cached.get("query_hash") == query_hash and cached.get("filters_hash") == filters_hash and cached.get("context_budget") == context_budget
+        fresh = cached.get("query_hash") == query_hash and cached.get("filters_hash") == filters_hash and cached.get("context_budget") == context_budget and cached.get("ranking_version") == "2.0.0" and cached.get("taxonomy_version") == "1.0.0"
         if fresh:
             connection = sqlite3.connect(database)
             try:
@@ -1411,6 +1406,7 @@ def rag_retrieve(args: argparse.Namespace) -> dict[str, Any]:
         payload = retrieve(database, args.query, policy, context_budget, state["run_id"], args.path_filter, args.domain, taxonomy=taxonomy, reranker_path=reranker_path)
     except (ValueError, sqlite3.Error) as exc:
         raise RuntimeErrorSafe(f"retrieval RAG falhou: {exc}") from exc
+    payload["filters_hash"] = filters_hash
     write_context_pack(destination, payload)
     if getattr(args, "collect_feedback", False):
         from aghuse_rag_feedback import read as read_feedback, suggest_from_pack, write as write_feedback
@@ -1613,7 +1609,7 @@ def export_telemetry(args: argparse.Namespace) -> dict[str, Any]:
         data = {table: [dict(row) for row in connection.execute(f"SELECT * FROM {table}")] for table in EXPORT_TABLES}
         columns = {table: [row[1] for row in connection.execute(f"PRAGMA table_info({table})")] for table in EXPORT_TABLES}
     if args.format == "json":
-        write_json(output, {"schema_version": load_json(VERSION_PATH)["telemetry_schema_version"], "exported_at": now(), "tables": data})
+        write_json(output, {"schema_version": load_json(VERSION_PATH)["telemetry_schema_version"], "exported_at": now(), "metrics_contract": {"schema_version": "1.0.0", "source": "Runtime V3", "phases": ["INITIAL", "FINAL"], "unknown_value": "UNKNOWN/NOT_OBSERVED"}, "tables": data})
     else:
         output.mkdir(parents=True, exist_ok=True)
         for table, rows in data.items():
