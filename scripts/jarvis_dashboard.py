@@ -23,6 +23,8 @@ AUDIT_STORE = ROOT / ".jarvis" / "dashboard" / "audit.jsonl"
 SETTINGS_STORE = ROOT / ".jarvis" / "dashboard" / "settings-revisions.jsonl"
 INTEGRATIONS_STORE = ROOT / ".jarvis" / "dashboard" / "integrations.json"
 REDMINE_MCP = ROOT / "plugins" / "redmine-agent" / "scripts" / "server.mjs"
+PROJECTS_CONFIG = ROOT / "config" / "projects.json"
+ACTIVE_PROJECT_STORE = ROOT / ".jarvis" / "dashboard" / "active-project.json"
 
 HTML = """<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Jarvis Observability</title>
 <style>body{font:15px system-ui;background:#0f172a;color:#e2e8f0;margin:0}main{max-width:1180px;margin:auto;padding:28px}h1{margin:0 0 6px}.muted{color:#94a3b8}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:24px 0}.card,table{background:#1e293b;border:1px solid #334155;border-radius:10px}.card{padding:16px}.value{font-size:26px;font-weight:700;margin-top:7px}table{width:100%;border-collapse:collapse;overflow:hidden}th,td{text-align:left;padding:11px;border-bottom:1px solid #334155}th{color:#94a3b8;font-size:12px;text-transform:uppercase}tr:hover{background:#263449}a{color:#7dd3fc;text-decoration:none}.ok{color:#86efac}.bad{color:#fca5a5}.section{margin-top:28px}button{background:#2563eb;color:white;border:0;border-radius:6px;padding:8px 12px;cursor:pointer}@media(max-width:600px){main{padding:16px}th:nth-child(n+4),td:nth-child(n+4){display:none}}</style></head><body><main>
@@ -231,14 +233,21 @@ def _safe_summary(value: str, limit: int = 500) -> str:
 def _hash(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
-def create_session(task_id: str | None = None) -> dict:
-    session = {"session_id": "chat-" + uuid.uuid4().hex, "task_id": _safe_summary(task_id or "", 120), "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "messages": [], "run_id": None}
+def _require_project(project_id: str | None) -> dict:
+    project = project_by_id(str(project_id or ""))
+    if not project:
+        raise ValueError("projeto inválido")
+    return project
+
+def create_session(project_id: str, task_id: str | None = None) -> dict:
+    _require_project(project_id)
+    session = {"session_id": "chat-" + uuid.uuid4().hex, "project_id": project_id, "task_id": _safe_summary(task_id or "", 120), "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "messages": [], "run_id": None}
     _append_jsonl(CHAT_STORE, session)
     return session
 
-def chat_sessions(session_id: str | None = None) -> list[dict]:
+def chat_sessions(session_id: str | None = None, project_id: str | None = None) -> list[dict]:
     rows = _read_jsonl(CHAT_STORE)
-    return [row for row in rows if not session_id or row.get("session_id") == session_id]
+    return [row for row in rows if (not session_id or row.get("session_id") == session_id) and (not project_id or row.get("project_id") == project_id)]
 
 def save_checkpoint(run_id: str, state: dict) -> dict:
     root = ROOT / ".jarvis" / "runs" / run_id / "checkpoints"
@@ -291,6 +300,37 @@ def settings_view() -> dict:
     rows = _read_jsonl(SETTINGS_STORE)
     current = next((row for row in reversed(rows) if row.get("status") == "APPLIED"), None)
     return {"schema_version": "1.0.0", "current": current, "revisions": [{"revision_id": row.get("revision_id"), "status": row.get("status"), "created_at": row.get("created_at"), "content_hash": row.get("content_hash")} for row in rows[-50:]]}
+
+def projects_view() -> dict:
+    if not PROJECTS_CONFIG.is_file():
+        return {"projects": [], "active_project_id": None}
+    try:
+        data = json.loads(PROJECTS_CONFIG.read_text(encoding="utf-8"))
+        projects = data.get("projects", [])
+        active = None
+        if ACTIVE_PROJECT_STORE.is_file():
+            active = json.loads(ACTIVE_PROJECT_STORE.read_text(encoding="utf-8")).get("project_id")
+        if not active and projects:
+            active = projects[0].get("project_id")
+        safe = [{key: item.get(key) for key in ("project_id", "name", "repository_root", "default_branch", "rag_scope", "allowed_agents", "allowed_integrations", "policy_ref")} for item in projects]
+        return {"projects": safe, "active_project_id": active}
+    except (OSError, json.JSONDecodeError):
+        return {"projects": [], "active_project_id": None, "error": "registro de projetos inválido"}
+
+
+def project_by_id(project_id: str) -> dict | None:
+    return next((item for item in projects_view().get("projects", []) if item.get("project_id") == project_id), None)
+
+
+def select_project(project_id: str) -> dict:
+    project = project_by_id(project_id)
+    if not project:
+        raise ValueError("projeto não encontrado")
+    ACTIVE_PROJECT_STORE.parent.mkdir(parents=True, exist_ok=True)
+    ACTIVE_PROJECT_STORE.write_text(json.dumps({"project_id": project_id, "selected_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    audit_action("PROJECT_SELECTED", None, {"project_id": project_id}, {"status": "SELECTED", "project_id": project_id})
+    return {"project": project, "active_project_id": project_id}
+
 
 def integrations_view() -> dict:
     if not INTEGRATIONS_STORE.is_file(): return {"integrations": []}
@@ -476,7 +516,17 @@ class Handler(BaseHTTPRequestHandler):
             compact_css = "<style>:root{--bg:#f4f7fb;--surface:#fff;--line:#e5eaf2;--text:#172033;--muted:#718096;--blue:#2563eb;--green:#059669;--red:#dc2626;--shadow:0 8px 24px rgba(30,55,90,.07)}*{box-sizing:border-box}body{font:14px Inter,ui-sans-serif,system-ui;background:var(--bg);color:var(--text)}main{max-width:1440px;padding:22px 28px;margin:auto}.grid{grid-template-columns:repeat(8,minmax(110px,1fr));gap:10px;margin:16px 0}.card,table{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}.card{padding:13px}.value{font-size:22px;margin-top:5px}.section{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}.section h2{font-size:15px;margin:0 0 11px}.section table{box-shadow:none;display:block;max-height:245px;overflow:auto}th,td{padding:9px 10px;white-space:nowrap}th{position:sticky;top:0;background:var(--surface)}button{border-radius:7px;padding:7px 10px;font-weight:600}@media(max-width:1050px){.grid{grid-template-columns:repeat(4,1fr)}}@media(max-width:600px){main{padding:14px}.grid{grid-template-columns:repeat(2,1fr)}}</style>"
             compact_css = "<style>" + (ROOT / "scripts" / "dashboard-modern.css").read_text(encoding="utf-8") + "</style>"
             return self.send(200, HTML.replace("</head>", compact_css + "</head>"))
-        if path == "/api/dashboard": return self.send(200, json.dumps(dashboard(self.db), ensure_ascii=False), "application/json; charset=utf-8")
+        if path == "/api/dashboard":
+            project_id = parse_qs(urlparse(self.path).query).get("project_id", [None])[0]
+            if not project_id: return self.send(400, json.dumps({"error": "project_id obrigatório"}, ensure_ascii=False), "application/json; charset=utf-8")
+            try: _require_project(project_id)
+            except ValueError as exc: return self.send(400, json.dumps({"error": str(exc)}, ensure_ascii=False), "application/json; charset=utf-8")
+            data = dashboard(self.db); data["project_id"] = project_id
+            return self.send(200, json.dumps(data, ensure_ascii=False), "application/json; charset=utf-8")
+        if path == "/api/projects": return self.send(200, json.dumps(projects_view(), ensure_ascii=False), "application/json; charset=utf-8")
+        if path.startswith("/api/projects/"):
+            project = project_by_id(path.rsplit("/", 1)[-1])
+            return self.send(200 if project else 404, json.dumps(project or {"error": "projeto não encontrado"}, ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/runs": return self.send(200, json.dumps({"runs": filtered_runs(self.db, parse_qs(urlparse(self.path).query))}, ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/attention": return self.send(200, json.dumps(attention(self.db), ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/agents": return self.send(200, json.dumps(agents_summary(self.db), ensure_ascii=False), "application/json; charset=utf-8")
@@ -495,10 +545,17 @@ class Handler(BaseHTTPRequestHandler):
             try: result = integration_health(integration_id)
             except ValueError as exc: return self.send(404, json.dumps({"error": str(exc)}, ensure_ascii=False), "application/json; charset=utf-8")
             return self.send(200, json.dumps(result, ensure_ascii=False), "application/json; charset=utf-8")
-        if path == "/api/chat/sessions": return self.send(200, json.dumps({"sessions": chat_sessions()}, ensure_ascii=False), "application/json; charset=utf-8")
+        if path == "/api/chat/sessions":
+            project_id = parse_qs(urlparse(self.path).query).get("project_id", [None])[0]
+            if not project_id: return self.send(400, json.dumps({"error": "project_id obrigatório"}, ensure_ascii=False), "application/json; charset=utf-8")
+            try: _require_project(project_id)
+            except ValueError as exc: return self.send(400, json.dumps({"error": str(exc)}, ensure_ascii=False), "application/json; charset=utf-8")
+            return self.send(200, json.dumps({"sessions": chat_sessions(project_id=project_id), "project_id": project_id}, ensure_ascii=False), "application/json; charset=utf-8")
         if path.startswith("/api/chat/sessions/"):
             session_id = path.split("/")[-1]
-            rows = chat_sessions(session_id)
+            project_id = parse_qs(urlparse(self.path).query).get("project_id", [None])[0]
+            if not project_id: return self.send(400, json.dumps({"error": "project_id obrigatório"}, ensure_ascii=False), "application/json; charset=utf-8")
+            rows = chat_sessions(session_id, project_id)
             return self.send(200 if rows else 404, json.dumps(rows[0] if rows else {"error": "sessão não encontrada"}, ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/audit": return self.send(200, json.dumps({"items": _read_jsonl(AUDIT_STORE)[-200:]}, ensure_ascii=False), "application/json; charset=utf-8")
         if path.startswith("/api/runs/") and path.endswith("/diff"):
@@ -530,6 +587,11 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         try: payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0")) or 0) or b"{}")
         except json.JSONDecodeError: return self.send(400, json.dumps({"error": "JSON inválido"}), "application/json; charset=utf-8")
+        if path.startswith("/api/projects/") and path.endswith("/select"):
+            project_id = path.split("/")[-2]
+            try: result = select_project(project_id)
+            except ValueError as exc: return self.send(404, json.dumps({"error": str(exc)}, ensure_ascii=False), "application/json; charset=utf-8")
+            return self.send(200, json.dumps(result, ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/tasks":
             clean, error = task_payload(payload)
             if error:
@@ -544,7 +606,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(500, json.dumps({"error": "resposta inválida do Runtime V3"}), "application/json; charset=utf-8")
             return self.send(201, json.dumps({"ok": True, "run_dir": created.get("run_dir"), "state": created.get("state", {})}, ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/chat/sessions":
-            session = create_session(payload.get("task_id"))
+            try: session = create_session(str(payload.get("project_id") or ""), payload.get("task_id"))
+            except ValueError as exc: return self.send(400, json.dumps({"error": str(exc)}, ensure_ascii=False), "application/json; charset=utf-8")
             return self.send(201, json.dumps(session, ensure_ascii=False), "application/json; charset=utf-8")
         if path == "/api/settings/drafts":
             try: draft = create_settings_draft(payload)
@@ -578,11 +641,12 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as exc: return self.send(403, json.dumps({"error": str(exc)}, ensure_ascii=False), "application/json; charset=utf-8")
             return self.send(501, json.dumps(result, ensure_ascii=False), "application/json; charset=utf-8")
         if path.startswith("/api/chat/sessions/") and path.endswith("/messages"):
-            session_id = path.split("/")[-2]; rows = chat_sessions(session_id)
+            session_id = path.split("/")[-2]; project_id = str(payload.get("project_id") or ""); rows = chat_sessions(session_id, project_id)
+            if not project_id: return self.send(400, json.dumps({"error": "project_id obrigatório"}, ensure_ascii=False), "application/json; charset=utf-8")
             if not rows: return self.send(404, json.dumps({"error": "sessão não encontrada"}, ensure_ascii=False), "application/json; charset=utf-8")
             message = str(payload.get("message", "")).strip()
             if not message or len(message) > 12000: return self.send(400, json.dumps({"error": "message inválida"}, ensure_ascii=False), "application/json; charset=utf-8")
-            session = rows[0]; entry = {"role": "user", "message_hash": _hash(message), "summary": _safe_summary(message), "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            session = rows[0]; entry = {"role": "user", "project_id": project_id, "message_hash": _hash(message), "summary": _safe_summary(message), "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
             command = [sys.executable, str(ROOT / "scripts" / "jarvis_chat.py"), message, "--database", str(ROOT / ".jarvis/rag/index.db"), "--context-budget", "SMALL"]
             result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, timeout=60)
             if result.returncode:
@@ -590,7 +654,7 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 try: data = json.loads(result.stdout); response = {"status": "READY", "summary": "RAG consultado antes do planejamento", "message_hash": _hash(result.stdout), "rag": {"retrieved": data.get("rag", {}).get("retrieved", False), "query_id": data.get("rag", {}).get("query_id")}, "metrics": data.get("metrics", {})}
                 except json.JSONDecodeError: response = {"status": "READY", "summary": "resposta recebida", "message_hash": _hash(result.stdout)}
-            entry["response"] = response; session.setdefault("messages", []).append(entry)
+            response["project_id"] = project_id; entry["response"] = response; session.setdefault("messages", []).append(entry)
             _write_jsonl(CHAT_STORE, [session if row.get("session_id") == session_id else row for row in _read_jsonl(CHAT_STORE)])
             return self.send(200, json.dumps({"session_id": session_id, "message": entry}, ensure_ascii=False), "application/json; charset=utf-8")
         if path.startswith("/api/runs/") and path.endswith("/actions"):

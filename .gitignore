@@ -8,6 +8,9 @@ plugins/*/.mcp.json
 # Artefatos locais
 .DS_Store
 node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
 *.log
 __pycache__/
 *.py[cod]

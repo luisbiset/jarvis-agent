@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jarvis://contracts/project-registry/1.0.0",
+  "title": "Jarvis Project Registry",
+  "type": "object",
+  "required": ["schema_version", "projects"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["project_id", "name", "repository_root", "default_branch", "rag_scope", "allowed_agents", "allowed_integrations", "policy_ref"],
+        "properties": {
+          "project_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"},
+          "name": {"type": "string", "minLength": 1, "maxLength": 120},
+          "repository_root": {"type": "string", "minLength": 1, "maxLength": 500},
+          "default_branch": {"type": "string", "minLength": 1, "maxLength": 120},
+          "rag_scope": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "allowed_agents": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "allowed_integrations": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "policy_ref": {"type": "string", "minLength": 1, "maxLength": 120}
+        }
+      }
+    }
+  }
+}
