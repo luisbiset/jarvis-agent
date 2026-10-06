@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "active_strategy": "CURRENT",
+  "shadow_enabled": true,
+  "optimized_enabled": false,
+  "savings_target_percent": 15,
+  "require_human_approval": true,
+  "quality_regression_allowed": false
+}

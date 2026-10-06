@@ -34,11 +34,13 @@ from runtime.telemetry import telemetry_db_for_state as _telemetry_db_for_state
 from runtime.telemetry import open_connection as _open_telemetry_connection
 from runtime.telemetry import sync_run as _sync_telemetry_run
 from runtime.telemetry import ensure_migrations as _ensure_telemetry_migrations
+from runtime.execution_planner import plan_execution, compare_strategies
 VERSION_PATH = ROOT / "contracts/version.json"
 REASONING_POLICY_PATH = ROOT / "contracts/reasoning-policy.json"
 KNOWLEDGE_TRANSFER_POLICY_PATH = ROOT / "contracts/knowledge-transfer-policy.json"
 RAG_POLICY_PATH = ROOT / "contracts/rag-policy.json"
 TEAMS_POLICY_PATH = ROOT / "contracts/teams-policy.json"
+EXECUTION_OPTIMIZATION_PATH = ROOT / "contracts/execution-optimization.json"
 DEFAULT_RUNS_DIR = ROOT / ".jarvis/runs"
 DEFAULT_TELEMETRY_DB = ROOT / ".jarvis/telemetry/jarvis.db"
 DEFAULT_RAG_DB = ROOT / ".jarvis/rag/index.db"
@@ -250,6 +252,11 @@ def task_signals_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "tests_required": bool(getattr(args, "tests_required", False)),
         "ambiguity_score": float(getattr(args, "ambiguity_score", 0) or 0),
         "complexity_score": float(getattr(args, "complexity_score", 0) or 0),
+        "contract_changed": bool(getattr(args, "contract_changed", False)),
+        "tests_changed": bool(getattr(args, "tests_changed", False)),
+        "database": bool(getattr(args, "database_migration", False)),
+        "security": bool(getattr(args, "security_sensitive", False)),
+        "rag_available": bool(getattr(args, "rag_available", False)),
     }
 
 
@@ -308,6 +315,14 @@ def reasoning_decide(args: argparse.Namespace) -> dict[str, Any]:
     signals = task_signals_from_args(args)
     assert_safe_metadata(signals)
     return reasoning_decision(signals)
+
+
+def execution_plan_command(args: argparse.Namespace) -> dict[str, Any]:
+    signals = task_signals_from_args(args)
+    decision = reasoning_decision(signals)
+    optimized = plan_execution(dict(signals, complexity=args.complexity, risk_class=args.risk_class), decision)
+    current = {"strategy": "CURRENT", "agents_planned": list(args.current_agent or []), "max_model_calls": None, "source": "EXPLICIT_ARGS" if args.current_agent else "UNKNOWN/NOT_OBSERVED"}
+    return {"optimized": optimized, "current": current, "shadow": compare_strategies(current, optimized)}
 
 
 def execution_path(complexity: str, risk_class: str, decision: dict[str, Any]) -> str:
@@ -479,6 +494,10 @@ def initial_state(task_id: str, complexity: str, risk_class: str, operational_mo
     model_call_limit = min(policy["model_call_limits"][complexity], policy["budget"]["hard_max_model_calls"])
     context_limits = policy["context_limits"][decision["context_budget"]]
     cost_limits = policy["cost_limits"][complexity]
+    planner_signals = dict(decision["signals"], complexity=complexity, risk_class=risk_class, operational_mode=operational_mode, rag_available=bool(decision["signals"].get("rag_available", False)))
+    execution_plan = plan_execution(planner_signals, {"max_model_calls": model_call_limit})
+    if agents_planned:
+        execution_plan["agents_planned"] = sorted(set(agents_planned))
     return {
         "schema_version": versions["execution_state_schema_version"], "run_id": make_run_id(), "task_id": task_id,
         "jarvis_version": versions["jarvis_version"], "policy_version": decision["policy_version"],
@@ -512,7 +531,9 @@ def initial_state(task_id: str, complexity: str, risk_class: str, operational_mo
             "max_child_depth": decision["max_child_depth"],
             "termination_reason": None
         },
-        "budget": {"max_agents": limit, "max_parallel_agents": parallel, "required_reviewers": REQUIRED_REVIEWERS[risk_class], "budget_limit": limit, "budget_used": 0, "budget_override": bool(budget_justification), "budget_override_reason": "EXPLICIT_OVERRIDE" if budget_justification else None, "max_model_calls": model_call_limit, "hard_max_model_calls": policy["budget"]["hard_max_model_calls"], "model_calls_used": 0, "max_duration_ms": decision["max_duration_ms"], "progress_events": 0},
+        "execution_plan": execution_plan,
+        "optimization": load_json(EXECUTION_OPTIMIZATION_PATH),
+        "budget": {"max_agents": limit, "max_parallel_agents": parallel, "required_reviewers": REQUIRED_REVIEWERS[risk_class], "budget_limit": limit, "budget_used": 0, "budget_override": bool(budget_justification), "budget_override_reason": "EXPLICIT_OVERRIDE" if budget_justification else None, "max_model_calls": model_call_limit, "hard_max_model_calls": policy["budget"]["hard_max_model_calls"], "model_calls_used": 0, "max_duration_ms": decision["max_duration_ms"], "progress_events": 0, "planned_credits": cost_limits["max_credits"], "reserved_credits": round(cost_limits["max_credits"] * 0.25, 6), "consumed_credits": 0, "remaining_credits": cost_limits["max_credits"], "stage_reservations": {"ANALYSIS": round(cost_limits["max_credits"] * 0.2, 6), "IMPLEMENTATION": round(cost_limits["max_credits"] * 0.5, 6), "VALIDATION": round(cost_limits["max_credits"] * 0.2, 6), "RETRY": round(cost_limits["max_credits"] * 0.1, 6)}, "stage_consumed": {"ANALYSIS": 0, "IMPLEMENTATION": 0, "VALIDATION": 0, "RETRY": 0}},
         "context_usage": {"mode": "OBSERVE_ONLY", "files": 0, "estimated_tokens": 0, "tool_reads": 0, "raw_bytes": 0, "limit_hits": 0, "limits": context_limits.copy()},
         "rag": {"enabled": load_rag_policy()["enabled"], "policy_version": load_rag_policy()["policy_version"], "queries": 0, "selected_chunks": 0, "estimated_tokens": 0, "cache_hits": 0, "cache_misses": 0, "last_query_id": None, "last_context_pack": None},
         "cost_budget": {"mode": policy["cost_limits"]["mode"], "soft_limit_ratio": policy["cost_limits"]["soft_limit_ratio"], "max_credits": cost_limits["max_credits"], "max_uncached_input_tokens": cost_limits["max_uncached_input_tokens"], "status": "ALLOW", "limit_hits": 0, "last_event": None, "override_reason": None},
@@ -591,6 +612,9 @@ def initialize(args: argparse.Namespace) -> dict[str, Any]:
     if task_query and getattr(args, "auto_rag", True) and database.is_file() and load_rag_policy()["enabled"]:
         retrieval = rag_retrieve(argparse.Namespace(run_dir=str(root), query=str(engineered["enhanced"]), database=database, path_filter=None, domain=None, agent=None, taxonomy=None, collect_feedback=True, feedback_file=getattr(args, "feedback_file", ROOT / ".jarvis/rag/feedback.jsonl"), team=None))
         result["automatic_rag"] = retrieval
+        state["execution_plan"] = plan_execution(dict(decision["signals"], complexity=args.complexity, risk_class=args.risk_class, operational_mode=args.operational_mode, rag_available=True), {"max_model_calls": state["budget"]["max_model_calls"]})
+        state["rag"]["automatic_context_pack"] = retrieval.get("context_pack") or retrieval.get("context_pack_id")
+        persist_state(root, state)
     else:
         result["automatic_rag"] = {"status": "SKIPPED", "reason": "missing_task_query_or_index_or_disabled"}
     return result
@@ -716,6 +740,14 @@ def invocation_start(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeErrorSafe(f"modelo divergente da policy: esperado {required_model}, recebido {model}")
     budget = state["budget"]
     enforce_cost_budget(state, getattr(args, "budget_justification", None))
+    stage_key = {"DISCOVERY": "ANALYSIS", "PLAN_READY": "ANALYSIS", "IMPLEMENTING": "IMPLEMENTATION", "VALIDATING": "VALIDATION", "REVIEW_READY": "VALIDATION"}.get(args.stage)
+    if stage_key and not getattr(args, "budget_justification", None):
+        reservation = budget.get("stage_reservations", {}).get(stage_key)
+        consumed = budget.get("stage_consumed", {}).get(stage_key, 0)
+        if reservation is not None and consumed >= reservation:
+            reasoning["termination_reason"] = "BUDGET_EXHAUSTED"
+            persist_state(root, state)
+            raise RuntimeErrorSafe(f"reserva de budget da etapa excedida: {stage_key}")
     if budget.get("model_calls_used", 0) >= budget.get("max_model_calls", 1):
         reasoning["termination_reason"] = "BUDGET_EXHAUSTED"
         persist_state(root, state)
@@ -873,6 +905,12 @@ def invocation_finish(args: argparse.Namespace) -> dict[str, Any]:
     budget_warnings = observe_usage(state, values)
     for key in ("input_tokens", "cached_input_tokens", "output_tokens", "credits", "retry_count"):
         state["metrics"][key] += values[key]
+    budget = state["budget"]
+    budget["consumed_credits"] = round(float(budget.get("consumed_credits", 0)) + float(values["credits"]), 6)
+    budget["remaining_credits"] = max(0, round(float(budget.get("planned_credits", 0)) - budget["consumed_credits"], 6))
+    stage_key = {"DISCOVERY": "ANALYSIS", "PLAN_READY": "ANALYSIS", "IMPLEMENTING": "IMPLEMENTATION", "VALIDATING": "VALIDATION", "REVIEW_READY": "VALIDATION"}.get(row["stage"])
+    if stage_key:
+        budget.setdefault("stage_consumed", {})[stage_key] = round(float(budget.setdefault("stage_consumed", {}).get(stage_key, 0)) + float(values["credits"]), 6)
     event = {"event": "AGENT_INVOCATION_FINISHED", "at": finished_at, "run_id": state["run_id"], "invocation_id": args.invocation_id, "agent": row["agent"], "stage": row["stage"], "status": args.status, "duration_ms": duration, "model_requested": row["model_requested"], "model_effective": observed_model, "reasoning_effort_requested": row["reasoning_effort"], "reasoning_effort_effective": observed_effort, "context_budget": row["context_budget"], "agent_result": args.agent_result, "success": success, "termination_reason": termination, "budget_warnings": budget_warnings, **{key: values[key] for key in ("input_tokens", "cached_input_tokens", "output_tokens", "credits", "files_changed", "tests_passed", "tests_failed", "tool_calls")}}
     assert_safe_metadata(event)
     append_jsonl(root / "events.jsonl", event)
@@ -1525,6 +1563,19 @@ def _dashboard_base(args: argparse.Namespace) -> dict[str, Any]:
 
 def dashboard(args: argparse.Namespace) -> dict[str, Any]:
     result = _dashboard_base(args)
+    result["optimization"] = {
+        "active_strategy": "CURRENT",
+        "shadow_enabled": True,
+        "optimized_enabled": False,
+        "baseline_credits": result.get("average_credits", "UNKNOWN/NOT_OBSERVED"),
+        "optimized_estimated_credits": "UNKNOWN/NOT_OBSERVED",
+        "observed_credits": result.get("average_credits", "UNKNOWN/NOT_OBSERVED"),
+        "credits_saved": "UNKNOWN/NOT_OBSERVED",
+        "credits_saved_percent": "UNKNOWN/NOT_OBSERVED",
+        "quality_delta": "UNKNOWN/NOT_OBSERVED",
+        "routing_delta": "UNKNOWN/NOT_OBSERVED",
+        "savings_target_percent": 15
+    }
     db_path = Path(result["telemetry_db"])
     if not db_path.is_file():
         return result
@@ -1622,6 +1673,8 @@ def add_signal_arguments(target: argparse.ArgumentParser) -> None:
     target.add_argument("--task-type", default="GENERAL")
     target.add_argument("--estimated-files", type=int, default=0)
     target.add_argument("--estimated-modules", type=int, default=0)
+    target.add_argument("--contract-changed", action="store_true")
+    target.add_argument("--tests-changed", action="store_true")
     target.add_argument("--architectural", action="store_true")
     target.add_argument("--production-critical", action="store_true")
     target.add_argument("--database-migration", action="store_true")
@@ -1635,6 +1688,7 @@ def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
     sub = root.add_subparsers(dest="command", required=True)
     decide = sub.add_parser("reasoning-decide"); add_signal_arguments(decide)
+    plan = sub.add_parser("execution-plan"); plan.add_argument("--complexity", choices=COMPLEXITIES, required=True); plan.add_argument("--risk-class", choices=RISKS, required=True); plan.add_argument("--current-agent", action="append"); add_signal_arguments(plan)
     init = sub.add_parser("init"); init.add_argument("--task-id", required=True); init.add_argument("--complexity", choices=COMPLEXITIES, required=True); init.add_argument("--risk-class", choices=RISKS, required=True); init.add_argument("--operational-mode", choices=MODES, required=True); init.add_argument("--reasoning-class", choices=REASONING); init.add_argument("--budget-justification"); init.add_argument("--agent-planned", action="append", dest="agents_planned", default=[]); init.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS_DIR); init.add_argument("--telemetry-db", type=Path); init.add_argument("--task-query"); init.add_argument("--rag-database", type=Path, default=DEFAULT_RAG_DB); init.add_argument("--feedback-file", type=Path, default=ROOT / ".jarvis/rag/feedback.jsonl"); init.add_argument("--no-auto-rag", action="store_false", dest="auto_rag", default=True); add_signal_arguments(init)
     move = sub.add_parser("transition"); move.add_argument("--run-dir", required=True); move.add_argument("--to", choices=STATES, required=True); move.add_argument("--reason", required=True); move.add_argument("--stop-reason", choices=STOP_REASONS); move.add_argument("--gate-decision", choices=GATE_DECISIONS); move.add_argument("--gate-reason-code", choices=GATE_REASON_CODES); move.add_argument("--gate-reason-detail"); move.add_argument("--rework-origin", choices=REWORK_ORIGINS); move.add_argument("--rework-reason", choices=REWORK_REASONS)
     start = sub.add_parser("invocation-start"); start.add_argument("--run-dir", required=True); start.add_argument("--invocation-id"); start.add_argument("--agent", required=True); start.add_argument("--stage", choices=STATES, required=True); start.add_argument("--model"); start.add_argument("--reasoning-effort", choices=REASONING_EFFORTS); start.add_argument("--attempt-number", type=int); start.add_argument("--task-type"); start.add_argument("--parent-execution-id"); start.add_argument("--child-depth", type=int, default=0); start.add_argument("--progress-event", choices=PROGRESS_EVENTS); start.add_argument("--parallel-batch"); start.add_argument("--budget-justification")
@@ -1669,7 +1723,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = parser().parse_args()
-    handlers = {"reasoning-decide": reasoning_decide, "init": initialize, "transition": transition, "invocation-start": invocation_start, "invocation-finish": invocation_finish, "evaluate": evaluate_attempt, "record": record, "finding": finding, "route": route, "decision": decision, "handoff": create_handoff, "validate-handoff": validate_handoff, "technical-handoff": create_technical_handoff, "technical-handoff-get": get_technical_handoff, "teachback-evaluate": evaluate_teachback, "context-pack": context_pack, "discovery": discovery_record, "retrieve": rag_retrieve, "summary": summary, "dashboard": dashboard, "report-cost": report_cost, "eval-result": release_eval, "compare-releases": compare_releases, "export": export_telemetry}
+    handlers = {"reasoning-decide": reasoning_decide, "execution-plan": execution_plan_command, "init": initialize, "transition": transition, "invocation-start": invocation_start, "invocation-finish": invocation_finish, "evaluate": evaluate_attempt, "record": record, "finding": finding, "route": route, "decision": decision, "handoff": create_handoff, "validate-handoff": validate_handoff, "technical-handoff": create_technical_handoff, "technical-handoff-get": get_technical_handoff, "teachback-evaluate": evaluate_teachback, "context-pack": context_pack, "discovery": discovery_record, "retrieve": rag_retrieve, "summary": summary, "dashboard": dashboard, "report-cost": report_cost, "eval-result": release_eval, "compare-releases": compare_releases, "export": export_telemetry}
     handlers["team-route"] = team_route
     try: result = handlers[args.command](args)
     except (RuntimeErrorSafe, OSError, sqlite3.Error) as exc:
