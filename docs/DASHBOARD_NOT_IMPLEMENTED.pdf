@@ -1,0 +1,111 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 4153 >>
+stream
+BT
+/F1 9 Tf
+1 0 0 1 42 800 Tm (Itens nao implementados da Dashboard do Jarvis) Tj
+1 0 0 1 42 787 Tm () Tj
+1 0 0 1 42 774 Tm (Data: 2026-10-05) Tj
+1 0 0 1 42 761 Tm () Tj
+1 0 0 1 42 748 Tm (Objetivo) Tj
+1 0 0 1 42 735 Tm () Tj
+1 0 0 1 42 722 Tm (Registrar as capacidades previstas para a dashboard que ainda nao estao implementadas ou estao apenas) Tj
+1 0 0 1 42 709 Tm (parcialmente disponiveis.) Tj
+1 0 0 1 42 696 Tm () Tj
+1 0 0 1 42 683 Tm (Resumo executivo) Tj
+1 0 0 1 42 670 Tm () Tj
+1 0 0 1 42 657 Tm (A dashboard ja possui um Control Center basico, consulta de execucoes, criacao de tarefas, visao de) Tj
+1 0 0 1 42 644 Tm (atencao, agentes, uso de modelos e evidencias. Permanecem pendentes principalmente integracoes reais,) Tj
+1 0 0 1 42 631 Tm (acoes operacionais seguras, busca global, configuracoes editaveis e telas detalhadas.) Tj
+1 0 0 1 42 618 Tm () Tj
+1 0 0 1 42 605 Tm (Itens pendentes) Tj
+1 0 0 1 42 592 Tm () Tj
+1 0 0 1 42 579 Tm (Prioridade | Item | Situacao atual | O que falta) Tj
+1 0 0 1 42 566 Tm (Alta | Integracoes/MCP reais | Nao implementado | Health check, capabilities, chamadas, autorizacao e) Tj
+1 0 0 1 42 553 Tm (auditoria persistida.) Tj
+1 0 0 1 42 540 Tm (Alta | Configuracoes editaveis | Nao implementado | API segura para alterar policy, RAG, modelos,) Tj
+1 0 0 1 42 527 Tm (limites, agentes e integracoes, com validacao, aprovacao, auditoria e rollback.) Tj
+1 0 0 1 42 514 Tm (Alta | Acoes operacionais | Parcial | Criar tarefa funciona; pause, approve e retry ainda nao estao) Tj
+1 0 0 1 42 501 Tm (conectados ao Runtime.) Tj
+1 0 0 1 42 488 Tm (Alta | Busca global | Nao implementado | Indice unico para tarefas, evidencias, erros e integracoes.) Tj
+1 0 0 1 42 475 Tm (Alta | Command Palette | Nao implementado | Registro de comandos, busca global e execucao com) Tj
+1 0 0 1 42 462 Tm (confirmacao.) Tj
+1 0 0 1 42 449 Tm (Media | Detalhe completo da tarefa | Parcial | Drill-down por estagio, passos, estado, evidencias e) Tj
+1 0 0 1 42 436 Tm (acoes seguras.) Tj
+1 0 0 1 42 423 Tm (Media | Interface dedicada de agentes | Parcial | Historico, saude, tarefas, consumo e acoes por) Tj
+1 0 0 1 42 410 Tm (agente.) Tj
+1 0 0 1 42 397 Tm (Media | Logs avancados | Parcial | Streaming, filtros combinaveis, correlacao visual, pausa/retomada e) Tj
+1 0 0 1 42 384 Tm (exportacao.) Tj
+1 0 0 1 42 371 Tm (Media | Modelos e metricas avancados | Parcial | Filtros por periodo/projeto/agente, graficos e) Tj
+1 0 0 1 42 358 Tm (drill-down por modelo.) Tj
+1 0 0 1 42 345 Tm (Media | Evidence Explorer completo | Parcial | Grafo produtor/consumidor/arquivo e proveniencia mais) Tj
+1 0 0 1 42 332 Tm (rica.) Tj
+1 0 0 1 42 319 Tm (Media | Temas e navegacao completa | Parcial | Tema claro/escuro consistente, navegacao responsiva e) Tj
+1 0 0 1 42 306 Tm (estados de loading/erro.) Tj
+1 0 0 1 42 293 Tm (Alta | Prompts e saidas completas | Nao previsto por seguranca | Exibir somente resumo seguro, hashes,) Tj
+1 0 0 1 42 280 Tm (referencias e evidencias; nao persistir conteudo sensivel.) Tj
+1 0 0 1 42 267 Tm () Tj
+1 0 0 1 42 254 Tm (Dependencias e ordem recomendada) Tj
+1 0 0 1 42 241 Tm () Tj
+1 0 0 1 42 228 Tm (1. Definir contratos de acao, autorizacao e auditoria.) Tj
+1 0 0 1 42 215 Tm (2. Implementar busca global e registro de comandos.) Tj
+1 0 0 1 42 202 Tm (3. Conectar pause, approve e retry ao Runtime, sem simulacao.) Tj
+1 0 0 1 42 189 Tm (4. Completar detalhe de tarefa, logs, agentes e evidencias.) Tj
+1 0 0 1 42 176 Tm (5. Integrar MCPs reais com health checks e controle de acesso.) Tj
+1 0 0 1 42 163 Tm (6. Evoluir metricas, filtros, graficos e temas.) Tj
+1 0 0 1 42 150 Tm () Tj
+1 0 0 1 42 137 Tm (Riscos) Tj
+1 0 0 1 42 124 Tm () Tj
+1 0 0 1 42 111 Tm (- Acoes operacionais sem autorizacao podem causar execucao indevida.) Tj
+1 0 0 1 42 98 Tm (- Configuracoes editaveis podem alterar budget, policy ou seguranca sem rastreabilidade.) Tj
+1 0 0 1 42 85 Tm (- Integracoes reais exigem credenciais, escopos minimos e tratamento de falhas.) Tj
+1 0 0 1 42 72 Tm (- Logs, prompts e resultados completos nao devem ser persistidos sem sanitizacao.) Tj
+1 0 0 1 42 59 Tm () Tj
+1 0 0 1 42 46 Tm (Criterio de conclusao) Tj
+ET
+endstream
+endobj
+3 0 obj
+<< /Length 341 >>
+stream
+BT
+/F1 9 Tf
+1 0 0 1 42 800 Tm () Tj
+1 0 0 1 42 787 Tm (Considerar a dashboard completa somente quando as acoes estiverem ligadas ao Runtime real, as) Tj
+1 0 0 1 42 774 Tm (integracoes forem auditaveis, os contratos forem validados, os dados forem seguros e houver testes de) Tj
+1 0 0 1 42 761 Tm (integracao para os fluxos principais.) Tj
+ET
+endstream
+endobj
+4 0 obj
+<< /Type /Pages /Kids [5 0 R 6 0 R] /Count 2 >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 4 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 4 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 4 0 R >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000085 00000 n 
+0000004290 00000 n 
+0000004682 00000 n 
+0000004745 00000 n 
+0000004871 00000 n 
+0000004997 00000 n 
+trailer
+<< /Size 8 /Root 7 0 R >>
+startxref
+5046
+%%EOF

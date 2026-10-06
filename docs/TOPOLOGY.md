@@ -8,9 +8,9 @@ Versão comportamental: `3.1.0`.
 
 | Plugin | Versão | Skills |
 |---|---|---:|
-| aghuse-agent | `0.1.0+codex.20260907123454` | 10 |
-| redmine-agent | `0.1.0+codex.20260826141923` | 1 |
-| sfa-agent | `0.1.0+codex.20260907123454` | 1 |
+| aghuse-agent | `0.1.0+codex.20261006013631` | 10 |
+| redmine-agent | `0.1.0+codex.20261006013631` | 1 |
+| sfa-agent | `0.1.0+codex.20261006013631` | 1 |
 
 ## Times de agentes
 
