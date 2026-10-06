@@ -53,7 +53,13 @@ class DashboardContractTest(unittest.TestCase):
             self.assertEqual(detail["logs"][0]["agent"], "aghuse_backend")
             self.assertEqual(module.attention(db)["items"][0]["kind"], "BLOCKED")
             self.assertEqual(module.models_usage(db)["calls"], 1)
+            self.assertEqual(module.models_usage(db, {"model": ["model-x"]})["calls"], 1)
+            self.assertEqual(module.models_usage(db, {"model": ["other"]})["calls"], 0)
+            self.assertEqual(module.metrics_series(db)["date_quality"], "UNKNOWN/NOT_OBSERVED")
+            self.assertEqual(module.metrics_series(db)["series"][0]["calls"], 1)
+            self.assertEqual(module.agent_detail(db, "aghuse_backend")["usage"]["calls"], 1)
             self.assertEqual(module.evidence(db, {"q": ["TEST"]})["items"][0]["category"], "TEST")
+            self.assertIn("graph", module.evidence(db, {"q": ["TEST"]}))
 
     def test_task_payload_rejects_missing_or_invalid_values(self):
         spec = importlib.util.spec_from_file_location("jarvis_dashboard_payload", ROOT / "scripts/jarvis_dashboard.py")
@@ -64,6 +70,31 @@ class DashboardContractTest(unittest.TestCase):
         self.assertIsNone(clean); self.assertIn("risk_class", error)
         clean, error = module.task_payload({"task_id": "t1", "query": "corrigir"})
         self.assertIsNone(error); self.assertEqual(clean["complexity"], "LOCALIZED")
+
+    def test_settings_draft_requires_confirmation_to_apply_and_rollback(self):
+        spec = importlib.util.spec_from_file_location("jarvis_dashboard_settings", ROOT / "scripts/jarvis_dashboard.py")
+        module = importlib.util.module_from_spec(spec); assert spec.loader; spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            module.SETTINGS_STORE = base / "settings.jsonl"
+            module.ROOT = base
+            draft = module.create_settings_draft({"limits": {"max_credits": 3}})
+            with self.assertRaises(ValueError): module.apply_settings_revision(draft["revision_id"], {})
+            applied = module.apply_settings_revision(draft["revision_id"], {"confirm": True, "reason": "teste"})
+            self.assertEqual(applied["status"], "APPLIED")
+            rolled = module.rollback_settings_revision(draft["revision_id"], {"confirm": True, "reason": "teste"})
+            self.assertEqual(rolled["status"], "ROLLED_BACK")
+
+    def test_dashboard_html_has_operational_and_accessible_shell(self):
+        spec = importlib.util.spec_from_file_location("jarvis_dashboard_html", ROOT / "scripts/jarvis_dashboard.py")
+        module = importlib.util.module_from_spec(spec); assert spec.loader; spec.loader.exec_module(module)
+        self.assertIn('<html lang="pt-BR">', module.HTML)
+        self.assertIn('name="viewport"', module.HTML)
+        self.assertIn("Chat operacional", module.HTML)
+        self.assertIn("Busca global", module.HTML)
+        self.assertIn("Command Palette", module.HTML)
+        self.assertIn("aria-live", module.HTML)
+        self.assertIn("event.ctrlKey", module.HTML)
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@
     "started_at": { "type": "string" },
     "updated_at": { "type": "string" },
     "finished_at": { "type": ["string", "null"] },
-    "current_state": { "enum": ["NEW", "DISCOVERY", "PLAN_READY", "PLAN_APPROVED", "IMPLEMENTING", "VALIDATING", "REVIEW_READY", "HUMAN_GATE", "HOMOLOGATION_READY", "DONE", "BLOCKED"] },
+    "current_state": { "enum": ["NEW", "DISCOVERY", "PLAN_READY", "PLAN_APPROVED", "IMPLEMENTING", "VALIDATING", "REVIEW_READY", "HUMAN_GATE", "HOMOLOGATION_READY", "WAITING_APPROVAL", "WAITING_REVIEW", "WAITING_TESTS", "PAUSED", "DONE", "BLOCKED"] },
     "complexity": { "enum": ["TRIVIAL", "LOCALIZED", "TRANSVERSAL", "CRITICAL"] },
     "risk_class": { "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
     "operational_mode": { "enum": ["COPILOT", "ASSISTED_AUTOPILOT", "READ_ONLY_AUDIT"] },

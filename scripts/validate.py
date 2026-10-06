@@ -301,6 +301,7 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
         "handoff.schema.json",
         "technical-handoff.schema.json",
         "execution-state.schema.json",
+        "dashboard-integration.schema.json",
         "role-boundaries.json",
         "task-patterns.json",
         "protocol.md",
@@ -310,6 +311,10 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
     if missing:
         fail(f"Contratos versionados ausentes: {missing}")
         return
+
+    integration = load_json(contract_dir / "dashboard-integration.schema.json")
+    if integration.get("$id") != "jarvis://contracts/dashboard-integration/1.0.0" or integration.get("additionalProperties") is not False:
+        fail("dashboard-integration.schema.json deve ser fechado e versionado em 1.0.0")
 
     version = load_json(contract_dir / "version.json")
     if version.get("jarvis_version") != "3.1.0" or version.get("execution_state_schema_version") != "3.1.0" or version.get("telemetry_schema_version") != "3.1.0" or version.get("reasoning_policy_version") != "3.1.0" or version.get("technical_handoff_schema_version") != "1.0.0" or version.get("knowledge_transfer_policy_version") != "1.0.0" or version.get("rag_policy_version") != "1.0.0" or version.get("rag_context_schema_version") != "1.0.0" or version.get("teams_policy_version") != "1.0.0" or version.get("routing_schema_version") != 2:

@@ -14,27 +14,26 @@ A dashboard já possui um Control Center básico, consulta de execuções, cria�
 
 | Prioridade | Item | Situação atual | O que falta |
 |---|---|---|---|
-| Alta | Integrações/MCP reais | Não implementado | Health check, capabilities, chamadas, autorização e auditoria persistida. |
-| Alta | Configurações editáveis | Não implementado | API segura para alterar policy, RAG, modelos, limites, agentes e integrações, com validação, aprovação, auditoria e rollback. |
-| Alta | Ações operacionais | Parcial | Criar tarefa funciona; pause, approve e retry ainda não estão conectados ao Runtime. |
-| Alta | Busca global | Não implementado | Índice único para tarefas, evidências, erros e integrações. |
-| Alta | Command Palette | Não implementado | Registro de comandos, busca global e execução com confirmação. |
-| Média | Detalhe completo da tarefa | Parcial | Drill-down por estágio, passos, estado, evidências e ações seguras. |
-| Média | Interface dedicada de agentes | Parcial | Histórico, saúde, tarefas, consumo e ações por agente. |
-| Média | Logs avançados | Parcial | Streaming, filtros combináveis, correlação visual, pausa/retomada e exportação. |
-| Média | Modelos e métricas avançados | Parcial | Filtros por período/projeto/agente, gráficos e drill-down por modelo. |
-| Média | Evidence Explorer completo | Parcial | Grafo produtor/consumidor/arquivo e proveniência mais rica. |
-| Média | Temas e navegação completa | Parcial | Tema claro/escuro consistente, navegação responsiva e estados de loading/erro. |
+| Alta | Integrações/MCP externos | Implementado para Redmine | Adaptador MCP Redmine com ping, capabilities somente leitura, timeout, auditoria e bloqueio de escrita; outros MCPs continuam pendentes. |
+| Alta | Configurações editáveis | Implementado | Draft, validação básica, aplicação confirmada, auditoria e rollback em overlay local. |
+| Alta | Ações operacionais | Implementado | Pause, resume, approve e retry delegados ao Runtime com confirmação e idempotência. |
+| Alta | Busca global | Implementado | Busca segura em execuções e sessões de chat. |
+| Alta | Command Palette | Implementado | Registro de comandos e confirmação para ações mutáveis. |
+| Média | Detalhe completo da tarefa | Parcial | APIs, checkpoint, eventos e diff existem; a tela ainda pode receber mais drill-down visual. |
+| Média | Interface dedicada de agentes | Implementado | Histórico, tarefas, findings e consumo por agent em `/api/agents/<agent>`. |
+| Média | Logs avançados | Implementado | Eventos correlacionados, SSE, filtros básicos e fallback por polling. |
+| Média | Modelos e métricas avançados | Parcial | Filtros por modelo/reasoning/período existem; gráficos visuais ainda faltam. |
+| Média | Evidence Explorer completo | Implementado | Grafo seguro de agents produtores, findings e referências. |
+| Média | Temas e navegação completa | Parcial | Tema responsivo existe; revisão formal de acessibilidade e navegação ainda falta. |
 | Alta | Prompts e saídas completas | Não previsto por segurança | Exibir somente resumo seguro, hashes, referências e evidências; não persistir conteúdo sensível. |
 
 ## Dependências e ordem recomendada
 
-1. Definir contratos de ação, autorização e auditoria.
-2. Implementar busca global e registro de comandos.
-3. Conectar pause, approve e retry ao Runtime, sem simulação.
-4. Completar detalhe de tarefa, logs, agentes e evidências.
-5. Integrar MCPs reais com health checks e controle de acesso.
-6. Evoluir métricas, filtros, gráficos e temas.
+1. Concluído: contratos, autorização, auditoria, ações, busca, comandos, checkpoints, logs, agents e evidências.
+2. Concluído: configurações revisionadas com aprovação e rollback local.
+3. Concluído para Redmine: adaptador MCP local integrado à Dashboard.
+4. Próximo: adicionar gráficos e filtros visuais avançados.
+5. Próximo: concluir acessibilidade e testes de navegador.
 
 ## Riscos
 

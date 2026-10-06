@@ -48,6 +48,19 @@ class JarvisRuntimeTest(unittest.TestCase):
             events = Path(result["run_dir"], "events.jsonl").read_text(encoding="utf-8").splitlines()
             self.assertEqual(len(events), 1)
 
+    def test_pause_and_resume_preserve_previous_state(self):
+        with tempfile.TemporaryDirectory() as root:
+            result = self.initialize(root)
+            self.transition(result["run_dir"], "PLAN_APPROVED")
+            self.transition(result["run_dir"], "PAUSED")
+            state = json.loads((Path(result["run_dir"]) / "state.json").read_text(encoding="utf-8"))
+            self.assertEqual(state["current_state"], "PAUSED")
+            self.assertEqual(state["pause_resume_state"], "PLAN_APPROVED")
+            self.transition(result["run_dir"], "PLAN_APPROVED")
+            resumed = json.loads((Path(result["run_dir"]) / "state.json").read_text(encoding="utf-8"))
+            self.assertEqual(resumed["current_state"], "PLAN_APPROVED")
+            self.assertNotIn("pause_resume_state", resumed)
+
     def test_transversal_cannot_skip_formal_plan(self):
         with tempfile.TemporaryDirectory() as root:
             result = self.initialize(root, complexity="TRANSVERSAL")
