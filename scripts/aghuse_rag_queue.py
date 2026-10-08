@@ -7,7 +7,7 @@ from pathlib import Path
 from subprocess import run
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT = ROOT / ".jarvis/rag/training-queue.jsonl"
+DEFAULT = ROOT / ".aghuse-assistant/rag/training-queue.jsonl"
 def now() -> str: return datetime.now(timezone.utc).isoformat(timespec="seconds")
 def read(path: Path) -> list[dict]: return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()] if path.exists() else []
 def write(path: Path, rows: list[dict]) -> None:

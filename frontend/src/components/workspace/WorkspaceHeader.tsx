@@ -1,0 +1,5 @@
+type Props = { projectName?: string; section: string; onOpenCommands: () => void };
+
+export function WorkspaceHeader({ projectName, section, onOpenCommands }: Props) {
+  return <header className="flex flex-col justify-between gap-5 px-4 pb-7 pt-8 sm:px-6 lg:flex-row lg:px-12"><div><span className="text-[11px] font-bold tracking-widest text-slate-500">WORKSPACE / {projectName || 'Carregando projeto'}</span><h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{section === 'Workspace' ? 'Operações do projeto' : section}</h1><p className="mt-1 text-sm text-slate-500">Selecione uma operação guiada e acompanhe sua execução com segurança.</p></div><div className="flex items-center gap-3"><button type="button" onClick={onOpenCommands} className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 shadow-sm hover:border-blue-300 hover:text-blue-600" aria-label="Abrir Command Palette">⌘K</button><div className="h-max rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-600"><i className="mr-1">●</i> Runtime local ativo</div></div></header>;
+}

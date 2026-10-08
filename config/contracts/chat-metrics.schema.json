@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aghuse://config/contracts/chat-metrics/1.0.0",
+  "title": "AGHUse Assistant Chat Metrics",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "phase", "complexity", "risk_class", "operational_mode", "model", "reasoning", "attempts_used", "attempts_budget", "agents_used", "agents_budget", "duration_ms", "credits", "credits_status", "termination_reason", "data_quality", "rag"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "phase": {"enum": ["INITIAL", "FINAL"]},
+    "complexity": {"type": ["string", "integer"]}, "risk_class": {"type": ["string", "integer"]}, "operational_mode": {"type": ["string", "integer"]},
+    "model": {"type": ["string", "integer"]}, "reasoning": {"type": ["string", "integer"]},
+    "attempts_used": {"type": ["string", "integer"]}, "attempts_budget": {"type": ["string", "integer"]},
+    "agents_used": {"type": ["string", "integer"]}, "agents_budget": {"type": ["string", "integer"]},
+    "duration_ms": {"type": ["string", "integer"]}, "credits": {"type": ["string", "number"]},
+    "credits_status": {"type": "string"}, "termination_reason": {"type": "string"}, "data_quality": {"type": "string"},
+    "message_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "rag": {"type": "object", "additionalProperties": false, "required": ["mode", "required", "selected_chunks", "cache_hit", "data_quality"], "properties": {"mode": {"type": "string"}, "required": {"type": "boolean"}, "selected_chunks": {"type": ["string", "integer"]}, "cache_hit": {}, "data_quality": {"type": "string"}}}
+  }
+}

@@ -27,7 +27,7 @@ python scripts/validate.py
 python -m unittest tests.test_rag
 ```
 
-O diretório `.jarvis/` é local e ignorado pelo Git. Ele armazena índice, feedback aprovado e modelos treinados.
+O diretório `.aghuse-assistant/` é local e ignorado pelo Git. Ele armazena índice, feedback aprovado e modelos treinados.
 
 ## 2. Registrar feedback
 
@@ -77,15 +77,15 @@ Não aprove exemplos com código de produção sem autorização, dados de pacie
 
 ```bash
 python scripts/aghuse_rag_feedback.py export \
-  --output .jarvis/rag/approved.jsonl
+  --output .aghuse-assistant/rag/approved.jsonl
 ```
 
 O exportador inclui somente registros `APPROVED`. Em seguida, valide e separe treino/validação:
 
 ```bash
 python scripts/aghuse_rag_dataset.py build \
-  --input .jarvis/rag/approved.jsonl \
-  --output .jarvis/rag/dataset
+  --input .aghuse-assistant/rag/approved.jsonl \
+  --output .aghuse-assistant/rag/dataset
 ```
 
 O manifesto registra quantidade de exemplos e hash do arquivo de entrada.
@@ -96,8 +96,8 @@ O reranker aprende pesos de termos que ajudam a distinguir candidatos relevantes
 
 ```bash
 python scripts/train_rag_reranker.py \
-  --train .jarvis/rag/dataset/train.jsonl \
-  --output .jarvis/rag/reranker.json
+  --train .aghuse-assistant/rag/dataset/train.jsonl \
+  --output .aghuse-assistant/rag/reranker.json
 ```
 
 Esse modelo reordena os candidatos depois da busca lexical. Ele não gera texto nem altera os documentos originais.
@@ -106,8 +106,8 @@ Esse modelo reordena os candidatos depois da busca lexical. Ele não gera texto 
 
 ```bash
 python scripts/train_taxonomy_classifier.py \
-  --input .jarvis/rag/approved.jsonl \
-  --output .jarvis/rag/taxonomy.json
+  --input .aghuse-assistant/rag/approved.jsonl \
+  --output .aghuse-assistant/rag/taxonomy.json
 ```
 
 Os rótulos atuais são:
@@ -118,18 +118,18 @@ Os rótulos atuais são:
 ## 7. Reindexar o AGHUse
 
 ```bash
-python scripts/jarvis_rag.py index \
+python scripts/aghuse_rag.py index \
   --repo /caminho/do/aghuse \
   --source-type CODE \
-  --taxonomy-model .jarvis/rag/taxonomy.json
+  --taxonomy-model .aghuse-assistant/rag/taxonomy.json
 ```
 
 Para consultar usando o reranker e um filtro taxonômico:
 
 ```bash
-python scripts/jarvis_rag.py search \
+python scripts/aghuse_rag.py search \
   --query "alterar regra de cálculo" \
-  --reranker .jarvis/rag/reranker.json \
+  --reranker .aghuse-assistant/rag/reranker.json \
   --taxonomy layer=backend \
   --context-budget MEDIUM
 ```
@@ -167,7 +167,7 @@ python scripts/aghuse_rag_queue.py enqueue
 python scripts/aghuse_rag_queue.py run-once
 ```
 
-`run-once` processa apenas um item, impede duplicidade enquanto há treinamento pendente ou em execução e registra o resultado em `.jarvis/rag/training-queue.jsonl`. Esse comando pode ser agendado pelo Task Scheduler do Windows ou pelo cron. A fila nunca aprova feedback; ela apenas dispara o pipeline que já exige exemplos aprovados e validação.
+`run-once` processa apenas um item, impede duplicidade enquanto há treinamento pendente ou em execução e registra o resultado em `.aghuse-assistant/rag/training-queue.jsonl`. Esse comando pode ser agendado pelo Task Scheduler do Windows ou pelo cron. A fila nunca aprova feedback; ela apenas dispara o pipeline que já exige exemplos aprovados e validação.
 - Registre uma justificativa curta e verificável para cada rótulo.
 
 ## 10. Troubleshooting

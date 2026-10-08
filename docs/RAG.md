@@ -1,24 +1,24 @@
-﻿# RAG local-first do Jarvis
+# RAG local-first do AGHUse Assistant
 
 O RAG seleciona evidências antes da leitura aprofundada dos agentes. Ele não substitui a fonte original e não é um novo agente. A recuperação pode usar reranker local e taxonomia AGHUse; o aprendizado é assistido e exige aprovação humana.
 
 ## Contexto por time
 
-`jarvis_runtime.py retrieve --team ANALISE|DESENVOLVIMENTO|REVISAO_QUALIDADE` valida o time contra o estado e o agente, quando informado. Sem `--team`, o runtime infere pelo estado; em `NEW`, retrieval legado usa o contexto de análise. Os packs são separados por time, sem duplicar o índice compartilhado.
+O RAG é uma infraestrutura opcional do Runtime canônico. A recuperação usa a competência do agente selecionado pela operação e mantém provenance sem criar fases ou estados de negócio.
 
 ## Indexação
 
 ```bash
-python3 scripts/jarvis_rag.py index --repo /caminho/do/repositorio
-python3 scripts/jarvis_rag.py status
+python3 scripts/aghuse_rag.py index --repo /caminho/do/repositorio
+python3 scripts/aghuse_rag.py status
 ```
 
-O índice padrão fica em `.jarvis/rag/index.db`, separado da telemetria. A indexação usa SHA-256: arquivos inalterados não são reprocessados; alterados invalidam apenas os próprios chunks; removidos ficam inativos. Entram somente formatos textuais permitidos. `.git`, `.jarvis`, builds, dependências, binários e arquivos secretos são ignorados. Conteúdo com credencial reconhecível é recusado antes de persistência ou embedding.
+O índice padrão fica em `.aghuse-assistant/rag/index.db`, separado da telemetria. A indexação usa SHA-256: arquivos inalterados não são reprocessados; alterados invalidam apenas os próprios chunks; removidos ficam inativos. Entram somente formatos textuais permitidos. `.git`, `.aghuse-assistant`, builds, dependências, binários e arquivos secretos são ignorados. Conteúdo com credencial reconhecível é recusado antes de persistência ou embedding.
 
 ## Busca isolada
 
 ```bash
-python3 scripts/jarvis_rag.py search \
+python3 scripts/aghuse_rag.py search \
   --query "agrupamento de profissionais no espelho APAC" \
   --context-budget MEDIUM
 ```
@@ -30,8 +30,8 @@ SQLite FTS5 é usado quando disponível. Caso contrário, a busca degrada para u
 As camadas principais são `backend`, `frontend`, `banco`, `testes`, `seguranca` e `documentacao`. Para usar classificação e reranker local:
 
 ```bash
-python3 scripts/jarvis_rag.py index --repo /caminho/do/repositorio --taxonomy-model .jarvis/rag/taxonomy.json
-python3 scripts/jarvis_rag.py search --query "regra de negócio" --reranker .jarvis/rag/reranker.json --taxonomy layer=backend
+python3 scripts/aghuse_rag.py index --repo /caminho/do/repositorio --taxonomy-model .aghuse-assistant/rag/taxonomy.json
+python3 scripts/aghuse_rag.py search --query "regra de negócio" --reranker .aghuse-assistant/rag/reranker.json --taxonomy layer=backend
 ```
 
 Correções podem ser registradas pelo fluxo de [RAG_FEEDBACK.md](RAG_FEEDBACK.md), mas só feedback aprovado entra no treino. O manual completo está em [MANUAL_TREINO_RAG_AGHUSE.md](MANUAL_TREINO_RAG_AGHUSE.md).
@@ -39,14 +39,14 @@ Correções podem ser registradas pelo fluxo de [RAG_FEEDBACK.md](RAG_FEEDBACK.m
 ## Integração ao runtime
 
 ```bash
-python3 scripts/jarvis_runtime.py retrieve \
-  --run-dir .jarvis/runs/<run_id> \
+python3 scripts/aghuse_rag.py search \
+  --run-dir .aghuse-assistant/runs/<run_id> \
   --query "agrupamento de profissionais no espelho APAC" \
   --domain aghuse \
-  --agent aghuse_backend
+  --agent backend
 ```
 
-O runtime usa o budget `SMALL`, `MEDIUM` ou `LARGE` já escolhido pela policy de reasoning e grava `.jarvis/runs/<run_id>/context-packs/rag-context.json`. A query não é persistida em texto: somente seu SHA-256. Cada hit carrega repo, path, symbol, linhas, hash, scores e texto recuperado. Um pack só é reutilizado quando a query, o budget e os hashes das fontes continuam iguais.
+O runtime usa o budget `SMALL`, `MEDIUM` ou `LARGE` já escolhido pela policy de reasoning e grava `.aghuse-assistant/runs/<run_id>/context-packs/rag-context.json`. A query não é persistida em texto: somente seu SHA-256. Cada hit carrega repo, path, symbol, linhas, hash, scores e texto recuperado. Um pack só é reutilizado quando a query, o budget e os hashes das fontes continuam iguais.
 
 Retrieval determinístico não aumenta `model_calls_used`. Estado, eventos e SQLite registram quantidade de candidatos, chunks selecionados, tokens estimados, latência e cache. Tokens são estimativa explícita de orçamento, não medição do executor.
 
@@ -62,5 +62,4 @@ Após indexar os repositórios necessários, execute:
 python3 scripts/run_rag_evals.py
 ```
 
-Os casos em `evals/rag-cases.json` medem Recall@K, MRR, conformidade de budget e funcionamento do fallback, sem chamada de modelo. Um caso sem a evidência esperada retorna status diferente de zero.
-
+Os casos em `tests/fixtures/evals/rag-cases.json` medem Recall@K, MRR, conformidade de budget e funcionamento do fallback, sem chamada de modelo. Um caso sem a evidência esperada retorna status diferente de zero.

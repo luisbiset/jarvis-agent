@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0.0",
+  "provider": "openai-responses",
+  "models": {
+    "gpt-5.6-luna": { "provider_model": "gpt-5.6-luna", "reasoning": ["low"], "context_budget": "SMALL" },
+    "gpt-5.6-terra": { "provider_model": "gpt-5.6-terra", "reasoning": ["medium"], "context_budget": "MEDIUM" },
+    "gpt-5.6-sol": { "provider_model": "gpt-5.6-sol", "reasoning": ["high"], "context_budget": "LARGE" }
+  }
+}

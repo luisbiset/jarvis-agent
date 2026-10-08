@@ -1,0 +1,13 @@
+{
+  "task_ref": "56213",
+  "requirements": [
+    {"id": "REQ-01", "question": "A observacao de nascimento chega à integração?"},
+    {"id": "REQ-02", "question": "A observacao de exame físico chega à integração?"}
+  ],
+  "flow": [
+    {"area": "query", "term": "IntegracaoDrgRecemNascidoQueryBuilder", "path": "src/test-fixture/java/IntegracaoDrgRecemNascidoQueryBuilder.java", "line": 10},
+    {"area": "dto", "term": "ObservacaoDto", "path": "src/test-fixture/java/ObservacaoDto.java", "line": 18},
+    {"area": "serialization", "term": "DrgPayload", "path": "src/test-fixture/java/DrgPayload.java", "line": 24}
+  ],
+  "expected_rule": "A query builder localizado sem projeção, DTO e serialização verificadas não confirma impacto; o resultado deve ser UNKNOWN ou PARTIAL."
+}

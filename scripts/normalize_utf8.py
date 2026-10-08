@@ -63,7 +63,7 @@ def main() -> int:
     for path in ROOT.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
             continue
-        if any(part in {".git", ".jarvis", "__pycache__", "target", "node_modules"} for part in path.parts):
+        if any(part in {".git", ".aghuse-assistant", "__pycache__", "target", "node_modules"} for part in path.parts):
             continue
         text = path.read_text(encoding="utf-8")
         fixed = repair(text)

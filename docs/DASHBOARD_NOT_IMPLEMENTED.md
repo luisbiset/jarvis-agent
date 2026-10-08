@@ -1,4 +1,4 @@
-# Itens não implementados da Dashboard do Jarvis
+# Itens não implementados da Dashboard do AGHUse Assistant
 
 Data: 2026-10-05
 
@@ -20,7 +20,7 @@ A dashboard já possui um Control Center básico, consulta de execuções, cria�
 | Alta | Busca global | Implementado | Busca segura em execuções e sessões de chat. |
 | Alta | Command Palette | Implementado | Registro de comandos e confirmação para ações mutáveis. |
 | Média | Detalhe completo da tarefa | Parcial | APIs, checkpoint, eventos e diff existem; a tela ainda pode receber mais drill-down visual. |
-| Média | Interface dedicada de agentes | Implementado | Histórico, tarefas, findings e consumo por agent em `/api/agents/<agent>`. |
+| Média | Interface dedicada de agentes | Implementado | Histórico, tarefas, findings e consumo por agent em `/api/config/agents/<agent>`. |
 | Média | Logs avançados | Implementado | Eventos correlacionados, SSE, filtros básicos e fallback por polling. |
 | Média | Modelos e métricas avançados | Parcial | Filtros por modelo/reasoning/período existem; gráficos visuais ainda faltam. |
 | Média | Evidence Explorer completo | Implementado | Grafo seguro de agents produtores, findings e referências. |

@@ -1,6 +1,6 @@
-# Guia de instalação do Jarvis Agent
+# Guia de instalação do AGHUse Assistant
 
-Este guia instala globalmente os agentes, skills e plugins do Jarvis Agent no Codex. A instalação não altera os repositórios do SFA ou do AGHUse.
+Este guia instala globalmente os agentes, skills e plugins do AGHUse Assistant no Codex. A instalação não altera os repositórios do SFA ou do AGHUse.
 
 ## 1. Pré-requisitos
 
@@ -29,15 +29,15 @@ Se `codex plugin --help` não funcionar, atualize o Codex antes de continuar.
 Com SSH:
 
 ```bash
-git clone git@github.com:luisbiset/jarvis-agent.git
-cd jarvis-agent
+git clone git@github.com:luisbiset/aghuse-assistant.git
+cd aghuse-assistant
 ```
 
 Ou com HTTPS:
 
 ```bash
-git clone https://github.com/luisbiset/jarvis-agent.git
-cd jarvis-agent
+git clone https://github.com/luisbiset/aghuse-assistant.git
+cd aghuse-assistant
 ```
 
 ## 3. Preparar a integração com o Redmine
@@ -73,7 +73,7 @@ Para disponibilizar o Redmine em qualquer projeto e permitir a verificação do 
 ```toml
 [mcp_servers.redmine]
 command = "node"
-args = ["/CAMINHO/ABSOLUTO/jarvis-agent/plugins/redmine-agent/scripts/server.mjs"]
+args = ["/CAMINHO/ABSOLUTO/aghuse-assistant/plugins/redmine-agent/scripts/server.mjs"]
 env_vars = ["REDMINE_API_KEY"]
 default_tools_approval_mode = "writes"
 enabled = true
@@ -108,7 +108,7 @@ O instalador:
 2. instala a política global de métricas em `~/.codex/AGENTS.md` e registra o caminho do runtime;
 3. registra o marketplace local `codex-agents`;
 4. instala os três plugins;
-5. cria os agentes globais em `~/.codex/agents/`;
+5. cria os agentes globais em `~/.codex/config/agents/`;
 6. copia cada agente como um arquivo TOML independente, compatível com o carregador de subagentes do Codex.
 
 O argumento legado continua aceito para compatibilidade, mas produz o mesmo resultado da instalação padrão:
@@ -121,7 +121,7 @@ Execute o instalador novamente após cada atualização para copiar as versões 
 
 ## 6. Reiniciar e verificar
 
-Feche e reabra o Codex ou recarregue a janela do VS Code. Depois, na raiz do Jarvis Agent, execute:
+Feche e reabra o Codex ou recarregue a janela do VS Code. Depois, na raiz do AGHUse Assistant, execute:
 
 ```bash
 python3 scripts/doctor.py --strict
@@ -131,8 +131,8 @@ codex plugin list
 O diagnóstico saudável confirma:
 
 - 16 agentes globais;
-- a política global `FLOW-003` e o ponteiro do Jarvis Runtime;
-- os plugins `redmine-agent`, `sfa-agent` e `aghuse-agent`;
+- a política global `FLOW-003` e o ponteiro do AGHUse Assistant Runtime;
+- os plugins `redmine-agent`, `sfa-agent` e `aghuse-assistant`;
 - o MCP Redmine apontando para este clone;
 - a presença de `REDMINE_API_KEY` sem exibir seu valor;
 - ausência de instalações legadas conflitantes.
@@ -159,7 +159,7 @@ Liste meus chamados abertos no Redmine.
 ```
 
 ```text
-Use `$aghuse-development` para analisar e conduzir a tarefa 51093 no AGHUse.
+Use `$implementar` para analisar e conduzir a tarefa 51093 no AGHUse.
 ```
 
 Consultas ao Redmine podem ser executadas diretamente. Alterações de chamado, comentários e lançamentos de horas devem pedir confirmação antes da escrita.
@@ -167,7 +167,7 @@ Consultas ao Redmine podem ser executadas diretamente. Alterações de chamado, 
 ## 8. Atualizar a instalação
 
 ```bash
-cd /caminho/do/jarvis-agent
+cd /caminho/do/aghuse-assistant
 git pull --ff-only
 ./scripts/install.sh
 python3 scripts/doctor.py --strict
@@ -182,13 +182,13 @@ Se o instalador não puder ser usado:
 ```bash
 mkdir -p ~/.codex/agents
 cp config/AGENTS.md ~/.codex/AGENTS.md
-printf '%s\n' "$PWD" > ~/.codex/jarvis-agent-root
-cp agents/*.toml ~/.codex/agents/
+printf '%s\n' "$PWD" > ~/.codex/aghuse-assistant-root
+cp config/agents/*.toml ~/.codex/config/agents/
 
 codex plugin marketplace add "$PWD"
 codex plugin add redmine-agent@codex-agents
 codex plugin add sfa-agent@codex-agents
-codex plugin add aghuse-agent@codex-agents
+codex plugin add aghuse-assistant@codex-agents
 ```
 
 ## 10. Solução de problemas

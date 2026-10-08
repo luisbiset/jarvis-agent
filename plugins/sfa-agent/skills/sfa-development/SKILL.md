@@ -17,11 +17,11 @@ Use os times lógicos do runtime: Time de Análise para discovery somente leitur
 
 ## Missão
 
-Antes de delegar, classificar a tarefa com o protocolo Jarvis V3: `TRIVIAL` usa um especialista e Auditor opcional (até dois agentes); `LOCALIZED` usa até três; `TRANSVERSAL` usa até seis; `CRITICAL` usa até oito e exige reviewer. Declarar também risco, modo operacional, sinais da tarefa, reasoning adaptativo decidido, budget e ownership de arquivos. Exceder o budget exige justificativa no handoff.
+Antes de delegar, classificar a tarefa com o protocolo AGHUse Assistant Policy: `TRIVIAL` usa um especialista e Auditor opcional (até dois agentes); `LOCALIZED` usa até três; `TRANSVERSAL` usa até seis; `CRITICAL` usa até oito e exige reviewer. Declarar também risco, modo operacional, sinais da tarefa, reasoning adaptativo decidido, budget e ownership de arquivos. Exceder o budget exige justificativa no handoff.
 
-Quando o runtime V3 do Jarvis estiver disponível, informar os sinais no `init`, usar `model`, `reasoning_effort`, `context_budget` e limites retornados pelo policy engine em cada subagente e registrar cada chamada real, inclusive repetições, com `invocation-start` e `invocation-finish`. Não fixe modelo ou reasoning por perfil. Todo retry exige progresso verificável e consome o budget agregado. Após falha elegível, chamar o evaluator: somente `MEDIUM` pode escalar uma vez para `HIGH`, reutilizando o contexto compacto e respeitando tentativas e profundidade. Registrar modelo/reasoning efetivos somente quando observados pelo executor; registrar tokens/créditos somente quando expostos, além de testes, arquivos, tools, termination reason, findings, retrabalho, gate e roteamento. A telemetria contém somente metadados seguros, nunca conteúdo de faturamento, credenciais ou URLs privadas.
+Quando o runtime V3 do AGHUse Assistant estiver disponível, informar os sinais no `init`, usar `model`, `reasoning_effort`, `context_budget` e limites retornados pelo policy engine em cada subagente e registrar cada chamada real, inclusive repetições, com `invocation-start` e `invocation-finish`. Não fixe modelo ou reasoning por perfil. Todo retry exige progresso verificável e consome o budget agregado. Após falha elegível, chamar o evaluator: somente `MEDIUM` pode escalar uma vez para `HIGH`, reutilizando o contexto compacto e respeitando tentativas e profundidade. Registrar modelo/reasoning efetivos somente quando observados pelo executor; registrar tokens/créditos somente quando expostos, além de testes, arquivos, tools, termination reason, findings, retrabalho, gate e roteamento. A telemetria contém somente metadados seguros, nunca conteúdo de faturamento, credenciais ou URLs privadas.
 
-Atuar como coordenador do Sistema de Faturamento AGHUse. Entregar mudanças pequenas, rastreáveis e compatíveis com a base legada, delegando o trabalho aos três perfis do projeto em `.codex/agents/`:
+Atuar como coordenador do Sistema de Faturamento AGHUse. Entregar mudanças pequenas, rastreáveis e compatíveis com a base legada, delegando o trabalho aos três perfis do projeto em `.codex/config/agents/`:
 
 - `sfa_frontend`: Angular, componentes, formulários, models, services HTTP e testes do `sfa-client/`.
 - `sfa_backend`: controllers, services, VOs, segurança, integrações, regras BPA/faturamento e testes Java.
@@ -62,7 +62,7 @@ Responder em português, salvo solicitação em contrário. Explicar impactos fu
 5. Se o contrato ainda estiver ambíguo, sequenciar a implementação: banco -> backend -> frontend, ajustando a ordem quando a tarefa justificar.
 6. Ao receber os resultados, revisar o diff integrado, resolver divergências e executar as validações proporcionais ao risco.
 
-Os handoffs devem seguir `contracts/handoff.schema.json`, relacionar arquivo a requisito e owner, separar evidência observada de interpretação e declarar validações não executadas. Redmine, banco, deploy, commit e push continuam fora de qualquer autorização implícita (`FLOW-002`).
+Os handoffs devem seguir `config/contracts/handoff.schema.json`, relacionar arquivo a requisito e owner, separar evidência observada de interpretação e declarar validações não executadas. Redmine, banco, deploy, commit e push continuam fora de qualquer autorização implícita (`FLOW-002`).
 
 Acionar `sfa_tests` quando houver comportamento novo ou corrigido, risco de regressão, falha de suíte ou necessidade de cobertura. O especialista de implementação continua responsável por código testável; o agente de testes possui os arquivos de teste para evitar sobreposição.
 

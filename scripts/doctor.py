@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Diagn\u00f3stico read-only da instala\u00e7\u00e3o local do Jarvis Agent."""
+"""Diagn\u00f3stico read-only da instala\u00e7\u00e3o local do AGHUse Assistant."""
 
 from __future__ import annotations
 
@@ -35,6 +35,14 @@ def agent_is_installed(path: Path, expected: Path) -> bool:
     return path.is_file() and not path.is_symlink() and path.read_bytes() == expected.read_bytes()
 
 
+def global_instructions_valid(path: Path, expected: Path) -> bool:
+    if agent_is_installed(path, expected):
+        return True
+    if not path.is_file() or path.is_symlink():
+        return False
+    text = path.read_text(encoding="utf-8")
+    return all(token in text for token in ("managed-by: aghuse-assistant", "$analisar", "$planejar", "$implementar", "$validar"))
+
 def redmine_diagnostic(config: dict, plugin_enabled: bool, central_server: str) -> tuple[bool, str]:
     """Aceita configura\u00e7\u00e3o MCP expl\u00edcita ou o plugin global habilitado."""
     redmine = config.get("mcp_servers", {}).get("redmine", {})
@@ -49,10 +57,10 @@ def main() -> int:
     cli_args = parse_args()
     global_instructions = CODEX_HOME / "AGENTS.md"
     expected_global_instructions = ROOT / "config/AGENTS.md"
-    status(agent_is_installed(global_instructions, expected_global_instructions), "instru\u00e7\u00f5es globais de m\u00e9tricas instaladas")
-    root_pointer = CODEX_HOME / "jarvis-agent-root"
-    status(root_pointer.is_file() and root_pointer.read_text(encoding="utf-8").strip() == str(ROOT), "ponteiro global do Jarvis Runtime aponta para o projeto central")
-    expected_agents = {path.name: path.resolve() for path in (ROOT / "agents").glob("*.toml")}
+    status(global_instructions_valid(global_instructions, expected_global_instructions), "instru\u00e7\u00f5es globais das skills operacionais instaladas")
+    root_pointer = CODEX_HOME / "aghuse-assistant-root"
+    status(root_pointer.is_file() and root_pointer.read_text(encoding="utf-8").strip() == str(ROOT), "ponteiro global do AGHUse Assistant Runtime aponta para o projeto central")
+    expected_agents = {path.name: path.resolve() for path in (ROOT / "config/agents").glob("*.toml")}
     installed_agents = CODEX_HOME / "agents"
     for name, target in sorted(expected_agents.items()):
         status(agent_is_installed(installed_agents / name, target), f"agente global {name} copiado a partir de {target}")
@@ -72,7 +80,7 @@ def main() -> int:
     redmine_ok, redmine_message = redmine_diagnostic(config, redmine_enabled, central_server)
     status(redmine_ok, redmine_message)
     status(bool(os.environ.get("REDMINE_API_KEY")), "REDMINE_API_KEY dispon\u00edvel sem exibir o valor")
-    for plugin in ("redmine-agent", "sfa-agent", "aghuse-agent"):
+    for plugin in ("redmine-agent", "sfa-agent", "aghuse-assistant"):
         selector = f"{plugin}@codex-agents"
         enabled = any(selector in line and "installed, enabled" in line for line in lines)
         status(enabled, f"plugin {selector} instalado")
@@ -80,7 +88,7 @@ def main() -> int:
     status(not duplicates, f"sem plugins legados ativos{': ' + ', '.join(duplicates) if duplicates else ''}")
     removed_selector = "sesab-orchestrator@codex-agents"
     status(not any(removed_selector in line and "installed, enabled" in line for line in lines), f"plugin removido {removed_selector} n\u00e3o est\u00e1 ativo")
-    legacy_skills = [Path.home() / ".agents/skills/redmine-workflows", Path.home() / ".agents/skills/sfa-development"]
+    legacy_skills = [Path.home() / ".codex/agents/skills/redmine-workflows", Path.home() / ".codex/agents/skills/sfa-development"]
     active_legacy = [str(path) for path in legacy_skills if path.exists() or path.is_symlink()]
     status(not active_legacy, f"sem symlinks legados de skills{': ' + ', '.join(active_legacy) if active_legacy else ''}")
     if FAILURES:

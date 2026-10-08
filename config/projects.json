@@ -2,22 +2,12 @@
   "schema_version": "1.0.0",
   "projects": [
     {
-      "project_id": "jarvis",
-      "name": "Jarvis Agent",
-      "repository_root": ".",
-      "default_branch": "main",
-      "rag_scope": ["jarvis-agent"],
-      "allowed_agents": [],
-      "allowed_integrations": ["redmine"],
-      "policy_ref": "default"
-    },
-    {
       "project_id": "aghuse",
       "name": "AGHUse",
       "repository_root": "../aghuse",
       "default_branch": "main",
       "rag_scope": ["aghuse"],
-      "allowed_agents": ["aghuse_analise", "aghuse_backend", "aghuse_banco", "aghuse_frontend", "aghuse_qualidade", "aghuse_revisor", "aghuse_testes"],
+      "allowed_agents": ["architecture", "backend", "database", "frontend", "qa"],
       "allowed_integrations": ["redmine"],
       "policy_ref": "aghuse"
     },
@@ -30,6 +20,16 @@
       "allowed_agents": ["sfa_backend", "sfa_database", "sfa_frontend", "sfa_tests"],
       "allowed_integrations": ["redmine"],
       "policy_ref": "sfa"
+    },
+    {
+      "project_id": "aghuse-assistant",
+      "name": "AGHUse Assistant",
+      "repository_root": ".",
+      "default_branch": "main",
+      "rag_scope": ["aghuse-assistant"],
+      "allowed_agents": ["aghuse_assistant"],
+      "allowed_integrations": [],
+      "policy_ref": "aghuse-assistant"
     }
   ]
 }

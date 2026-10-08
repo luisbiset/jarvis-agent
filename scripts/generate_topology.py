@@ -31,14 +31,14 @@ def frontmatter(path: Path) -> dict[str, str]:
 
 
 def render() -> str:
-    version = json.loads((ROOT / "contracts/version.json").read_text(encoding="utf-8"))
-    teams_policy = json.loads((ROOT / "contracts/teams-policy.json").read_text(encoding="utf-8"))
+    version = json.loads((ROOT / "config/contracts/version.json").read_text(encoding="utf-8"))
+    teams_policy = json.loads((ROOT / "config/contracts/teams-policy.json").read_text(encoding="utf-8"))
     lines = [
-        "# Topologia gerada do Jarvis Agent",
+        "# Topologia gerada do AGHUse Assistant",
         "",
         "> Arquivo gerado por `python3 scripts/generate_topology.py`. Não editar manualmente.",
         "",
-        f"Versão comportamental: `{version['jarvis_version']}`.",
+        f"Versão comportamental: `{version['product_version']}`.",
         "",
         "## Plugins",
         "",
@@ -64,7 +64,7 @@ def render() -> str:
             "|---|---|---|---|---|---|",
         ]
     )
-    for path in sorted((ROOT / "agents").glob("*.toml")):
+    for path in sorted((ROOT / "config/agents").glob("*.toml")):
         with path.open("rb") as stream:
             agent = tomllib.load(stream)
         declared = agent.get("allowed_teams") or [agent.get("team")]
@@ -80,7 +80,7 @@ def render() -> str:
         plugin = path.parents[2].name
         lines.append(f"| {escape(plugin)} | {escape(data.get('name', path.parent.name))} | {escape(data.get('description', ''))} |")
 
-    policies = json.loads((ROOT / "contracts/policy-registry.json").read_text(encoding="utf-8"))["policies"]
+    policies = json.loads((ROOT / "config/contracts/policy-registry.json").read_text(encoding="utf-8"))["policies"]
     lines.extend(["", "## Políticas", "", "| ID | Categoria | Resumo |", "|---|---|---|"])
     for policy in policies:
         lines.append(f"| `{escape(policy['id'])}` | {escape(policy['category'])} | {escape(policy['summary'])} |")

@@ -9,16 +9,16 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "src"))
 
-from rag.indexer import RagIndex  # noqa: E402
-from rag.retriever import search  # noqa: E402
+from aghuse_assistant.rag.indexer import RagIndex  # noqa: E402
+from aghuse_assistant.rag.retriever import search  # noqa: E402
 
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
-    result.add_argument("--database", type=Path, default=ROOT / ".jarvis/rag/index.db")
-    result.add_argument("--cases", type=Path, default=ROOT / "evals/rag-cases.json")
+    result.add_argument("--database", type=Path, default=ROOT / ".aghuse-assistant/rag/index.db")
+    result.add_argument("--cases", type=Path, default=ROOT / "tests/fixtures/evals/rag-cases.json")
     result.add_argument("--top-k", type=int, default=10)
     result.add_argument("--baseline", type=Path, help="JSON com recall_at_k e mrr mínimos aceitos")
     return result

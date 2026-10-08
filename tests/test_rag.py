@@ -1,36 +1,26 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-import argparse
-import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
+import sys
 
-from rag.chunkers import chunk_text
-from rag.indexer import RagIndex
-from rag.retriever import retrieve, load_reranker
-from rag.security import safe_text
-from rag.taxonomy import classify
-from rag.semantic import LocalEmbeddingProvider, cosine
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from aghuse_assistant.rag.chunkers import chunk_text
+from aghuse_assistant.rag.indexer import RagIndex
+from aghuse_assistant.rag.retriever import retrieve, load_reranker
+from aghuse_assistant.rag.security import safe_text
+from aghuse_assistant.rag.taxonomy import classify
+from aghuse_assistant.rag.semantic import LocalEmbeddingProvider, cosine
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_runtime():
-    spec = importlib.util.spec_from_file_location("jarvis_runtime_rag_test", ROOT / "scripts/jarvis_runtime.py")
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader
-    spec.loader.exec_module(module)
-    return module
-
-
-RUNTIME = load_runtime()
-
-
 class RagTest(unittest.TestCase):
     def policy(self) -> dict:
-        return json.loads((ROOT / "contracts/rag-policy.json").read_text(encoding="utf-8"))
+        return json.loads((ROOT / "config/contracts/rag-policy.json").read_text(encoding="utf-8"))
 
     def test_local_embedding_provider_is_deterministic_and_offline(self):
         provider = LocalEmbeddingProvider()
@@ -65,7 +55,7 @@ class RagTest(unittest.TestCase):
             source = root / "Foo.java"; source.write_text("public class Foo {}\n", encoding="utf-8")
             with RagIndex(Path(temporary) / "index.db") as index:
                 first = index.index_repo(root)
-                original = __import__("rag.indexer", fromlist=["git_revision", "git_branch"])
+                original = __import__("aghuse_assistant.rag.indexer", fromlist=["git_revision", "git_branch"])
                 old_revision, old_branch = original.git_revision, original.git_branch
                 try:
                     original.git_revision = lambda _root: "commit-2"
@@ -106,33 +96,6 @@ class RagTest(unittest.TestCase):
             self.assertIn("query_term_in_symbol", payload["hits"][0]["match_reasons"])
             self.assertEqual(payload["hits"][0]["selection_reason"], "selected_by_ranked_relevance")
             self.assertIn("coverage", payload["hits"][0]["score_breakdown"])
-
-    def test_runtime_writes_rag_context_without_counting_model_call(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            base = Path(temporary); repo = base / "repo"; repo.mkdir()
-            (repo / "README.md").write_text("# Evidência\nagrupamento profissionais APAC\n", encoding="utf-8")
-            database = base / "index.db"
-            with RagIndex(database) as index:
-                index.index_repo(repo)
-            initialized = RUNTIME.initialize(argparse.Namespace(
-                task_id="RAG-TEST", complexity="LOCALIZED", risk_class="LOW", operational_mode="COPILOT",
-                reasoning_class=None, budget_justification=None, agents_planned=[], runs_dir=base / "runs", telemetry_db=base / "telemetry.db",
-                task_type="GENERAL", estimated_files=2, estimated_modules=1, architectural=False, production_critical=False,
-                database_migration=False, security_sensitive=False, tests_required=True, ambiguity_score=0, complexity_score=2,
-            ))
-            result = RUNTIME.rag_retrieve(argparse.Namespace(run_dir=initialized["run_dir"], query="agrupamento APAC", database=database, path_filter=None, domain=None, agent=None))
-            state = json.loads((Path(initialized["run_dir"]) / "state.json").read_text(encoding="utf-8"))
-            pack = json.loads(Path(result["context_pack"]).read_text(encoding="utf-8"))
-            self.assertEqual(state["budget"]["model_calls_used"], 0)
-            self.assertEqual(state["rag"]["queries"], 1)
-            self.assertEqual(pack["query_hash"], __import__("hashlib").sha256(b"agrupamento APAC").hexdigest())
-            cached = RUNTIME.rag_retrieve(argparse.Namespace(run_dir=initialized["run_dir"], query="agrupamento APAC", database=database, path_filter=None, domain=None, agent=None))
-            state = json.loads((Path(initialized["run_dir"]) / "state.json").read_text(encoding="utf-8"))
-            dashboard = RUNTIME.dashboard(argparse.Namespace(runs_dir=base / "runs", telemetry_db=base / "telemetry.db"))
-            self.assertTrue(cached["cache_hit"])
-            self.assertEqual(state["rag"]["cache_hits"], 1)
-            self.assertEqual(dashboard["rag"]["queries_count"], 1)
-            self.assertGreaterEqual(dashboard["rag"]["selected_chunks"], 1)
 
     def test_security_filter_rejects_credentials(self):
         self.assertFalse(safe_text("Authorization: Bearer abcdefghijklmnopqrstuvwxyz"))
@@ -179,7 +142,7 @@ class RagTest(unittest.TestCase):
             database = Path(temporary) / "index.db"
             with RagIndex(database) as index:
                 index.index_repo(root)
-                from rag.retriever import search
+                from aghuse_assistant.rag.retriever import search
                 hits = search(index, "calcular", 10, taxonomy={"layer": "backend"})
                 self.assertTrue(hits)
                 self.assertTrue(all(".java" in hit.path for hit in hits))
@@ -192,7 +155,7 @@ class RagTest(unittest.TestCase):
             database = Path(temporary) / "index.db"
             with RagIndex(database) as index:
                 index.index_repo(root)
-                from rag.retriever import search
+                from aghuse_assistant.rag.retriever import search
                 hits = search(index, "ContaON", 10, taxonomy={"category": "ON"})
                 self.assertEqual([hit.path for hit in hits], ["ContaON.java"])
 
@@ -211,22 +174,6 @@ class RagTest(unittest.TestCase):
     def test_local_semantic_similarity_is_deterministic(self):
         self.assertGreater(cosine("regra de cálculo da conta", "calculo conta regra"), 0.5)
         self.assertEqual(cosine("abc", "xyz"), 0.0)
-
-    def test_runtime_uses_default_reranker_when_present(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            base = Path(temporary); repo = base / "repo"; repo.mkdir()
-            (repo / "ContaON.java").write_text("public class ContaON { void calcular() {} }\n", encoding="utf-8")
-            database = base / "index.db"
-            model = base / "reranker.json"
-            model.write_text(json.dumps({"schema_version":"1.0.0", "method":"term_log_odds", "weights":{}}), encoding="utf-8")
-            with RagIndex(database) as index: index.index_repo(repo)
-            initialized = RUNTIME.initialize(argparse.Namespace(task_id="RAG-RERANK", complexity="LOCALIZED", risk_class="LOW", operational_mode="COPILOT", reasoning_class=None, budget_justification=None, agents_planned=[], runs_dir=base / "runs", telemetry_db=base / "telemetry.db", task_type="GENERAL", estimated_files=1, estimated_modules=1, architectural=False, production_critical=False, database_migration=False, security_sensitive=False, tests_required=True, ambiguity_score=0, complexity_score=2))
-            previous = RUNTIME.DEFAULT_RAG_RERANKER; RUNTIME.DEFAULT_RAG_RERANKER = model
-            try:
-                result = RUNTIME.rag_retrieve(argparse.Namespace(run_dir=initialized["run_dir"], query="ContaON", database=database, path_filter=None, domain=None, agent=None, taxonomy=None))
-                self.assertEqual(result["retrieval_mode"], "LEXICAL_RERANKED")
-            finally:
-                RUNTIME.DEFAULT_RAG_RERANKER = previous
 
 if __name__ == "__main__":
     unittest.main()

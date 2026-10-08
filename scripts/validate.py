@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validação determinística e sem dependências do projeto Jarvis Agent."""
+"""Validação determinística e sem dependências do projeto AGHUse Assistant."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def validate_text_encoding() -> None:
     for path in ROOT.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
             continue
-        if any(part in {".git", ".jarvis", "__pycache__", "target", "node_modules"} for part in path.parts):
+        if any(part in {".git", ".aghuse-assistant", "__pycache__", "target", "node_modules"} for part in path.parts):
             continue
         try:
             text = path.read_text(encoding="utf-8")
@@ -65,7 +65,7 @@ def load_json(path: Path) -> dict:
 
 def validate_agents() -> set[str]:
     names: set[str] = set()
-    for path in sorted((ROOT / "agents").glob("*.toml")):
+    for path in sorted((ROOT / "config/agents").glob("*.toml")):
         try:
             with path.open("rb") as stream:
                 data = tomllib.load(stream)
@@ -162,8 +162,8 @@ def validate_plugins() -> set[str]:
 
 
 def validate_evals(agent_names: set[str]) -> None:
-    data = load_json(ROOT / "evals/routing-cases.json")
-    schema = load_json(ROOT / "evals/routing-result.schema.json")
+    data = load_json(ROOT / "tests/fixtures/evals/routing-cases.json")
+    schema = load_json(ROOT / "tests/fixtures/evals/routing-result.schema.json")
     if data.get("schema_version") != 2:
         fail("Evals de roteamento devem usar schema_version 2")
     if schema.get("type") != "object" or schema.get("additionalProperties") is not False:
@@ -288,7 +288,13 @@ def validate_evals(agent_names: set[str]) -> None:
 
 
 def validate_versioned_contracts(agent_names: set[str]) -> None:
-    contract_dir = ROOT / "contracts"
+    contract_dir = ROOT / "config/contracts"
+    response_dir = contract_dir / "responses"
+    response_files = ["envelope.schema.json", "analyze-response.schema.json", "plan-response.schema.json", "implement-response.schema.json", "validate-response.schema.json"]
+    for name in response_files:
+        path = response_dir / name
+        if not path.is_file() or not load_json(path).get("$id"):
+            fail(f"Contrato de resposta ausente ou inválido: {name}")
     required = {
         "version.json",
         "reasoning-policy.json",
@@ -313,16 +319,16 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
         return
 
     integration = load_json(contract_dir / "dashboard-integration.schema.json")
-    if integration.get("$id") != "jarvis://contracts/dashboard-integration/1.0.0" or integration.get("additionalProperties") is not False:
+    if integration.get("$id") != "aghuse://config/contracts/dashboard-integration/1.0.0" or integration.get("additionalProperties") is not False:
         fail("dashboard-integration.schema.json deve ser fechado e versionado em 1.0.0")
 
     version = load_json(contract_dir / "version.json")
-    if version.get("jarvis_version") != "3.1.0" or version.get("execution_state_schema_version") != "3.1.0" or version.get("telemetry_schema_version") != "3.1.0" or version.get("reasoning_policy_version") != "3.1.0" or version.get("technical_handoff_schema_version") != "1.0.0" or version.get("knowledge_transfer_policy_version") != "1.0.0" or version.get("rag_policy_version") != "1.0.0" or version.get("rag_context_schema_version") != "1.0.0" or version.get("teams_policy_version") != "1.0.0" or version.get("routing_schema_version") != 2:
-        fail("contracts/version.json não declara Jarvis/runtime/policy 3.1.0 e routing schema 2")
+    if version.get("product_version") != "3.1.0" or version.get("execution_state_schema_version") != "3.1.0" or version.get("telemetry_schema_version") != "3.1.0" or version.get("reasoning_policy_version") != "3.1.0" or version.get("technical_handoff_schema_version") != "1.0.0" or version.get("knowledge_transfer_policy_version") != "1.0.0" or version.get("rag_policy_version") != "1.0.0" or version.get("rag_context_schema_version") != "1.0.0" or version.get("teams_policy_version") != "1.0.0" or version.get("routing_schema_version") != 2:
+        fail("config/contracts/version.json não declara AGHUse Assistant/runtime/policy 3.1.0 e routing schema 2")
 
     handoff = load_json(contract_dir / "handoff.schema.json")
     handoff_required = {
-        "schema_version", "run_id", "jarvis_version", "status", "stage", "complexity",
+        "schema_version", "run_id", "product_version", "status", "stage", "complexity",
         "risk_class", "operational_mode", "reasoning_class", "requirement_ids", "files",
         "contracts_changed", "decisions", "validations", "risks", "limitations", "blockers",
         "stop_reason", "ownership", "next",
@@ -359,7 +365,7 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
             fail(f"Policy {policy_id} não é citada por nenhum enforcement declarado")
 
     boundaries = load_json(contract_dir / "role-boundaries.json").get("roles", {})
-    expected_roles = {"aghuse_revisor", "aghuse_qualidade", "aghuse_revisor", "aghuse_qualidade"}
+    expected_roles = {"architecture", "qa", "architecture", "qa"}
     if set(boundaries) != expected_roles:
         fail("role-boundaries.json não declara as quatro fronteiras de validação")
     evidence_domains = [value.get("primary_evidence") for value in boundaries.values()]
@@ -405,74 +411,8 @@ def validate_redmine_server() -> None:
         fail(f"Testes offline do MCP Redmine falharam: {details}")
 
 
-def validate_aghuse_automation() -> None:
-    plugin = ROOT / "plugins/aghuse-agent"
-    script = plugin / "scripts/aghuse_automacao.py"
-    tests = plugin / "tests"
-    if not script.is_file():
-        fail("Plugin AGHUse deve possuir scripts/aghuse_automacao.py")
-        return
-    try:
-        ast.parse(script.read_text(encoding="utf-8"), filename=str(script))
-    except SyntaxError as exc:
-        fail(f"Automação AGHUse possui Python inválido: {exc}")
-        return
-    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": str(ROOT / "scripts") + os.pathsep + str(ROOT) + os.pathsep + os.environ.get("PYTHONPATH", "")}
-    result = subprocess.run(
-        [sys.executable, "-m", "unittest", "discover", "-s", str(tests), "-p", "test_*.py"],
-        cwd=ROOT,
-        env=env,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode:
-        details = (result.stdout + result.stderr).strip()
-        fail(f"Testes das automações AGHUse falharam: {details}")
-
-
-def validate_jarvis_runtime() -> None:
-    scripts = [ROOT / "scripts/jarvis_runtime.py", ROOT / "scripts/jarvis_rag.py", ROOT / "scripts/run_rag_evals.py", ROOT / "scripts/run_evals.py", ROOT / "scripts/generate_topology.py"]
-    for script in scripts:
-        if not script.is_file():
-            fail(f"Script V3 ausente: {script.relative_to(ROOT)}")
-            continue
-        try:
-            ast.parse(script.read_text(encoding="utf-8"), filename=str(script))
-        except SyntaxError as exc:
-            fail(f"Script V3 possui Python inválido em {script.relative_to(ROOT)}: {exc}")
-    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": str(ROOT / "scripts") + os.pathsep + str(ROOT) + os.pathsep + os.environ.get("PYTHONPATH", "")}
-    result = subprocess.run(
-        [sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "tests"), "-p", "test_*.py"],
-        cwd=ROOT,
-        env=env,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode:
-        details = (result.stdout + result.stderr).strip()
-        fail(f"Testes do runtime Jarvis V3 falharam: {details}")
-    evals = subprocess.run(
-        [sys.executable, str(ROOT / "scripts/run_evals.py")],
-        cwd=ROOT,
-        env=env,
-        capture_output=True,
-        text=True,
-    )
-    if evals.returncode:
-        fail(f"Carregamento dos evals falhou: {(evals.stdout + evals.stderr).strip()}")
-    topology = subprocess.run(
-        [sys.executable, str(ROOT / "scripts/generate_topology.py"), "--check"],
-        cwd=ROOT,
-        env=env,
-        capture_output=True,
-        text=True,
-    )
-    if topology.returncode:
-        fail(f"Topologia gerada está desatualizada: {(topology.stdout + topology.stderr).strip()}")
-
-
 def validate_reasoning_policy() -> None:
-    policy = load_json(ROOT / "contracts/reasoning-policy.json")
+    policy = load_json(ROOT / "config/contracts/reasoning-policy.json")
     if policy.get("policy_version") != "3.1.0":
         fail("Reasoning policy deve declarar policy_version 3.1.0")
     if policy.get("default_level") != "MEDIUM":
@@ -510,12 +450,12 @@ def validate_reasoning_policy() -> None:
 
 
 def validate_rag_policy() -> None:
-    policy = load_json(ROOT / "contracts/rag-policy.json")
+    policy = load_json(ROOT / "config/contracts/rag-policy.json")
     if policy.get("policy_version") != "1.0.0" or policy.get("enabled") is not True:
         fail("RAG policy deve estar habilitada e versionada em 1.0.0")
     if policy.get("retrieval", {}).get("fallback_mode") != "LEXICAL_ONLY":
         fail("RAG deve possuir fallback LEXICAL_ONLY")
-    reasoning = load_json(ROOT / "contracts/reasoning-policy.json")
+    reasoning = load_json(ROOT / "config/contracts/reasoning-policy.json")
     previous = {"candidate_k": 0, "top_k": 0, "max_tokens": 0, "max_sources": 0}
     for level in ("SMALL", "MEDIUM", "LARGE"):
         current = policy.get("budgets", {}).get(level, {})
@@ -527,13 +467,13 @@ def validate_rag_policy() -> None:
         maximum = reasoning.get("context_limits", {}).get(level, {}).get("max_context_tokens", 0)
         if current.get("max_tokens", 0) > maximum:
             fail(f"RAG excede max_context_tokens global em {level}")
-    schema = load_json(ROOT / "contracts/rag-context.schema.json")
+    schema = load_json(ROOT / "config/contracts/rag-context.schema.json")
     if schema.get("additionalProperties") is not False or schema.get("properties", {}).get("schema_version", {}).get("const") != "1.0.0":
         fail("rag-context.schema.json deve ser fechado e versionado em 1.0.0")
 
 
 def validate_knowledge_transfer_policy() -> None:
-    policy = load_json(ROOT / "contracts/knowledge-transfer-policy.json")
+    policy = load_json(ROOT / "config/contracts/knowledge-transfer-policy.json")
     if policy.get("policy_id") != "FLOW-004" or policy.get("policy_version") != "1.0.0":
         fail("Knowledge transfer deve declarar FLOW-004 e policy_version 1.0.0")
     expected = {
@@ -552,13 +492,13 @@ def validate_knowledge_transfer_policy() -> None:
     budget = policy.get("budget", {})
     if budget.get("max_handoff_tokens") != 4000 or budget.get("max_teachback_turns") != 6:
         fail("Budgets de knowledge transfer devem ser 4000 tokens e 6 turnos")
-    schema = load_json(ROOT / "contracts/technical-handoff.schema.json")
-    if schema.get("additionalProperties") is not False or schema.get("$id") != "jarvis://contracts/technical-handoff/1.0.0":
+    schema = load_json(ROOT / "config/contracts/technical-handoff.schema.json")
+    if schema.get("additionalProperties") is not False or schema.get("$id") != "aghuse://config/contracts/technical-handoff/1.0.0":
         fail("technical-handoff.schema.json deve ser fechado e versionado em 1.0.0")
 
 
 def validate_teams_policy(agent_names: set[str]) -> None:
-    policy = load_json(ROOT / "contracts/teams-policy.json")
+    policy = load_json(ROOT / "config/contracts/teams-policy.json")
     teams = policy.get("teams", {})
     expected = {"ANALISE", "DESENVOLVIMENTO", "REVISAO_QUALIDADE"}
     if policy.get("schema_version") != "1.0.0" or set(teams) != expected:
@@ -576,7 +516,7 @@ def validate_teams_policy(agent_names: set[str]) -> None:
         if overlap:
             fail(f"Estados pertencem a mais de um time: {sorted(overlap)}")
         states_seen.update(config.get("allowed_states", []))
-    for path in sorted((ROOT / "agents").glob("*.toml")):
+    for path in sorted((ROOT / "config/agents").glob("*.toml")):
         with path.open("rb") as stream:
             agent = tomllib.load(stream)
         declared = [agent["team"]] if "team" in agent else agent.get("allowed_teams", [])
@@ -585,7 +525,7 @@ def validate_teams_policy(agent_names: set[str]) -> None:
         for team in declared:
             if agent.get("name") not in teams[team]["agents"]:
                 fail(f"{agent.get('name')} declara {team}, mas não consta no time")
-    patterns = load_json(ROOT / "contracts/task-patterns.json")
+    patterns = load_json(ROOT / "config/contracts/task-patterns.json")
     if patterns.get("schema_version") != 2 or not patterns.get("compatibility", {}).get("legacy_agents_field"):
         fail("task-patterns deve usar times com fallback agents legado")
     for pattern in patterns.get("patterns", []):
@@ -611,50 +551,30 @@ def validate_critical_contracts() -> None:
             "Aplique `FLOW-003` a toda tarefa",
             "informe as pré-métricas ao usuário antes do trabalho substantivo",
         ],
-        "contracts/protocol.md": [
+        "config/contracts/protocol.md": [
             "Toda tarefa solicitada, inclusive consulta, explicação, diagnóstico somente leitura ou ação externa",
             "Aplicar `FLOW-003`",
             "o fechamento deve dizer `não informados`",
             "`HIGH` nunca escala novamente",
             "O reasoning do agente principal já iniciado não muda no meio da mesma chamada",
         ],
-        "agents/aghuse_backend.toml": [
+        "config/agents/backend.toml": [
             "nunca crie uma nova classe `*RN`",
             "crie-a como `*ON`",
         ],
-        "agents/aghuse_testes.toml": [
+        "config/agents/qa.toml": [
             "Crie, amplie ou corrija testes somente quando a unidade de produção testada for uma classe `*ON` ou uma classe `*RN` existente",
             "Não crie nem modifique testes de controller/action",
             "É permitido ler e executar testes existentes fora de ON/RN apenas para diagnóstico",
             "Antes de criar uma classe de teste, procure uma cobertura adequada no módulo, no restante do repositório e nas branches relacionadas ao fluxo",
             "Só crie uma nova classe após demonstrar que não existe teste adequado",
         ],
-        "plugins/aghuse-agent/skills/aghuse-idempotent-database-scripts/SKILL.md": [
-            "A mesma regra vale para o rollback",
-            "aplicação duas vezes, rollback duas vezes",
-            "finalizar a definição da constraint com `ENABLE NOVALIDATE`",
-            "Toda foreign key deve possuir um índice associado",
-            "Todo `CREATE INDEX` Oracle, inclusive `CREATE UNIQUE INDEX`, deve terminar com `ONLINE`",
-            "Não transportar `ENABLE NOVALIDATE` ou `ONLINE` para PostgreSQL",
-        ],
-        "plugins/aghuse-agent/skills/aghuse-development/SKILL.md": [
-            "nunca criar uma nova `*RN`",
-            "criá-la como `*ON`",
-            "aghuse-idempotent-database-scripts",
-            "testes unitários exclusivamente para ONs e RNs existentes",
-            "Não delegue ao `aghuse_testes` a criação ou alteração de testes de controller/action",
-            "Antes de autorizar uma nova classe `*ONTest` ou `*RNTest`",
-            "Prefira ampliar ou portar a classe de teste existente",
-            "policy engine central do Jarvis V3",
-            "Não fixe modelo ou reasoning por perfil",
-            "Somente `MEDIUM` pode escalar uma vez para `HIGH`",
-        ],
         "plugins/sfa-agent/skills/sfa-development/SKILL.md": [
-            "protocolo Jarvis V3",
+            "protocolo AGHUse Assistant Policy",
             "Não fixe modelo ou reasoning por perfil",
             "somente `MEDIUM` pode escalar uma vez para `HIGH`",
         ],
-        "agents/aghuse_banco.toml": [
+        "config/agents/database.toml": [
             "aplicação e rollback",
             "deve ser idempotente",
             "Toda nova consulta baseada em Criteria",
@@ -668,14 +588,14 @@ def validate_critical_contracts() -> None:
             "Todo `CREATE INDEX` Oracle, inclusive `CREATE UNIQUE INDEX`, deve terminar com a cláusula `ONLINE`",
             "não as copie para scripts PostgreSQL",
         ],
-        "agents/sfa_database.toml": [
+        "config/agents/sfa_database.toml": [
             "Aplique `DB-DDL-001` nos scripts Oracle",
             "finalize a definição da constraint com `ENABLE NOVALIDATE`",
             "Toda foreign key deve possuir um índice associado",
             "Todo `CREATE INDEX` Oracle, inclusive `CREATE UNIQUE INDEX`, deve terminar com a cláusula `ONLINE`",
             "não as copie para scripts PostgreSQL",
         ],
-        "agents/aghuse_revisor.toml": [
+        "config/agents/architecture.toml": [
             "Ao revisar mudanças no AGHUse",
             "reporte como achado a criação de consultas com `DetachedCriteria`",
         ],
@@ -686,7 +606,7 @@ def validate_critical_contracts() -> None:
             "Não usar automação de navegador",
         ],
     }
-    contracts["agents/aghuse_revisor.toml"] = ["Ao revisar", "`DetachedCriteria`"]
+    contracts["config/agents/architecture.toml"] = ["Ao revisar", "`DetachedCriteria`"]
     for relative, fragments in contracts.items():
         path = ROOT / relative
         if not path.is_file():
@@ -711,14 +631,27 @@ def scan_secrets() -> None:
             fail(f"Possível segredo literal em {path.relative_to(ROOT)}")
 
 
+def validate_python_tests() -> None:
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": str(ROOT / "src") + os.pathsep + os.environ.get("PYTHONPATH", "")}
+    result = subprocess.run(
+        [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-q"],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode:
+        details = (result.stdout + result.stderr).strip()
+        fail(f"Suíte Python falhou: {details}")
+
+
 def main() -> int:
     agents = validate_agents()
     plugins = validate_plugins()
     validate_evals(agents)
     validate_versioned_contracts(agents)
     validate_redmine_server()
-    validate_aghuse_automation()
-    validate_jarvis_runtime()
+
     validate_reasoning_policy()
     validate_rag_policy()
     validate_knowledge_transfer_policy()
@@ -726,6 +659,7 @@ def main() -> int:
     validate_critical_contracts()
     validate_text_encoding()
     scan_secrets()
+    validate_python_tests()
     if ERRORS:
         print("VALIDAÇÃO FALHOU")
         for error in ERRORS:

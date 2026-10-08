@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implementar AGHUse"
+  short_description: "Executa implementações controladas com testes."
+  default_prompt: "Use $implementar para executar a operação IMPLEMENT. Valide o JSON internamente e apresente o resultado em seções Markdown padronizadas."

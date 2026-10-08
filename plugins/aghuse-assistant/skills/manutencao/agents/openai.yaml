@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manutenção AGHUse Assistant"
+  short_description: "Mantém o próprio assistant e seus componentes."
+  default_prompt: "Use $manutencao para analisar, implementar ou validar mudanças exclusivamente no AGHUse Assistant."

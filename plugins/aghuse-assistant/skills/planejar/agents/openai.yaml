@@ -1,0 +1,4 @@
+interface:
+  display_name: "Planejar AGHUse"
+  short_description: "Cria planos técnicos independentes."
+  default_prompt: "Use $planejar para executar a operação PLAN. Valide o JSON internamente e apresente o resultado em seções Markdown padronizadas."

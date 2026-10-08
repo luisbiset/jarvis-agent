@@ -28,11 +28,11 @@ def load_active(path: Path) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--feedback", type=Path, default=Path(".jarvis/rag/feedback.jsonl")); parser.add_argument("--root", type=Path, default=Path(".jarvis/rag")); parser.add_argument("--min-examples", type=int, default=2); parser.add_argument("--approve-promotion", action="store_true", help="autoriza explicitamente substituir o modelo ativo"); args = parser.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--feedback", type=Path, default=Path(".aghuse-assistant/rag/feedback.jsonl")); parser.add_argument("--root", type=Path, default=Path(".aghuse-assistant/rag")); parser.add_argument("--min-examples", type=int, default=2); parser.add_argument("--approve-promotion", action="store_true", help="autoriza explicitamente substituir o modelo ativo"); args = parser.parse_args()
     rows = load(args.feedback); approved = [row for row in rows if row.get("status") == "APPROVED"]; pending = sum(row.get("status") == "PENDING" for row in rows)
     if len(approved) < args.min_examples:
         print(json.dumps({"promoted": False, "reason": "insufficient_approved_examples", "approved": len(approved), "pending": pending, "required": args.min_examples}, ensure_ascii=False)); return 0
-    with tempfile.TemporaryDirectory(prefix="jarvis-rag-train-") as temp:
+    with tempfile.TemporaryDirectory(prefix="aghuse-rag-train-") as temp:
         work = Path(temp); approved_path = work / "approved.jsonl"; write(approved_path, approved); validated = read_examples(approved_path)
         train_rows = [row for row in validated if hashlib.sha256(row["query"].encode()).digest()[0] >= 51]; validation_rows = [row for row in validated if hashlib.sha256(row["query"].encode()).digest()[0] < 51]
         if not train_rows or not validation_rows:

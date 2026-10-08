@@ -14,11 +14,11 @@ SPEC.loader.exec_module(EVALS)
 class RoutingEvalTest(unittest.TestCase):
     def case(self):
         return {
-            "expected_skills": ["aghuse-development"],
-            "expected_agents": ["aghuse_frontend"],
+            "expected_skills": ["implementar"],
+            "expected_agents": ["frontend"],
             "allowed_agents": [],
-            "forbidden_agents": ["aghuse_banco"],
-            "expected_stages": [{"mode": "sequential", "agents": ["aghuse_frontend"]}],
+            "forbidden_agents": ["database"],
+            "expected_stages": [{"mode": "sequential", "agents": ["frontend"]}],
             "complexity": "TRIVIAL",
             "risk_class": "LOW",
             "operational_mode": "ASSISTED_AUTOPILOT",
@@ -33,9 +33,9 @@ class RoutingEvalTest(unittest.TestCase):
 
     def actual(self):
         return {
-            "skills": ["aghuse-agent:aghuse-development"],
-            "agents": ["aghuse_frontend"],
-            "stages": [{"mode": "sequential", "agents": ["aghuse_frontend"]}],
+            "skills": ["implementar"],
+            "agents": ["frontend"],
+            "stages": [{"mode": "sequential", "agents": ["frontend"]}],
             "complexity": "TRIVIAL",
             "risk_class": "LOW",
             "operational_mode": "ASSISTED_AUTOPILOT",
@@ -55,14 +55,14 @@ class RoutingEvalTest(unittest.TestCase):
 
     def test_detects_over_routing_even_when_required_agent_exists(self):
         actual = self.actual()
-        actual["agents"].append("aghuse_banco")
+        actual["agents"].append("database")
         errors, scores = EVALS.compare(self.case(), actual)
         self.assertTrue(any("over-routing" in error for error in errors))
         self.assertFalse(scores["over_routing"])
 
     def test_detects_stage_order(self):
         actual = self.actual()
-        actual["stages"] = [{"mode": "parallel", "agents": ["aghuse_frontend"]}]
+        actual["stages"] = [{"mode": "parallel", "agents": ["frontend"]}]
         _, scores = EVALS.compare(self.case(), actual)
         self.assertFalse(scores["stage_order"])
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Executa, reproduz e pontua decisões de roteamento do Jarvis sem mutações externas."""
+"""Executa, reproduz e pontua decisões de roteamento do AGHUse Assistant sem mutações externas."""
 
 from __future__ import annotations
 
@@ -13,9 +13,9 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-CASES_PATH = ROOT / "evals/routing-cases.json"
-SCHEMA_PATH = ROOT / "evals/routing-result.schema.json"
-DEFAULT_BASELINE = ROOT / "evals/baselines/routing-v2.json"
+CASES_PATH = ROOT / "tests/fixtures/evals/routing-cases.json"
+SCHEMA_PATH = ROOT / "tests/fixtures/evals/routing-result.schema.json"
+DEFAULT_BASELINE = ROOT / "tests/fixtures/evals/baselines/routing-v2.json"
 SCORE_NAMES = ("routing_accuracy", "over_routing", "under_routing", "stage_order", "confirmation_safety")
 
 
@@ -61,7 +61,7 @@ def load_cases(selected: set[str] | None, canary: bool = False) -> list[dict[str
 
 def prompt_for(case: dict[str, Any]) -> str:
     return f"""
-Avalie somente o roteamento que o Jarvis Agent SESAB deveria aplicar ao pedido abaixo.
+Avalie somente o roteamento que o AGHUse Assistant SESAB deveria aplicar ao pedido abaixo.
 Não chame ferramentas, não consulte serviços externos, não altere arquivos e não implemente a tarefa.
 Retorne apenas o JSON solicitado pelo schema.
 
@@ -94,7 +94,7 @@ Pedido a classificar:
 
 
 def run_live(case: dict[str, Any], model: str | None, reasoning_effort: str) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="jarvis-agent-eval-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="aghuse-assistant-eval-") as temp_dir:
         output = Path(temp_dir) / "result.json"
         command = [
             "codex", "exec", "--ephemeral", "--sandbox", "read-only",
@@ -199,8 +199,8 @@ def compare(case: dict[str, Any], actual: dict[str, Any]) -> tuple[list[str], di
 
 def behavior_hash() -> str:
     digest = hashlib.sha256()
-    paths = [CASES_PATH, SCHEMA_PATH, ROOT / "contracts/version.json"]
-    paths.extend(sorted((ROOT / "agents").glob("*.toml")))
+    paths = [CASES_PATH, SCHEMA_PATH, ROOT / "config/contracts/version.json"]
+    paths.extend(sorted((ROOT / "config/agents").glob("*.toml")))
     paths.extend(sorted((ROOT / "plugins").glob("*/skills/*/SKILL.md")))
     for path in paths:
         digest.update(path.relative_to(ROOT).as_posix().encode("utf-8"))
@@ -217,10 +217,10 @@ def scorecard(case_scores: list[dict[str, bool]]) -> dict[str, float]:
 
 
 def baseline_payload(report: dict[str, Any]) -> dict[str, Any]:
-    version = json.loads((ROOT / "contracts/version.json").read_text(encoding="utf-8"))
+    version = json.loads((ROOT / "config/contracts/version.json").read_text(encoding="utf-8"))
     return {
         "schema_version": 1,
-        "jarvis_version": version["jarvis_version"],
+        "product_version": version["product_version"],
         "behavior_hash": behavior_hash(),
         "minimum_scores": report["scorecard"],
         "case_ids": report["case_ids"],

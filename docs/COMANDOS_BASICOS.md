@@ -4,7 +4,7 @@
 
 Comece com **uma única skill**, informe o escopo exato e peça a menor validação suficiente.
 
-O Jarvis aplica automaticamente `FLOW-003` em toda tarefa: classifica complexidade, risco, modo, reasoning e budget, usa o mínimo de agentes e apresenta uma linha curta de métricas no fechamento.
+O AGHUse Assistant aplica automaticamente `FLOW-003` em toda tarefa: classifica complexidade, risco, modo, reasoning e budget, usa o mínimo de agentes e apresenta uma linha curta de métricas no fechamento.
 
 Modelo para copiar:
 
@@ -17,12 +17,12 @@ Modelo para copiar:
 Execute a partir da raiz do projeto:
 
 ```bash
-python3 scripts/jarvis.py auditar
-python3 scripts/jarvis.py resumo-git
-python3 scripts/jarvis.py simular --task-id TESTE --task-type SECURITY --security-sensitive
-python3 scripts/jarvis.py simular-redmine --task-id 55315
-python3 scripts/jarvis.py rag search --query "frequencia aprazamento"
-python3 scripts/jarvis.py executar dashboard
+python3 scripts/aghuse_guard.py audit
+python3 scripts/aghuse_guard.py git-summary
+python3 scripts/aghuse.py simular --task-id TESTE --task-type SECURITY --security-sensitive
+python3 scripts/aghuse.py simular-redmine --task-id 55315
+python3 scripts/aghuse.py rag search --query "frequencia aprazamento"
+python3 scripts/aghuse.py executar dashboard
 ```
 
 `auditar` verifica credenciais, URLs privadas e dados clínicos detectáveis. `resumo-git` é somente leitura. `simular` não cria estado nem acessa serviços externos. `rag` indexa ou consulta o conhecimento local. `executar` encaminha comandos avançados ao runtime.
@@ -35,7 +35,7 @@ git config core.hooksPath .githooks
 
 ### Trabalhar no AGHUse
 
-> `$aghuse-development` Corrija **[problema]** no módulo **[módulo]**. Não use subagentes. Execute somente os testes diretamente afetados. Não faça commit.
+> `$implementar` Corrija **[problema]** no módulo **[módulo]**. Não use subagentes. Execute somente os testes diretamente afetados. Não faça commit.
 
 ### Trabalhar no SFA
 
@@ -47,23 +47,23 @@ git config core.hooksPath .githooks
 
 ### Diagnosticar antes de corrigir
 
-> `$aghuse-diagnostico-logs` Analise este erro e informe causa raiz, arquivo provável e correção recomendada. Não implemente.
+> `$analisar` Analise este erro e informe causa raiz, arquivo provável e correção recomendada. Não implemente.
 
 ### Preparar uma tarefa AGHUse
 
-> `$aghuse-preparacao-tarefa` Verifique a tarefa **[número]**, branch, módulos e dependências. Somente leitura e sem subagentes.
+> `$analisar` Verifique a tarefa **[número]**, branch, módulos e dependências. Somente leitura e sem subagentes.
 
 ### Executar a validação mínima
 
-> `$aghuse-validacao-direcionada` Valide somente os arquivos alterados. Não execute build completo se um teste ou módulo direcionado for suficiente.
+> `$validar` Valide somente os arquivos alterados. Não execute build completo se um teste ou módulo direcionado for suficiente.
 
 ### Conferir antes de entregar
 
-> `$aghuse-verificacao-entrega` Revise o diff e as validações desta tarefa. Somente leitura. Não faça commit, push ou atualização no Redmine.
+> `$validar` Revise o diff e as validações desta tarefa. Somente leitura. Não faça commit, push ou atualização no Redmine.
 
 ### Criar roteiro de homologação
 
-> `$aghuse-roteiro-homologacao` Crie um roteiro curto com pré-condições, passos e resultados esperados. Use dados fictícios e não execute a interface.
+> `$validar` Crie um roteiro curto com pré-condições, passos e resultados esperados. Use dados fictícios e não execute a interface.
 
 ## Quando usar mais raciocínio
 
@@ -77,7 +77,7 @@ git config core.hooksPath .githooks
 1. Use uma conversa nova para cada tarefa ou sistema.
 2. Informe arquivo, módulo, erro e critério de conclusão logo no primeiro pedido.
 3. Para tarefa simples, escreva: **“Não use subagentes.”** Cada subagente realiza trabalho próprio e aumenta o consumo.
-4. Não combine várias skills de coordenação. Escolha `$aghuse-development`, `$sfa-development` ou `$redmine-workflows`.
+4. Não combine várias skills de coordenação. Escolha `$implementar`, `$sfa-development` ou `$redmine-workflows`.
 5. Use uma skill AGHUse especializada somente quando quiser aquela etapa isolada.
 6. Peça **“somente leitura”** quando não quiser implementação.
 7. Peça testes e builds direcionados; deixe a suíte completa para mudanças transversais ou para o gate final.
@@ -89,12 +89,12 @@ git config core.hooksPath .githooks
 
 | Necessidade | Use |
 |---|---|
-| Mudança no AGHUse | `$aghuse-development` |
+| Mudança no AGHUse | `$implementar` |
 | Mudança no SFA | `$sfa-development` |
 | Consulta ou ação no Redmine | `$redmine-workflows` |
-| Log do AGHUse | `$aghuse-diagnostico-logs` |
-| Teste mínimo do AGHUse | `$aghuse-validacao-direcionada` |
-| Conferência final do AGHUse | `$aghuse-verificacao-entrega` |
+| Log do AGHUse | `$analisar` |
+| Teste mínimo do AGHUse | `$validar` |
+| Conferência final do AGHUse | `$validar` |
 
 ## Referências oficiais
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Validar AGHUse"
+  short_description: "Valida mudanças e regressões sem corrigir automaticamente."
+  default_prompt: "Use $validar para executar a operação VALIDATE. Valide o JSON internamente e apresente o resultado em seções Markdown padronizadas."

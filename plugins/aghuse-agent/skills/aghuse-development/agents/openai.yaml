@@ -1,6 +1,0 @@
-interface:
-  display_name: "AGHUse Development"
-  short_description: "Coordene o fluxo profissional do AGHUse"
-  default_prompt: "Use $aghuse-development para conduzir esta tarefa do AGHUse da análise paralela ao gate humano."
-policy:
-  allow_implicit_invocation: true

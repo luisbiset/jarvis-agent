@@ -1,18 +1,117 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { NavLink, Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { ContextPanel } from '../components/context/ContextPanel';
+import { Composer } from '../components/workspace/Composer';
+import { WorkspaceHeader } from '../components/workspace/WorkspaceHeader';
+import { WorkspaceSidebar } from '../components/workspace/WorkspaceSidebar';
+import { ExecutionTimeline } from '../components/workspace/ExecutionTimeline';
+import { DataModulePage } from '../components/workspace/DataModulePage';
+import { ObservedModulePage } from '../components/workspace/ObservedModulePage';
+import { CheckpointPage } from '../components/workspace/CheckpointPage';
+import { TaskDetailPage } from '../components/workspace/TaskDetailPage';
+import { ConfirmDialog } from '../components/workspace/ConfirmDialog';
+import { CommandPalette } from '../components/workspace/CommandPalette';
+import { useChatSession } from '../hooks/useChatSession';
+import { useRunEvents } from '../hooks/useRunEvents';
+import { useChatEvents } from '../hooks/useChatEvents';
 import { api } from '../services/api';
+import type { ChatMessage, ChatSession } from '../types/api';
 
-const menu = [['⌂', 'Workspace', '/workspace'], ['▣', 'Tarefas', '/tasks'], ['◈', 'Agents', '/agents'], ['◇', 'Checkpoints', '/checkpoints'], ['⌕', 'RAG', '/rag'], ['≋', 'Logs', '/logs'], ['◈', 'Evidências', '/evidence'], ['◒', 'Modelos e custos', '/models'], ['⌘', 'Integrações', '/integrations'], ['⚙', 'Configurações', '/settings']] as const;
-const navClass = ({ isActive }: { isActive: boolean }) => `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isActive ? 'bg-blue-50 font-bold text-blue-600' : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'}`;
-
-function Workspace({ active, summary, reply, section, message, setMessage, submit, pending }: any) {
-  return <section className="grid min-w-0 grid-cols-1 gap-5 px-4 pb-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_310px] lg:px-12"><div className="min-w-0"><div className="flex gap-4 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-5 shadow-panel"><span className="text-3xl text-violet-500">✦</span><div><h2 className="m-0 text-base font-bold tracking-tight text-slate-900">Seu espaço de trabalho inteligente</h2><p className="mt-1.5 text-sm leading-6 text-slate-500">O AGHUse Assistant consulta o RAG, planeja com segurança e coordena os agents para você.</p></div></div><div className="min-h-[390px] px-2 py-6" aria-live="polite">{reply ? <div className="mx-auto flex max-w-3xl gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-panel"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 font-extrabold text-white shadow-md">A</div><div><b className="text-sm text-slate-900">AGHUse Assistant</b><p className="leading-7 text-slate-600">{reply}</p></div></div> : <div className="mx-auto max-w-2xl py-14 text-center text-slate-500"><div className="mb-3 text-4xl text-violet-600">✦</div><h2 className="m-0 text-xl font-bold text-slate-900">{section === 'Workspace' ? 'Comece uma conversa' : section}</h2><p className="mt-2">{section === 'Workspace' ? 'Peça uma análise, crie um plano ou retome uma tarefa.' : 'Módulo conectado ao projeto ativo; dados reais serão exibidos nesta área.'}</p><div className="mt-6 flex flex-wrap justify-center gap-2">{['Analise o contexto atual do projeto', 'Mostre minhas tarefas recentes', 'Consulte o RAG sobre este projeto'].map((suggestion) => <button className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-600 transition hover:border-blue-300 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" key={suggestion} onClick={() => setMessage(suggestion)}>{suggestion.replace(' o contexto atual do projeto', ' o projeto').replace(' sobre este projeto', ' o RAG')}</button>)}</div></div>}</div>{section === 'Workspace' && <form className="rounded-2xl border border-slate-200 bg-white p-3 shadow-panel" onSubmit={submit}><textarea className="w-full resize-y border-0 px-1 py-1 text-[15px] leading-relaxed text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0" value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Converse com o AGHUse Assistant..." aria-label="Mensagem para o AGHUse Assistant" rows={3} /><div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2.5 text-[11px] text-slate-400"><span>RAG será consultado antes do planejamento</span><button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" disabled={pending || !message.trim()}>{pending ? 'Enviando...' : 'Enviar ↑'}</button></div></form>}</div><aside className="h-max rounded-2xl border border-slate-200 bg-white p-5 shadow-panel"><div className="mb-5 flex justify-between font-extrabold text-slate-900"><span>Contexto</span><span className="text-[11px] font-semibold text-emerald-500">● ao vivo</span></div><div className="grid gap-1.5 border-t border-slate-100 py-4"><small className="text-[10px] font-extrabold tracking-wider text-slate-400">TAREFA ATIVA</small><strong className="text-sm font-semibold tracking-tight text-slate-900">Nenhuma tarefa selecionada</strong><span className="text-xs leading-5 text-slate-500">Crie uma tarefa pelo AGHUse Assistant para começar.</span></div><div className="grid gap-1.5 border-t border-slate-100 py-4"><small className="text-[10px] font-extrabold tracking-wider text-slate-400">PROJETO</small><strong className="text-sm font-semibold tracking-tight text-slate-900">{active?.name || '—'}</strong><span className="text-xs leading-5 text-slate-500">Branch: {active?.default_branch || '—'}</span></div><div className="grid grid-cols-3 gap-2 border-t border-slate-100 py-4">{[[summary.data?.total_runs || 0, 'Execuções'], [summary.data?.successful_runs || 0, 'Sucesso'], [summary.data?.average_agent_invocations?.toFixed(1) || '0', 'Agents / execução']].map(([value, label]) => <div className="rounded-xl bg-slate-50 p-2 text-center" key={String(label)}><b className="block text-lg text-slate-900">{value}</b><span className="text-[10px] text-slate-400">{label}</span></div>)}</div></aside></section>;
+function displayMessages(messages: ChatMessage[] = []): ChatMessage[] {
+  return messages.flatMap((message) => {
+    if (!message.response || message.role !== 'user') return [message];
+    return [
+      { ...message, response: undefined },
+      {
+        role: 'assistant',
+        project_id: message.project_id,
+        summary: message.response.summary || 'Resposta recebida.',
+        response: message.response,
+      },
+    ];
+  });
 }
 
 export function App() {
-  const [collapsed, setCollapsed] = useState(false); const [message, setMessage] = useState(''); const [sessionId, setSessionId] = useState<string>(); const [reply, setReply] = useState(''); const [activeProjectId, setActiveProjectId] = useState(''); const [section, setSection] = useState('Workspace'); const navigate = useNavigate(); const queryClient = useQueryClient(); const projects = useQuery({ queryKey: ['projects'], queryFn: api.projects });
+  const [collapsed, setCollapsed] = useState(false);
+  const [message, setMessage] = useState('');
+  const [streaming, setStreaming] = useState(false);
+  const streamAbort = useRef<AbortController>();
+  const [sessionId, setSessionId] = useState<string>();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState('');
+  const [runId, setRunId] = useState<string>();
+  const [pendingAction, setPendingAction] = useState<import('../types/api').WorkspaceAction>();
+  const [taskProposal, setTaskProposal] = useState(false);
+  const [taskPending, setTaskPending] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState<string>();
+  const [commandsOpen, setCommandsOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const projects = useQuery({ queryKey: ['projects'], queryFn: api.projects });
+  const active = projects.data?.projects.find((project) => project.project_id === activeProjectId);
+  const summary = useQuery({ queryKey: ['dashboard', activeProjectId], queryFn: () => api.dashboard(activeProjectId), enabled: Boolean(activeProjectId) });
+  const chat = useChatSession(activeProjectId);
+  const select = useMutation({ mutationFn: api.selectProject, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }) });
+
   useEffect(() => { if (!activeProjectId && projects.data?.active_project_id) setActiveProjectId(projects.data.active_project_id); }, [activeProjectId, projects.data?.active_project_id]);
-  const summary = useQuery({ queryKey: ['dashboard', activeProjectId], queryFn: () => api.dashboard(activeProjectId), enabled: Boolean(activeProjectId) }); const select = useMutation({ mutationFn: api.selectProject, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }) }); const send = useMutation({ mutationFn: async () => { const session = sessionId ? { session_id: sessionId } : await api.createSession(activeProjectId); setSessionId(session.session_id); return api.sendMessage(session.session_id, activeProjectId, message); }, onSuccess: (data) => { setReply(data.message.response?.summary || 'Contexto recebido pelo AGHUse Assistant.'); setMessage(''); } }); const active = projects.data?.projects.find((project) => project.project_id === activeProjectId) || projects.data?.projects[0]; const submit = (event: FormEvent) => { event.preventDefault(); if (message.trim() && activeProjectId) send.mutate(); };
-  return <div className="flex min-h-screen bg-[radial-gradient(circle_at_50%_-20%,#e8efff,transparent_42%),#f5f7fb] font-sans antialiased text-slate-900"><aside className={`flex shrink-0 flex-col border-r border-slate-200 bg-white px-3 py-5 shadow-sm transition-all duration-200 ${collapsed ? 'w-[76px]' : 'w-[250px]'}`}><div className="flex items-center gap-2.5 px-2.5 pb-7"><span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 font-extrabold text-white shadow-md">A</span>{!collapsed && <div><strong className="block text-lg">AGHUse Assistant</strong><small className="text-[11px] text-slate-400">Workspace</small></div>}</div><label className="px-2.5 pb-1.5 text-[10px] font-bold tracking-wider text-slate-400">{!collapsed && 'PROJETO ATIVO'}</label><select className="mb-5 w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-500" aria-label="Projeto ativo" value={activeProjectId} onChange={(event) => { setActiveProjectId(event.target.value); setSessionId(undefined); setReply(''); select.mutate(event.target.value); navigate('/workspace'); }}><option value="" disabled>Selecione</option>{projects.data?.projects.map((project) => <option key={project.project_id} value={project.project_id}>{project.name}</option>)}</select><nav className="grid gap-1" aria-label="Navegação principal">{menu.map(([icon, label, path]) => <NavLink className={navClass} title={label} key={label} to={path} onClick={() => setSection(label)}><span className="w-5 text-center text-lg">{icon}</span>{!collapsed && label}</NavLink>)}</nav><button className="mt-auto rounded-lg px-3 py-2.5 text-left text-sm text-slate-400 transition hover:bg-slate-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" onClick={() => setCollapsed(!collapsed)}>{collapsed ? '»' : '« Recolher menu'}</button></aside><main className="min-w-0 flex-1"><header className="flex flex-col justify-between gap-5 px-4 pb-7 pt-8 sm:px-6 lg:flex-row lg:px-12"><div><span className="text-[11px] font-bold tracking-widest text-slate-500">WORKSPACE / {active?.name || 'Carregando projeto'}</span><h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{section === 'Workspace' ? 'Como posso ajudar?' : section}</h1><p className="mt-1 text-sm text-slate-500">Converse com o AGHUse Assistant e acompanhe o trabalho em um só lugar.</p></div><div className="h-max rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-600"><i className="mr-1">●</i> Runtime local ativo</div></header><Routes><Route path="*" element={<Workspace active={active} summary={summary} reply={reply} section={section} message={message} setMessage={setMessage} submit={submit} pending={send.isPending} />} /></Routes></main></div>;
+  useEffect(() => { setSessionId(undefined); setMessages([]); setMessage(''); setRunId(undefined); }, [activeProjectId]);
+  useEffect(() => { const latest = chat.sessions.data?.sessions?.[0]; if (!sessionId && latest) { setSessionId(latest.session_id); setMessages(displayMessages(latest.messages)); setRunId(latest.run_id || latest.messages?.find((item) => item.response?.run_id)?.response?.run_id); } }, [chat.sessions.data, sessionId]);
+  useEffect(() => { const listener = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setCommandsOpen(true); } }; window.addEventListener('keydown', listener); return () => window.removeEventListener('keydown', listener); }, []);
+
+  const selectProject = (projectId: string) => { streamAbort.current?.abort(); setStreaming(false); setActiveProjectId(projectId); setSessionId(undefined); setMessages([]); setMessage(''); select.mutate(projectId); navigate('/workspace'); };
+  const newSession = () => { streamAbort.current?.abort(); setStreaming(false); setSessionId(undefined); setMessages([]); setMessage(''); setRunId(undefined); setWorkspaceError(undefined); };
+  const selectSession = (session: ChatSession) => { setSessionId(session.session_id); setMessages(displayMessages(session.messages)); setMessage(''); setRunId(session.messages?.find((item) => item.response?.run_id)?.response?.run_id); };
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    const text = message.trim();
+    if (!text || !activeProjectId || chat.send.isPending || streaming) return;
+    const projectIdAtStart = activeProjectId;
+    setWorkspaceError(undefined);
+    try {
+      let currentSession = sessionId;
+      if (!currentSession) { const created = await chat.create.mutateAsync(); currentSession = created.session_id; setSessionId(currentSession); }
+      setMessages((current) => [...current, { role: 'user', project_id: activeProjectId, summary: text }, { role: 'assistant', project_id: activeProjectId, summary: 'Gerando resposta…' }]);
+      setMessage('');
+      setStreaming(true); const controller = new AbortController(); streamAbort.current = controller; let streamError: string | undefined;
+      await api.streamMessage(currentSession, projectIdAtStart, text, controller.signal, (event) => {
+        if (activeProjectId !== projectIdAtStart || (sessionId && sessionId !== currentSession)) { controller.abort(); return; }
+        if (event.event === 'message.delta') setMessages((current) => current.map((item, index) => index === current.length - 1 ? { ...item, summary: `${item.summary === 'Gerando resposta…' ? '' : item.summary || ''}${event.delta || ''}` } : item));
+        if (event.event === 'message.completed') setMessages((current) => current.map((item, index) => index === current.length - 1 ? { ...item, summary: event.summary || item.summary, response: { status: 'READY', project_id: projectIdAtStart, summary: event.summary, rag: event.rag, metrics: event.metrics, provider: event.provider, model_requested: event.model_requested, model_effective: event.model_effective, registry_version: event.registry_version } } : item));
+        if (event.event === 'message.error') { streamError = event.message || 'Não foi possível gerar a resposta.'; setMessages((current) => current.map((item, index) => index === current.length - 1 ? { ...item, summary: streamError } : item)); }
+      });
+      if (streamError) setWorkspaceError(streamError);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setWorkspaceError(error instanceof Error ? error.message : 'Não foi possível concluir a mensagem.');
+      setMessages((current) => [...current, { role: 'assistant', project_id: activeProjectId, summary: 'Não foi possível concluir a mensagem. Tente novamente.' }]);
+    } finally { setStreaming(false); streamAbort.current = undefined; }
+  };
+
+  const sessions = chat.sessions.data?.sessions || [];
+  const module = ({
+    '/tasks': ['Tarefas', 'Consulte e filtre as execuções do projeto ativo.'],
+    '/agents': ['Agents', 'Acompanhe agents, saúde, histórico e consumo.'],
+    '/checkpoints': ['Checkpoints', 'Retome estados consistentes de tarefas interrompidas.'],
+    '/rag': ['RAG', 'Consulte fontes, ranking, feedback e versões do contexto.'],
+    '/logs': ['Logs', 'Acompanhe eventos correlacionados da execução.'],
+    '/evidence': ['Evidências', 'Explore provenance, findings e referências seguras.'],
+    '/models': ['Modelos e custos', 'Visualize métricas observadas, tokens e budgets.'],
+    '/integrations': ['Integrações', 'Verifique capabilities, saúde e auditoria de MCPs.'],
+    '/settings': ['Configurações', 'Gerencie drafts revisionados, aprovação e rollback.'],
+  } as Record<string, [string, string]>)[location.pathname];
+  const section = module?.[0] || 'Workspace';
+  const events = useRunEvents(activeProjectId, runId);
+  const chatEvents = useChatEvents(activeProjectId, sessionId);
+  if (location.pathname === '/') return <Navigate to="/workspace" replace />;
+  const runAction = (action: import('../types/api').WorkspaceAction) => { setPendingAction(action); };
+  const confirmRunAction = async () => { if (runId && pendingAction) { try { await api.runAction(activeProjectId, runId, pendingAction, `Ação solicitada no Workspace: ${pendingAction}`); setPendingAction(undefined); setWorkspaceError(undefined); } catch (error) { setWorkspaceError(error instanceof Error ? error.message : 'Não foi possível executar a ação.'); } } };
+  const requestTask = () => { if (message.trim()) setTaskProposal(true); };
+  const confirmTask = async () => { if (!activeProjectId || !message.trim()) return; setTaskPending(true); setWorkspaceError(undefined); try { const query = message.trim(); let currentSession = sessionId; if (!currentSession) { const createdSession = await chat.create.mutateAsync(); currentSession = createdSession.session_id; setSessionId(currentSession); } const created = await api.createTask(activeProjectId, `workspace-${Date.now()}`, query, currentSession); const createdRunId = created.state?.run_id; if (createdRunId) setRunId(createdRunId); setMessages((current) => [...current, { role: 'user', project_id: activeProjectId, summary: query }, { role: 'assistant', project_id: activeProjectId, summary: 'Tarefa criada e associada à conversa. O Runtime V3 está pronto para executar o plano.', response: { status: String(created.state?.current_state || 'CREATED'), project_id: activeProjectId, task_id: created.state?.task_id, run_id: createdRunId, plan: (created.state?.execution_plan as { [key: string]: unknown } | undefined) } }]); setMessage(''); setTaskProposal(false); } catch (error) { setWorkspaceError(error instanceof Error ? error.message : 'Não foi possível iniciar a tarefa.'); } finally { setTaskPending(false); } };
+  const latestChatEvent = chatEvents.length ? chatEvents[chatEvents.length - 1] : undefined;
+  const activeSession = sessions.find((session) => session.session_id === sessionId);
+  const activeTaskId = [...messages].reverse().find((item) => item.response?.task_id)?.response?.task_id || activeSession?.task_id;
+  return <div className="flex min-h-screen bg-[radial-gradient(circle_at_50%_-20%,#e8efff,transparent_42%),#f5f7fb] font-sans antialiased text-slate-900">{workspaceError && <div role="alert" className="fixed right-4 top-4 z-50 max-w-sm rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-lg">{workspaceError}<button className="ml-3 font-bold" onClick={() => setWorkspaceError(undefined)} aria-label="Fechar aviso">×</button></div>}<WorkspaceSidebar projects={projects.data?.projects || []} projectId={activeProjectId} collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} onProjectChange={selectProject} /><main className="min-w-0 flex-1"><WorkspaceHeader projectName={active?.name} section={section} onOpenCommands={() => setCommandsOpen(true)} /><Routes><Route path="/workspace" element={<section className="grid min-w-0 grid-cols-1 gap-5 px-4 pb-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_310px] lg:px-12"><div className="min-w-0"><div className="flex gap-4 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-5 shadow-panel"><span className="text-3xl text-violet-500">✦</span><div><h2 className="m-0 text-base font-bold tracking-tight text-slate-900">Workspace de operações</h2><p className="mt-1.5 text-sm leading-6 text-slate-500">Escolha Analisar, Planejar, Implementar ou Validar para iniciar um fluxo controlado.</p></div></div><div className="px-2 py-6"><Composer /><ExecutionTimeline events={events} pending={Boolean(runId)} onAction={runId ? runAction : undefined} /></div></div><ContextPanel project={active} summary={summary.data} loading={summary.isLoading} runId={runId} taskId={activeTaskId} events={events} /></section>} /><Route path="/tasks" element={<DataModulePage kind="tasks" project={active} projectId={activeProjectId} />} /><Route path="/tasks/:runId" element={<TaskDetailPage project={active} projectId={activeProjectId} runId={decodeURIComponent(location.pathname.split('/').pop() || '')} />} /><Route path="/rag" element={<DataModulePage kind="rag" project={active} projectId={activeProjectId} />} /><Route path="/agents" element={<ObservedModulePage kind="agents" title="Agents" description="Acompanhe agents, saúde, histórico e consumo." project={active} projectId={activeProjectId} />} /><Route path="/logs" element={<ObservedModulePage kind="logs" title="Logs" description="Acompanhe eventos correlacionados da execução." project={active} projectId={activeProjectId} />} /><Route path="/evidence" element={<ObservedModulePage kind="evidence" title="Evidências" description="Explore provenance, findings e referências seguras." project={active} projectId={activeProjectId} />} /><Route path="/models" element={<ObservedModulePage kind="models" title="Modelos e custos" description="Visualize métricas observadas, tokens e budgets." project={active} projectId={activeProjectId} />} /><Route path="/integrations" element={<ObservedModulePage kind="integrations" title="Integrações" description="Verifique capabilities, saúde e auditoria de MCPs." project={active} projectId={activeProjectId} />} /><Route path="/settings" element={<ObservedModulePage kind="settings" title="Configurações" description="Gerencie drafts revisionados, aprovação e rollback." project={active} projectId={activeProjectId} />} /><Route path="/checkpoints" element={<CheckpointPage project={active} projectId={activeProjectId} />} /></Routes></main>{pendingAction && <ConfirmDialog action={pendingAction} onCancel={() => setPendingAction(undefined)} onConfirm={confirmRunAction} />}<CommandPalette open={commandsOpen} onClose={() => setCommandsOpen(false)} onNewSession={newSession} /></div>;
 }

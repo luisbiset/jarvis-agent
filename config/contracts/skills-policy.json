@@ -1,0 +1,135 @@
+{
+    "schema_version":  "1.0.0",
+    "policy_id":  "SKILLS-001",
+    "skills":  {
+                   "analisar":  {
+                                    "operation_id":  "ANALYZE",
+                                    "team":  "ANALISE",
+                                    "allowed_agents":  [
+                                                           "architecture",
+                                                           "database"
+                                                       ],
+                                    "forbidden_agents":  [
+                                                             "backend",
+                                                             "frontend",
+                                                             "qa"
+                                                         ],
+                                    "allowed_stages":  [
+                                                           "DISCOVERY",
+                                                           "PLAN_READY"
+                                                       ],
+                                    "operational_mode":  "READ_ONLY_AUDIT",
+                                    "can_write":  false,
+                                    "rag_required":  true,
+                                    "human_gate":  false,
+                                    "output":  "analysis",
+                                    "acceptance":  [
+                                                       "findings",
+                                                       "risks",
+                                                       "evidence_refs"
+                                                   ]
+                                },
+                   "planejar":  {
+                                    "operation_id":  "PLAN",
+                                    "team":  "ANALISE",
+                                    "allowed_agents":  [
+                                                           "architecture",
+                                                           "database"
+                                                       ],
+                                    "forbidden_agents":  [
+                                                             "backend",
+                                                             "frontend",
+                                                             "qa"
+                                                         ],
+                                    "allowed_stages":  [
+                                                           "DISCOVERY",
+                                                           "PLAN_READY"
+                                                       ],
+                                    "operational_mode":  "COPILOT",
+                                    "can_write":  false,
+                                    "rag_required":  true,
+                                    "human_gate":  false,
+                                    "output":  "plan",
+                                    "acceptance":  [
+                                                       "scope",
+                                                       "agents",
+                                                       "budget",
+                                                       "tests",
+                                                       "risks"
+                                                   ]
+                                },
+                   "implementar":  {
+                                       "operation_id":  "IMPLEMENT",
+                                       "team":  "DESENVOLVIMENTO",
+                                       "allowed_agents":  [
+                                                              "backend",
+                                                              "frontend",
+                                                              "database"
+                                                          ],
+                                       "forbidden_agents":  [
+                                                                "architecture",
+                                                                "qa"
+                                                            ],
+                                       "allowed_stages":  [
+                                                              "PLAN_APPROVED",
+                                                              "IMPLEMENTING"
+                                                          ],
+                                       "operational_mode":  "ASSISTED_AUTOPILOT",
+                                       "can_write":  true,
+                                       "rag_required":  true,
+                                       "human_gate":  true,
+                                       "requires_checkpoint":  true,
+                                       "output":  "implementation",
+                                       "acceptance":  [
+                                                          "diff",
+                                                          "tests",
+                                                          "evidence_refs"
+                                                      ]
+                                   },
+                   "manutencao":  {
+                                    "operation_id":  "MANUTENCAO",
+                                    "team":  "DESENVOLVIMENTO",
+                                    "allowed_agents":  ["aghuse_assistant"],
+                                    "forbidden_agents":  ["backend", "frontend", "database", "qa", "architecture"],
+                                    "allowed_stages":  ["PLAN_APPROVED", "IMPLEMENTING", "VALIDATING"],
+                                    "operational_mode":  "ASSISTED_AUTOPILOT",
+                                    "can_write":  true,
+                                    "rag_required":  true,
+                                    "human_gate":  true,
+                                    "requires_checkpoint":  true,
+                                    "output":  "maintenance",
+                                    "acceptance":  ["assistant_scope", "diff", "tests", "evidence_refs"]
+                                },
+                   "validar":  {
+                                   "operation_id":  "VALIDATE",
+                                   "team":  "REVISAO_QUALIDADE",
+                                   "allowed_agents":  [
+                                                          "qa",
+                                                          "architecture"
+                                                      ],
+                                   "forbidden_agents":  [
+                                                            "backend",
+                                                            "frontend",
+                                                            "database"
+                                                        ],
+                                   "allowed_stages":  [
+                                                          "VALIDATING",
+                                                          "REVIEW_READY",
+                                                          "HOMOLOGATION_READY"
+                                                      ],
+                                   "operational_mode":  "READ_ONLY_AUDIT",
+                                   "can_write":  false,
+                                   "rag_required":  true,
+                                   "human_gate":  false,
+                                   "output":  "validation",
+                                   "acceptance":  [
+                                                      "tests",
+                                                      "findings",
+                                                      "evidence_refs"
+                                                  ]
+                               }
+               },
+    "flow_policy":  [
+                        "FLOW-001"
+                    ]
+}

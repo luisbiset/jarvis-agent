@@ -1,0 +1,30 @@
+{
+  "name": "aghuse-assistant",
+  "version": "0.1.1+codex.20261008133544",
+  "description": "AGHUse Assistant: controlled analysis, planning, implementation and validation operations.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "AGHUse Assistant",
+    "shortDescription": "Execute controlled AGHUse operations.",
+    "longDescription": "Provides analyze, plan, implement and validate; Runtime, policy, agents and MCP are internal infrastructure.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Analysis",
+      "Code",
+      "Database",
+      "Testing",
+      "Review",
+      "Security"
+    ],
+    "defaultPrompt": [
+      "Use $analisar to investigate context and risks.",
+      "Use $planejar to create a technical plan.",
+      "Use $implementar only after approval."
+    ]
+  }
+}

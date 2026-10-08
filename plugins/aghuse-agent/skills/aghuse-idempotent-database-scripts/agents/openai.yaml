@@ -1,6 +1,0 @@
-interface:
-  display_name: "Scripts Idempotentes AGHUse"
-  short_description: "Crie aplicação e rollback idempotentes"
-  default_prompt: "Use $aghuse-idempotent-database-scripts para revisar a idempotência destes scripts AGHUse."
-policy:
-  allow_implicit_invocation: true

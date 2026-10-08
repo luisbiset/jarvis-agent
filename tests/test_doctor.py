@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 import sys
 import unittest
@@ -10,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_doctor():
-    spec = importlib.util.spec_from_file_location("jarvis_doctor", ROOT / "scripts" / "doctor.py")
+    spec = importlib.util.spec_from_file_location("aghuse_doctor", ROOT / "scripts" / "doctor.py")
     module = importlib.util.module_from_spec(spec)
     assert spec.loader
     spec.loader.exec_module(module)
@@ -20,21 +21,21 @@ def load_doctor():
 class DoctorTest(unittest.TestCase):
     def test_plugin_enabled_is_valid_without_explicit_mcp_section(self):
         doctor = load_doctor()
-        self.assertEqual(doctor.redmine_diagnostic({}, True, "C:/jarvis/server.mjs"), (True, "plugin Redmine instalado e habilitado"))
+        self.assertEqual(doctor.redmine_diagnostic({}, True, "C:/aghuse/server.mjs"), (True, "plugin Redmine instalado e habilitado"))
 
     def test_explicit_mcp_path_has_priority(self):
         doctor = load_doctor()
-        config = {"mcp_servers": {"redmine": {"args": ["C:/jarvis/server.mjs"]}}}
-        self.assertEqual(doctor.redmine_diagnostic(config, True, "C:/jarvis/server.mjs"), (True, "MCP Redmine configurado via mcp_servers"))
+        config = {"mcp_servers": {"redmine": {"args": ["C:/aghuse/server.mjs"]}}}
+        self.assertEqual(doctor.redmine_diagnostic(config, True, "C:/aghuse/server.mjs"), (True, "MCP Redmine configurado via mcp_servers"))
 
     def test_wrong_path_without_plugin_fails(self):
         doctor = load_doctor()
         config = {"mcp_servers": {"redmine": {"args": ["C:/other/server.mjs"]}}}
-        self.assertEqual(doctor.redmine_diagnostic(config, False, "C:/jarvis/server.mjs")[0], False)
+        self.assertEqual(doctor.redmine_diagnostic(config, False, "C:/aghuse/server.mjs")[0], False)
 
     def test_missing_plugin_and_mcp_fails(self):
         doctor = load_doctor()
-        self.assertEqual(doctor.redmine_diagnostic({}, False, "C:/jarvis/server.mjs")[0], False)
+        self.assertEqual(doctor.redmine_diagnostic({}, False, "C:/aghuse/server.mjs")[0], False)
 
     def test_doctor_source_is_utf8_and_has_no_mojibake(self):
         text = (ROOT / "scripts" / "doctor.py").read_text(encoding="utf-8")
@@ -42,6 +43,7 @@ class DoctorTest(unittest.TestCase):
         self.assertIn(r"ATEN\u00c7\u00c3O", text)
         self.assertIn(r"Diagn\u00f3stico", text)
 
+    @unittest.skipUnless(os.environ.get("AGHUSE_RUN_INSTALLATION_DOCTOR") == "1", "diagnóstico depende da instalação global do Codex")
     def test_strict_exit_is_zero_in_current_installation(self):
         result = subprocess.run([sys.executable, str(ROOT / "scripts" / "doctor.py"), "--strict"], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

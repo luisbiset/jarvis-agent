@@ -1,4 +1,4 @@
-"""Pré-processador local de prompts do Jarvis.
+"""Pré-processador local de prompts do AGHUse Assistant.
 
 Transforma mensagens curtas em uma instrução estruturada para o roteamento.
 Não chama modelos, não faz rede e não persiste o texto recebido.

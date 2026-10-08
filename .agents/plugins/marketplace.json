@@ -1,7 +1,7 @@
 {
   "name": "codex-agents",
   "interface": {
-    "displayName": "Jarvis Agent"
+    "displayName": "AGHUse Assistant"
   },
   "plugins": [
     {
@@ -29,10 +29,10 @@
       "category": "Productivity"
     },
     {
-      "name": "aghuse-agent",
+      "name": "aghuse-assistant",
       "source": {
         "source": "local",
-        "path": "./plugins/aghuse-agent"
+        "path": "./plugins/aghuse-assistant"
       },
       "policy": {
         "installation": "AVAILABLE",

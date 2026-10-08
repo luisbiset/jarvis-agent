@@ -15,5 +15,5 @@ frontend/tsconfig.tsbuildinfo
 __pycache__/
 *.py[cod]
 
-# Estado e telemetria locais do Jarvis (somente metadados)
-.jarvis/
+# Estado e telemetria locais do AGHUse Assistant (somente metadados)
+.aghuse-assistant/

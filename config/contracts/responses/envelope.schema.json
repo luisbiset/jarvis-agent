@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aghuse://config/contracts/responses/envelope/1.0.0",
+  "type": "object",
+  "required": ["schema_version", "operation", "run_id", "project_id", "status", "summary", "data", "warnings", "evidence", "validation"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "operation": {"enum": ["ANALYZE", "PLAN", "IMPLEMENT", "VALIDATE", "MANUTENCAO"]},
+    "run_id": {"type": ["string", "null"]}, "project_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["SUCCEEDED", "FAILED"]}, "summary": {"type": "string"},
+    "data": {"type": "object"}, "warnings": {"type": "array", "items": {"type": "string"}},
+    "evidence": {"type": "array", "items": {"type": "object"}},
+    "validation": {"type": "object", "required": ["schema_valid", "attempts"], "properties": {"schema_valid": {"const": true}, "attempts": {"type": "integer", "minimum": 1}}, "additionalProperties": false}
+  }, "additionalProperties": false
+}

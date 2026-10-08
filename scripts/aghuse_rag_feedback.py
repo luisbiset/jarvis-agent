@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 SECRET = re.compile(r"(?i)(-----BEGIN|bearer\s+|api[_-]?key\s*[=:]|password\s*[=:]|secret\s*[=:]|https?://)")
-DEFAULT = Path(".jarvis/rag/feedback.jsonl")
+DEFAULT = Path(".aghuse-assistant/rag/feedback.jsonl")
 
 def now() -> str: return datetime.now(timezone.utc).isoformat(timespec="seconds")
 def safe(value: str) -> bool: return isinstance(value, str) and not SECRET.search(value)

@@ -1,4 +1,4 @@
-# Guia de uso do Jarvis Agent SESAB
+# Guia de uso do AGHUse Assistant SESAB
 
 Este guia explica como usar em conjunto o Redmine, o SFA, o AGHUse e os agentes de qualidade. O objetivo é obter entregas rastreáveis sem acionar especialistas desnecessários ou conceder permissões além do pedido.
 
@@ -26,7 +26,7 @@ Tarefas triviais, de baixo risco e sem sinais críticos podem usar `FAST_PATH`. 
 Como o sistema já é conhecido, use diretamente seu coordenador. Exemplo AGHUse:
 
 ```text
-Use $aghuse-development.
+Use $implementar.
 
 Estou trabalhando no chamado 51093.
 
@@ -36,8 +36,8 @@ Estou trabalhando no chamado 51093.
 4. Implemente o que estiver faltando, preservando minhas alterações.
 5. Crie ou ajuste testes.
 6. Execute as validações proporcionais ao risco.
-7. Acione QA e Auditor com evidências distintas; use aghuse_revisor apenas por risco alto/crítico.
-8. Peça ao QA técnico o roteiro e use aghuse_qualidade somente para executá-lo em ambiente autorizado.
+7. Acione QA e Auditor com evidências distintas; use architecture apenas por risco alto/crítico.
+8. Peça ao QA técnico o roteiro e use qa somente para executá-lo em ambiente autorizado.
 9. Entregue resultado, evidências, arquivos, testes, riscos e pendências.
 
 Não altere o Redmine, não registre horas, não faça commit e não execute deploy.
@@ -49,18 +49,18 @@ O nome explícito da skill não é obrigatório quando o pedido e o repositório
 
 | Situação | Skill |
 |---|---|
-| Implementação isolada no AGHUse | `$aghuse-development` |
+| Implementação isolada no AGHUse | `$implementar` |
 | Implementação isolada no SFA | `$sfa-development` |
 | Consulta ou operação em chamado | `$redmine-workflows` |
-| DDL ou DML do AGHUse | `$aghuse-development` e `$aghuse-idempotent-database-scripts` |
-| Preparar tarefa AGHUse antes de editar | `$aghuse-preparacao-tarefa` |
-| Investigar remoção ou regressão no Git | `$aghuse-historico-alteracoes` |
-| Preparar scripts AGHUse para o Redmine | `$aghuse-entrega-banco` |
-| Diagnosticar permissão, perfil ou menu | `$aghuse-mapeamento-seguranca` |
-| Escolher módulos e testes mínimos | `$aghuse-validacao-direcionada` |
-| Encontrar causa raiz em log AGHUse | `$aghuse-diagnostico-logs` |
-| Gerar roteiro manual de homologação | `$aghuse-roteiro-homologacao` |
-| Conferir prontidão da entrega | `$aghuse-verificacao-entrega` |
+| DDL ou DML do AGHUse | `$implementar` e `$implementar` |
+| Preparar tarefa AGHUse antes de editar | `$analisar` |
+| Investigar remoção ou regressão no Git | `$analisar` |
+| Preparar scripts AGHUse para o Redmine | `$implementar` |
+| Diagnosticar permissão, perfil ou menu | `$analisar` |
+| Escolher módulos e testes mínimos | `$validar` |
+| Encontrar causa raiz em log AGHUse | `$analisar` |
+| Gerar roteiro manual de homologação | `$validar` |
+| Conferir prontidão da entrega | `$validar` |
 
 ### Redmine
 
@@ -87,14 +87,14 @@ Usar para Java 17, Java EE, EJB, JSF, PrimeFaces, RN/ON, Facades, JPA, Oracle/Po
 Exemplo:
 
 ```text
-Use $aghuse-development para implementar o restante do chamado 51093.
+Use $implementar para implementar o restante do chamado 51093.
 Preserve a worktree, não faça commit, valide o menor módulo afetado e
 considere pronto somente após teste direcionado e revisão independente.
 ```
 
 #### Arquitetura do AGHUse Agent
 
-Para uma tarefa completa, o `$aghuse-development` coordena automaticamente esta arquitetura:
+Para uma tarefa completa, o `$implementar` coordena automaticamente esta arquitetura:
 
 ```mermaid
 flowchart TD
@@ -115,12 +115,12 @@ O usuário chama apenas o Aghuse Agent; não precisa memorizar os perfis interno
 
 | Nome no fluxo | Perfil | Responsabilidade |
 |---|---|---|
-| Coordenador | `$aghuse-development` | Delimitar escopo, preservar baseline, distribuir e integrar os handoffs |
-| Requisitos e legado | `aghuse_analise` | Confirmar requisito, aceite, comportamento atual e histórico em leitura |
-| Banco e impacto | `aghuse_banco` | Avaliar persistência, schema, dialetos, segurança e impactos em leitura |
-| Desenvolvedor | `aghuse_backend` | Executar o plano usando apenas os especialistas técnicos necessários |
-| QA | `aghuse_qualidade` | Validar requisito, testes, build e roteiro funcional sem corrigir o avaliado |
-| Auditor do diff | `aghuse_revisor` | Revisar baseline, escopo, hunks, arquivos, EOL/encoding, segredos e higiene em leitura |
+| Coordenador | `$implementar` | Delimitar escopo, preservar baseline, distribuir e integrar os handoffs |
+| Requisitos e legado | `architecture` | Confirmar requisito, aceite, comportamento atual e histórico em leitura |
+| Banco e impacto | `database` | Avaliar persistência, schema, dialetos, segurança e impactos em leitura |
+| Desenvolvedor | `backend` | Executar o plano usando apenas os especialistas técnicos necessários |
+| QA | `qa` | Validar requisito, testes, build e roteiro funcional sem corrigir o avaliado |
+| Auditor do diff | `architecture` | Revisar baseline, escopo, hunks, arquivos, EOL/encoding, segredos e higiene em leitura |
 | Gate humano | usuário | Aprovar, pedir correção e autorizar separadamente ações externas |
 
 `Análise paralela` e `Validação paralela` são estágios de coordenação. `Plano aprovado` e `Gate humano` são decisões reais do usuário, não subagentes. Um pedido direto, inequívoco e já delimitado de implementação pode funcionar como plano aprovado; ações como Redmine, banco, deploy, commit e push continuam exigindo autorização explícita própria.
@@ -128,7 +128,7 @@ O usuário chama apenas o Aghuse Agent; não precisa memorizar os perfis interno
 Exemplo completo:
 
 ```text
-Use $aghuse-development para conduzir a tarefa 51093 pelo fluxo profissional.
+Use $implementar para conduzir a tarefa 51093 pelo fluxo profissional.
 
 Na Análise paralela, acione Requisitos e legado e Banco e impacto.
 Consolide um plano e aguarde minha aprovação antes de editar.
@@ -140,7 +140,7 @@ de autorização. Não altere Redmine, banco, deploy, commit ou push.
 Exemplo a partir de um plano já aprovado:
 
 ```text
-Use $aghuse-development. Este plano já está aprovado: corrigir somente o
+Use $implementar. Este plano já está aprovado: corrigir somente o
 controller e o XHTML indicados, preservar o contrato atual e criar o teste
 direcionado da ON existente. Siga de Desenvolvedor para Validação paralela
 e pare no Gate humano sem fazer commit.
@@ -148,7 +148,7 @@ e pare no Gate humano sem fazer commit.
 
 ### Automações do AGHUse
 
-As automações abaixo complementam `$aghuse-development`. Elas podem ser chamadas isoladamente quando a etapa está bem delimitada; não é necessário executar todas em toda tarefa.
+As automações abaixo complementam `$implementar`. Elas podem ser chamadas isoladamente quando a etapa está bem delimitada; não é necessário executar todas em toda tarefa.
 
 Fluxo completo possível:
 
@@ -161,7 +161,7 @@ preparação → histórico → implementação → validação → revisão →
 Use antes de editar quando for necessário descobrir branch, commits, módulos e pré-requisitos.
 
 ```text
-Use $aghuse-preparacao-tarefa para preparar a tarefa 51093.
+Use $analisar para preparar a tarefa 51093.
 Consulte somente a worktree e o histórico Git. Identifique branch, commits,
 módulos afetados, dependências de banco e segurança e o que ainda falta.
 Não altere arquivos, Redmine, banco ou Jenkins.
@@ -174,7 +174,7 @@ Resultado esperado: contexto Git, tarefas candidatas, alterações preexistentes
 Use quando algo existia em outro commit ou desapareceu da branch atual.
 
 ```text
-Use $aghuse-historico-alteracoes para localizar quando as mensagens de
+Use $analisar para localizar quando as mensagens de
 combinação clínica foram incluídas e removidas. Compare a implementação
 oficial com a branch atual sem trocar de branch e sem restaurar arquivos.
 ```
@@ -186,7 +186,7 @@ Resultado esperado: linha do tempo, commits relevantes, arquivos afetados, motiv
 Use para montar o pacote que será anexado ao Redmine. Scripts de implantação permanecem fora do repositório AGHUse.
 
 ```text
-Use $aghuse-entrega-banco com o aghuse_banco para revisar os scripts da
+Use $implementar com o database para revisar os scripts da
 tarefa 51093. Confira aplicação e rollback idempotentes, comentários,
 restrições, índices, grants e ordem. Gere o manifesto com resumos SHA-256,
 mas não execute no banco e não adicione os SQL ao Git.
@@ -199,7 +199,7 @@ Resultado esperado: lista ordenada, objetos afetados, achados, guardas de idempo
 Use para erros do `SecurityPhaseListener`, páginas negadas, menus ausentes ou perfis incompletos.
 
 ```text
-Use $aghuse-mapeamento-seguranca para analisar este erro de permissão.
+Use $analisar para analisar este erro de permissão.
 Localize página, permissão, menu, perfil e branch do mapeamento. Prepare os
 parâmetros para uma simulação, mas não execute Jenkins, banco ou atualizador.
 ```
@@ -211,7 +211,7 @@ Resultado esperado: causa provável, repositório e branch a conferir, permissã
 Use depois de alterar código para evitar build ou suíte completa sem necessidade.
 
 ```text
-Use $aghuse-validacao-direcionada para analisar os arquivos modificados.
+Use $validar para analisar os arquivos modificados.
 Selecione o menor conjunto de módulos Maven, testes ON/RN, validações XHTML
 e mensagens. Mostre os comandos antes de executar e não faça deploy.
 ```
@@ -223,7 +223,7 @@ Resultado esperado: mapa arquivo → módulo, ordem de compilação, comandos su
 Use quando houver stack trace, log do WildFly ou erro Oracle e a causa ainda não estiver clara.
 
 ```text
-Use $aghuse-diagnostico-logs para analisar o arquivo de log anexado.
+Use $analisar para analisar o arquivo de log anexado.
 Remova dados sensíveis da resposta, encontre a exceção raiz, a primeira
 classe AGHUse relevante, o módulo provável e indique o especialista.
 Ainda não corrija o código.
@@ -236,7 +236,7 @@ Resultado esperado: categoria da falha, causa mais provável, evidências, hipó
 Use quando a tela será testada pelo próprio usuário. Por padrão, o QA gera o roteiro e não controla a interface.
 
 ```text
-Use $aghuse-roteiro-homologacao e o aghuse_qualidade para criar somente o
+Use $validar e o qa para criar somente o
 roteiro manual da tarefa 51093. Inclua pré-condições de banco e segurança,
 perfil, dados fictícios, passos, resultados, regressões e evidências.
 Eu executarei o teste em tela.
@@ -249,7 +249,7 @@ Resultado esperado: checklist reproduzível com critérios de `Aprovado`, `Repro
 Use como portão final antes de solicitar commit, revisão ou homologação.
 
 ```text
-Use $aghuse-verificacao-entrega para conferir a tarefa 51093 contra a
+Use $validar para conferir a tarefa 51093 contra a
 worktree atual. Verifique tarefa do commit, diff, mensagens, scripts fora
 do Git, validações e roteiro. Classifique a entrega, mas não faça commit,
 push nem alteração no Redmine.
@@ -260,15 +260,15 @@ Resultado esperado: `Pronto`, `Pronto com ressalvas` ou `Bloqueado`, acompanhado
 #### Fluxo automatizado completo
 
 ```text
-Use $aghuse-development para conduzir a tarefa 51093.
+Use $implementar para conduzir a tarefa 51093.
 
-1. Use $aghuse-preparacao-tarefa antes de editar.
-2. Se houver código ou mensagem desaparecida, use $aghuse-historico-alteracoes.
+1. Use $analisar antes de editar.
+2. Se houver código ou mensagem desaparecida, use $analisar.
 3. Implemente somente o escopo confirmado com os especialistas necessários.
-4. Para scripts externos, use $aghuse-entrega-banco.
-5. Use $aghuse-validacao-direcionada para escolher os testes e builds.
-6. Use $aghuse-verificacao-entrega para a verificação final.
-7. Use $aghuse-roteiro-homologacao para eu executar a homologação manual.
+4. Para scripts externos, use $implementar.
+5. Use $validar para escolher os testes e builds.
+6. Use $validar para a verificação final.
+7. Use $validar para eu executar a homologação manual.
 
 Não faça commit, push, deploy, alteração no Redmine, banco ou Jenkins.
 ```
@@ -278,9 +278,9 @@ Não faça commit, push, deploy, alteração no Redmine, banco ou Jenkins.
 As skills utilizam um utilitário local que retorna JSON. O uso direto é opcional e serve para diagnóstico reproduzível:
 
 ```bash
-export JARVIS_AGENT_HOME="/caminho/para/jarvis-agent"
+export CODEX_HOME="/caminho/para/aghuse-assistant"
 export AGHUSE_HOME="/caminho/para/o-repositorio-aghuse"
-export AGHUSE_AUTOMACAO="$JARVIS_AGENT_HOME/plugins/aghuse-agent/scripts/aghuse_automacao.py"
+python scripts/validate.py
 
 python3 "$AGHUSE_AUTOMACAO" contexto --raiz "$AGHUSE_HOME"
 python3 "$AGHUSE_AUTOMACAO" historico 51093 --raiz "$AGHUSE_HOME"
@@ -313,36 +313,36 @@ Uma tarefa pequena e bem delimitada pode chamar apenas o responsável.
 
 | Agente | Quando usar |
 |---|---|
-| `aghuse_analise` | Requisitos, aceite, comportamento atual e histórico antes do plano |
-| `aghuse_banco` | Persistência, schema, dialetos, segurança e impacto antes do plano |
-| `aghuse_backend` | Execução integrada de um plano aprovado |
-| `aghuse_qualidade` | Validação técnica independente de requisito, testes, build e preparação do roteiro |
-| `aghuse_revisor` | Auditoria independente do diff e da worktree |
-| `aghuse_analise` | Relatório técnico ad-hoc; não usar junto com discovery formal sem justificativa |
-| `aghuse_frontend` | XHTML, JSF, PrimeFaces, mensagens, navegação e controllers de apresentação |
-| `aghuse_backend` | RN existente, nova ON, EJB, Facade, API, service e contrato Java |
-| `aghuse_banco` | Entidades, DAOs, consultas, Oracle/PostgreSQL, Envers e scripts |
-| `aghuse_testes` | JUnit, Mockito, fixtures, diagnóstico e cobertura do AGHUse |
+| `architecture` | Requisitos, aceite, comportamento atual e histórico antes do plano |
+| `database` | Persistência, schema, dialetos, segurança e impacto antes do plano |
+| `backend` | Execução integrada de um plano aprovado |
+| `qa` | Validação técnica independente de requisito, testes, build e preparação do roteiro |
+| `architecture` | Auditoria independente do diff e da worktree |
+| `architecture` | Relatório técnico ad-hoc; não usar junto com discovery formal sem justificativa |
+| `frontend` | XHTML, JSF, PrimeFaces, mensagens, navegação e controllers de apresentação |
+| `backend` | RN existente, nova ON, EJB, Facade, API, service e contrato Java |
+| `database` | Entidades, DAOs, consultas, Oracle/PostgreSQL, Envers e scripts |
+| `qa` | JUnit, Mockito, fixtures, diagnóstico e cobertura do AGHUse |
 | `sfa_frontend` | Angular, formulários, rotas, models, services HTTP e Karma/Jasmine |
 | `sfa_backend` | Spring MVC, services, VOs, segurança, integrações e regras BPA |
 | `sfa_database` | JPA, repositories, datasources, transações e SQL do SFA |
 | `sfa_tests` | Testes Java e Angular, regressão, fixtures e cobertura do SFA |
-| `aghuse_revisor` | Revisão sistêmica de contratos, transações, segurança e regressão para risco alto/crítico |
-| `aghuse_qualidade` | Execução funcional do roteiro em ambiente autorizado e evidências de tela |
+| `architecture` | Revisão sistêmica de contratos, transações, segurança e regressão para risco alto/crítico |
+| `qa` | Execução funcional do roteiro em ambiente autorizado e evidências de tela |
 
 Exemplos:
 
 ```text
-Use o aghuse_frontend para corrigir este label e validar somente o WAR afetado.
+Use o frontend para corrigir este label e validar somente o WAR afetado.
 ```
 
 ```text
-Use o aghuse_backend para implementar esta regra. Reutilize uma RN compatível;
+Use o backend para implementar esta regra. Reutilize uma RN compatível;
 caso não exista, crie uma ON.
 ```
 
 ```text
-Use o aghuse_banco para preparar aplicação e rollback idempotentes para
+Use o database para preparar aplicação e rollback idempotentes para
 Oracle e PostgreSQL. Não execute no banco.
 ```
 
@@ -352,7 +352,7 @@ alterar o código de produção.
 ```
 
 ```text
-Use o aghuse_analise em modo somente leitura para analisar o chamado e gerar
+Use o architecture em modo somente leitura para analisar o chamado e gerar
 o relatório técnico antes de qualquer implementação.
 ```
 
@@ -379,9 +379,9 @@ Não acionar todos os agentes apenas por disponibilidade. Subagentes aumentam us
 Quando a implementação estiver aparentemente pronta:
 
 ```text
-Acione o aghuse_revisor para conferir baseline, escopo, hunks,
+Acione o architecture para conferir baseline, escopo, hunks,
 arquivos inesperados, EOL/encoding, segredos e scripts indevidos.
-Se o risco for alto ou crítico, depois acione o aghuse_revisor para revisar
+Se o risco for alto ou crítico, depois acione o architecture para revisar
 arquitetura, contratos, transações, segurança e regressões sistêmicas.
 ```
 
@@ -392,13 +392,13 @@ Cada perfil deve informar achados por severidade, evidência, impacto e correç�
 Depois da revisão, para gerar somente o roteiro manual:
 
 ```text
-Use $aghuse-roteiro-homologacao e acione o aghuse_qualidade. Crie um roteiro
+Use $validar e acione o qa. Crie um roteiro
 completo em tela com pré-condições, perfil necessário, massa fictícia,
 passos, resultados esperados e evidências. Não use produção nem controle
 a interface; eu executarei o roteiro.
 ```
 
-Quando o usuário pedir a execução no ambiente autorizado, entregue o roteiro pronto ao `aghuse_qualidade`.
+Quando o usuário pedir a execução no ambiente autorizado, entregue o roteiro pronto ao `qa`.
 
 O QA deve validar, quando aplicável:
 
@@ -485,8 +485,8 @@ Solicitar ou esperar o seguinte handoff:
 Executar somente quando os próprios plugins, skills ou agentes forem alterados:
 
 ```bash
-export JARVIS_AGENT_HOME="/caminho/para/jarvis-agent"
-cd "$JARVIS_AGENT_HOME"
+export CODEX_HOME="/caminho/para/aghuse-assistant"
+cd "$CODEX_HOME"
 python3 scripts/validate.py
 python3 scripts/doctor.py --strict
 python3 scripts/smoke_install.py

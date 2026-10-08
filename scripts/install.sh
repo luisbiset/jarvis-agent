@@ -51,22 +51,22 @@ run mkdir -p "$codex_home/agents"
 
 global_instructions_source="$project_root/config/AGENTS.md"
 global_instructions_destination="$codex_home/AGENTS.md"
-if [[ ! -e "$global_instructions_destination" ]] || grep -q "managed-by: jarvis-agent" "$global_instructions_destination"; then
+if [[ ! -e "$global_instructions_destination" ]] || grep -q "managed-by: aghuse-assistant" "$global_instructions_destination"; then
   run cp -f --remove-destination "$global_instructions_source" "$global_instructions_destination"
 else
-  echo "ERRO: $global_instructions_destination já existe e não é gerenciado pelo Jarvis Agent." >&2
+  echo "ERRO: $global_instructions_destination já existe e não é gerenciado pelo AGHUse Assistant." >&2
   echo "Mescle config/AGENTS.md manualmente para preservar suas instruções globais." >&2
   exit 1
 fi
 if [[ "$dry_run" == true ]]; then
-  printf 'DRY-RUN: gravar %q em %q\n' "$project_root" "$codex_home/jarvis-agent-root"
+  printf 'DRY-RUN: gravar %q em %q\n' "$project_root" "$codex_home/aghuse-assistant-root"
 else
   # Bash/Git Bash pode converter o caminho para /c/...; o runtime do Codex
   # precisa receber o caminho nativo do Windows no ponteiro global.
-  printf '%s\n' "$project_root_native" > "$codex_home/jarvis-agent-root"
+  printf '%s\n' "$project_root_native" > "$codex_home/aghuse-assistant-root"
 fi
 
-for agent in "$project_root"/agents/*.toml; do
+for agent in "$project_root"/config/agents/*.toml; do
   destination="$codex_home/agents/$(basename "$agent")"
   run cp -f --remove-destination "$agent" "$destination"
 done
@@ -75,7 +75,7 @@ if ! codex plugin marketplace list | grep -q "^$marketplace_name[[:space:]]"; th
   run codex plugin marketplace add "$project_root"
 fi
 
-for plugin in redmine-agent sfa-agent aghuse-agent; do
+for plugin in redmine-agent sfa-agent aghuse-assistant; do
   run codex plugin add "$plugin@$marketplace_name"
 done
 

@@ -1,8 +1,37 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import readline from "node:readline";
 
 import { handleMessage } from "./protocol.mjs";
+
+function loadLocalEnv() {
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+  const envPath = resolve(root, ".mcp.env");
+  let content;
+  try {
+    content = readFileSync(envPath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw new Error(`Não foi possível ler .mcp.env: ${error.message}`);
+  }
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const separator = line.indexOf("=");
+    if (separator <= 0) throw new Error("Linha inválida em .mcp.env; esperado NOME=VALOR.");
+    const name = line.slice(0, separator).trim();
+    let value = line.slice(separator + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new Error(`Nome inválido em .mcp.env: ${name}`);
+    if (process.env[name] === undefined) process.env[name] = value;
+  }
+}
+
+loadLocalEnv();
 
 function send(message) {
   process.stdout.write(`${JSON.stringify(message)}\n`);

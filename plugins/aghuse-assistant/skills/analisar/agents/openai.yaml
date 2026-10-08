@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analisar AGHUse"
+  short_description: "Investiga demandas técnicas em modo somente leitura."
+  default_prompt: "Use $analisar para executar a operação ANALYZE. Valide o JSON internamente e apresente o resultado em seções Markdown padronizadas."

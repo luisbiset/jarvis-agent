@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "compatibility": {"legacy_agents_field": true},
+  "patterns": [
+    {"id":"aghuse-jsf-label","complexity":"TRIVIAL","risk_class":"LOW","max_agents":1,"agents":["frontend"],"teams":[{"team":"DESENVOLVIMENTO","agents":["frontend"]}],"validations":["xhtml_or_properties_check"]},
+    {"id":"aghuse-dao-criteria","complexity":"LOCALIZED","risk_class":"MEDIUM","max_agents":2,"agents":["database","qa"],"teams":[{"team":"ANALISE","optional":true,"agents":["database"]},{"team":"DESENVOLVIMENTO","agents":["database"]},{"team":"REVISAO_QUALIDADE","agents":["qa"]}],"validations":["targeted_module_test","criteria_policy_check"]},
+    {"id":"aghuse-new-on","complexity":"LOCALIZED","risk_class":"MEDIUM","max_agents":2,"agents":["backend","qa"],"teams":[{"team":"DESENVOLVIMENTO","agents":["backend","qa"]},{"team":"REVISAO_QUALIDADE","optional":true,"agents":["qa"]}],"validations":["targeted_on_test"]},
+    {"id":"aghuse-external-db-script","complexity":"LOCALIZED","risk_class":"HIGH","max_agents":2,"agents":["database","architecture"],"teams":[{"team":"DESENVOLVIMENTO","agents":["database"]},{"team":"REVISAO_QUALIDADE","agents":["architecture"]}],"validations":["idempotence_review","manifest_hashes","git_absence"]},
+    {"id":"aghuse-log-incident","complexity":"LOCALIZED","risk_class":"MEDIUM","max_agents":0,"agents":[],"teams":[{"team":"ANALISE","agents":[]}],"validations":["read_only_root_cause"]},
+    {"id":"sfa-localized-billing-rule","complexity":"LOCALIZED","risk_class":"HIGH","max_agents":2,"agents":["sfa_backend","sfa_tests"],"teams":[{"team":"DESENVOLVIMENTO","agents":["sfa_backend"]},{"team":"REVISAO_QUALIDADE","agents":["sfa_tests"]}],"validations":["targeted_backend_test","billing_regression"]},
+    {"id":"aghuse-transversal-analysis","complexity":"TRANSVERSAL","risk_class":"MEDIUM","max_agents":4,"agents":["architecture","backend","database","architecture"],"teams":[{"team":"ANALISE","agents":["architecture"]},{"team":"DESENVOLVIMENTO","agents":["backend","database"]},{"team":"REVISAO_QUALIDADE","agents":["architecture"]}],"validations":["evidence_map","impact_review"]}
+  ]
+}

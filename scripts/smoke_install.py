@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Valida a instalação do Jarvis Agent em um CODEX_HOME temporário e isolado."""
+"""Valida a instalação do AGHUse Assistant em um CODEX_HOME temporário e isolado."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
-    with tempfile.TemporaryDirectory(prefix="jarvis-agent-home-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="aghuse-assistant-home-") as temp_dir:
         codex_home = Path(temp_dir)
         env = {**os.environ, "CODEX_HOME": str(codex_home)}
         command = [str(ROOT / "scripts/install.sh")]
@@ -33,11 +33,11 @@ def main() -> int:
         expected_instructions = ROOT / "config/AGENTS.md"
         if not installed_instructions.is_file() or installed_instructions.read_bytes() != expected_instructions.read_bytes():
             raise RuntimeError("Instruções globais de métricas não foram instaladas")
-        root_pointer = codex_home / "jarvis-agent-root"
+        root_pointer = codex_home / "aghuse-assistant-root"
         if not root_pointer.is_file() or root_pointer.read_text(encoding="utf-8").strip() != str(ROOT):
-            raise RuntimeError("Ponteiro do Jarvis Runtime não foi instalado corretamente")
+            raise RuntimeError("Ponteiro do AGHUse Assistant Runtime não foi instalado corretamente")
 
-        expected_agents = sorted((ROOT / "agents").glob("*.toml"))
+        expected_agents = sorted((ROOT / "config/agents").glob("*.toml"))
         for source in expected_agents:
             installed = codex_home / "agents" / source.name
             if not installed.is_file() or installed.is_symlink():
@@ -55,7 +55,7 @@ def main() -> int:
         )
         output = plugins.stdout + plugins.stderr
         lines = output.splitlines()
-        for plugin in ("redmine-agent", "sfa-agent", "aghuse-agent"):
+        for plugin in ("redmine-agent", "sfa-agent", "aghuse-assistant"):
             selector = f"{plugin}@codex-agents"
             if not any(selector in line and "installed, enabled" in line for line in lines):
                 raise RuntimeError(f"Plugin não foi instalado no perfil temporário: {selector}")
