@@ -21,11 +21,10 @@ python3 scripts/aghuse_guard.py audit
 python3 scripts/aghuse_guard.py git-summary
 python3 scripts/aghuse.py simular --task-id TESTE --task-type SECURITY --security-sensitive
 python3 scripts/aghuse.py simular-redmine --task-id 55315
-python3 scripts/aghuse.py rag search --query "frequencia aprazamento"
 python3 scripts/aghuse.py executar dashboard
 ```
 
-`auditar` verifica credenciais, URLs privadas e dados clínicos detectáveis. `resumo-git` é somente leitura. `simular` não cria estado nem acessa serviços externos. `rag` indexa ou consulta o conhecimento local. `executar` encaminha comandos avançados ao runtime.
+`auditar` verifica credenciais, URLs privadas e dados clínicos detectáveis. `resumo-git` é somente leitura. `simular` não cria estado nem acessa serviços externos. A busca de código é feita pelo Codex e pelas ferramentas MCP.
 
 Para bloquear automaticamente commits inseguros nesta cópia:
 

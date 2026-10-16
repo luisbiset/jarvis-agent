@@ -1,0 +1,173 @@
+{
+  "agents_used": [
+    "aghuse_auditor_do_diff",
+    "aghuse_banco_e_impacto",
+    "sesab_reviewer"
+  ],
+  "budget": {
+    "budget_limit": 6,
+    "budget_override": false,
+    "budget_override_reason": null,
+    "budget_used": 3,
+    "hard_max_model_calls": 8,
+    "max_agents": 6,
+    "max_duration_ms": 3600000,
+    "max_model_calls": 6,
+    "max_parallel_agents": 2,
+    "model_calls_used": 4,
+    "progress_events": 4,
+    "required_reviewers": [
+      "technical_qa",
+      "diff_auditor",
+      "system_reviewer"
+    ]
+  },
+  "complexity": "CRITICAL",
+  "config_hash": "a871b10f5a86d4f04d161a6e22c96c6a6e54a03a0a6df9c53834e400dd472ce4",
+  "context_usage": {
+    "estimated_tokens": 0,
+    "files": 24,
+    "limit_hits": 0,
+    "limits": {
+      "max_context_tokens": 100000,
+      "max_files": 30,
+      "max_raw_bytes": 1500000,
+      "max_tool_reads": 60
+    },
+    "mode": "OBSERVE_ONLY",
+    "raw_bytes": 0,
+    "tool_reads": 32
+  },
+  "contracts_version": "3.1.0",
+  "cost_budget": {
+    "limit_hits": 0,
+    "max_credits": 60,
+    "max_uncached_input_tokens": 300000,
+    "mode": "OBSERVE_ONLY",
+    "soft_limit_ratio": 0.8,
+    "status": "ALLOW"
+  },
+  "created_at": "2026-08-31T11:33:22.883Z",
+  "current_state": "PLAN_READY",
+  "execution_path": "STANDARD",
+  "finished_at": null,
+  "gate_attempts": 0,
+  "gate_decision": null,
+  "gate_reason_code": null,
+  "gate_reason_detail": null,
+  "history": [
+    {
+      "at": "2026-08-31T11:33:22.883Z",
+      "from": null,
+      "reason": "run initialized",
+      "stop_reason": null,
+      "to": "NEW"
+    },
+    {
+      "at": "2026-08-31T11:33:30.602Z",
+      "from": "NEW",
+      "reason": "Retomada solicitada pelo usuario com relatorio preliminar e simbolos relevantes ja identificados",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "DISCOVERY"
+    },
+    {
+      "at": "2026-08-31T16:40:44.263Z",
+      "from": "DISCOVERY",
+      "reason": "Relatorio corrigido com evidencias de legado, banco e auditoria; decisoes funcionais pendentes registradas",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "PLAN_READY"
+    }
+  ],
+  "jarvis_version": "3.1.0",
+  "metrics": {
+    "agent_invocation_count": 4,
+    "cached_input_tokens": 0,
+    "credits": 0.0,
+    "duration_ms": 18441389,
+    "first_pass_success": null,
+    "handoff_count": 0,
+    "human_gate_pass_on_first_attempt": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "retry_count": 0,
+    "rework_cycles": 0,
+    "stop_count": 0,
+    "stop_reasons": {}
+  },
+  "operational_mode": "READ_ONLY_AUDIT",
+  "policy_version": "3.1.0",
+  "reasoning": {
+    "attempts_used": 2,
+    "context_budget": "LARGE",
+    "contributions": {
+      "ambiguity": 2.0,
+      "architectural": 3,
+      "complexity": 4.0,
+      "database_migration": 0,
+      "many_files": 2,
+      "multiple_modules": 2,
+      "production_critical": 3,
+      "security_sensitive": 0,
+      "tests_required": 0
+    },
+    "current_level": "HIGH",
+    "effective_effort": "high",
+    "effective_model": "gpt-5.6-sol",
+    "escalation_allowed": false,
+    "escalations_used": 0,
+    "final_level": null,
+    "initial_level": "HIGH",
+    "last_escalation_reason": null,
+    "max_attempts": 3,
+    "max_child_depth": 3,
+    "max_escalations": 1,
+    "max_input_tokens": 160000,
+    "policy_version": "3.1.0",
+    "requested_effort": "high",
+    "requested_model": "gpt-5.6-sol",
+    "score": 16.0,
+    "signals": {
+      "ambiguity_score": 2.0,
+      "architectural": true,
+      "complexity_score": 4.0,
+      "database_migration": false,
+      "estimated_files": 12,
+      "estimated_modules": 4,
+      "production_critical": true,
+      "security_sensitive": false,
+      "task_type": "ANALYSIS",
+      "tests_required": false
+    },
+    "termination_reason": "BUDGET_EXHAUSTED"
+  },
+  "reasoning_class": "DEEP",
+  "registry_version": "1.1.0",
+  "risk_class": "HIGH",
+  "routing": {
+    "agents_invoked": [
+      "aghuse_auditor_do_diff",
+      "aghuse_banco_e_impacto",
+      "sesab_reviewer"
+    ],
+    "agents_planned": [
+      "aghuse_banco_e_impacto",
+      "sesab_reviewer"
+    ],
+    "agents_rejected_by_budget": [],
+    "agents_skipped": [],
+    "missing_agents": [],
+    "parallel_batches": 3,
+    "routing_outcome": "UNKNOWN",
+    "unnecessary_agents": []
+  },
+  "run_id": "jarvis-20260831T113322Z-29291a61",
+  "schema_version": "3.1.0",
+  "started_at": "2026-08-31T11:33:22.883Z",
+  "task_id": "REDMINE-54698-ANALISE-CONTINUACAO",
+  "telemetry_db": "/home/luisbiset/desenvolvimento/projetos/jarvis-agent/.jarvis/telemetry/jarvis.db",
+  "updated_at": "2026-08-31T16:40:44.272Z"
+}

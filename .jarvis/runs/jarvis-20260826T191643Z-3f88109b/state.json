@@ -1,0 +1,149 @@
+{
+  "agents_used": [
+    "sesab_reviewer"
+  ],
+  "budget": {
+    "budget_limit": 6,
+    "budget_override": false,
+    "budget_override_reason": null,
+    "budget_used": 1,
+    "max_agents": 6,
+    "max_parallel_agents": 2,
+    "required_reviewers": [
+      "technical_qa",
+      "diff_auditor",
+      "system_reviewer"
+    ]
+  },
+  "complexity": "TRANSVERSAL",
+  "config_hash": "10e9898f56dcfc19d49cb1caac40858abd95e8835211f78aaa4ed0b85cb95603",
+  "contracts_version": "2.1.0",
+  "created_at": "2026-08-26T19:16:43.434Z",
+  "current_state": "DONE",
+  "finished_at": "2026-08-27T01:47:08.668Z",
+  "gate_attempts": 1,
+  "gate_decision": "APPROVED",
+  "gate_reason_code": "APPROVED_AS_PLANNED",
+  "gate_reason_detail": null,
+  "history": [
+    {
+      "at": "2026-08-26T19:16:43.434Z",
+      "from": null,
+      "reason": "run initialized",
+      "stop_reason": null,
+      "to": "NEW"
+    },
+    {
+      "at": "2026-08-27T01:47:07.571Z",
+      "from": "NEW",
+      "reason": "V3 scope confirmed",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "DISCOVERY"
+    },
+    {
+      "at": "2026-08-27T01:47:07.721Z",
+      "from": "DISCOVERY",
+      "reason": "V3 implementation plan recorded",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "PLAN_READY"
+    },
+    {
+      "at": "2026-08-27T01:47:07.874Z",
+      "from": "PLAN_READY",
+      "reason": "User explicitly requested urgent V3 implementation",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "PLAN_APPROVED"
+    },
+    {
+      "at": "2026-08-27T01:47:08.032Z",
+      "from": "PLAN_APPROVED",
+      "reason": "Adaptive reasoning implementation completed",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "IMPLEMENTING"
+    },
+    {
+      "at": "2026-08-27T01:47:08.191Z",
+      "from": "IMPLEMENTING",
+      "reason": "Required validation suite executed",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "VALIDATING"
+    },
+    {
+      "at": "2026-08-27T01:47:08.349Z",
+      "from": "VALIDATING",
+      "reason": "Independent review has no HIGH blockers",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "REVIEW_READY"
+    },
+    {
+      "at": "2026-08-27T01:47:08.509Z",
+      "from": "REVIEW_READY",
+      "reason": "Ready for owner gate",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "HUMAN_GATE"
+    },
+    {
+      "at": "2026-08-27T01:47:08.668Z",
+      "from": "HUMAN_GATE",
+      "reason": "Owner explicitly requested implementation",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "DONE"
+    }
+  ],
+  "jarvis_version": "2.1.0",
+  "metrics": {
+    "agent_invocation_count": 1,
+    "cached_input_tokens": 0,
+    "credits": 0.0,
+    "duration_ms": 23425234,
+    "first_pass_success": true,
+    "handoff_count": 0,
+    "human_gate_pass_on_first_attempt": true,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "retry_count": 0,
+    "rework_cycles": 0,
+    "stop_count": 0,
+    "stop_reasons": {}
+  },
+  "operational_mode": "ASSISTED_AUTOPILOT",
+  "policy_version": "1.0.0",
+  "reasoning_class": "DEEP",
+  "risk_class": "HIGH",
+  "routing": {
+    "agents_invoked": [
+      "sesab_reviewer"
+    ],
+    "agents_planned": [
+      "sesab_reviewer"
+    ],
+    "agents_rejected_by_budget": [],
+    "agents_skipped": [],
+    "missing_agents": [],
+    "parallel_batches": 0,
+    "routing_outcome": "CORRECT",
+    "unnecessary_agents": []
+  },
+  "run_id": "jarvis-20260826T191643Z-3f88109b",
+  "schema_version": "2.1.0",
+  "started_at": "2026-08-26T19:16:43.434Z",
+  "task_id": "JARVIS-V3-ADAPTIVE-REASONING",
+  "telemetry_db": "/home/luisbiset/desenvolvimento/projetos/jarvis-agent/.jarvis/telemetry/jarvis.db",
+  "updated_at": "2026-08-27T01:47:23.049Z"
+}

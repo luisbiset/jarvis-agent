@@ -1,0 +1,210 @@
+{
+  "changed_components": [
+    {
+      "description": "Decisão proporcional da transferência",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "reutiliza complexidade, risco e task_type",
+      "symbol": "knowledge_transfer_decision"
+    },
+    {
+      "description": "Geração e persistência do artefato",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "confirma evidências, aplica budget e grava SQLite/JSON",
+      "symbol": "create_technical_handoff"
+    },
+    {
+      "description": "Avaliação segura do Teach-Back",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "classifica a resposta sem persistir texto livre",
+      "symbol": "evaluate_teachback"
+    }
+  ],
+  "classification": "TRANSVERSAL",
+  "created_at": "2026-08-28T17:12:56.895Z",
+  "decisions": [
+    {
+      "description": "Manter TechnicalHandoff separado do handoff operacional",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "preserva compatibilidade com o fluxo existente",
+      "symbol": "create_technical_handoff"
+    },
+    {
+      "description": "Não persistir resposta livre",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "aplica SEC-001 e reduz exposição",
+      "symbol": "matched_concepts"
+    }
+  ],
+  "evidence_status": "CONFIRMED",
+  "execution_flow": [
+    {
+      "description": "Policy decide classificação e limites",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "entrada do fluxo",
+      "symbol": "knowledge_transfer_decision"
+    },
+    {
+      "description": "Builder normaliza evidências",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "evidence binding",
+      "symbol": "_evidence_items"
+    },
+    {
+      "description": "Artefato é persistido",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "retomada futura",
+      "symbol": "technical_handoffs"
+    },
+    {
+      "description": "Teach-Back é avaliado",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "fechamento do ciclo",
+      "symbol": "evaluate_teachback"
+    }
+  ],
+  "execution_id": null,
+  "handoff_id": "technical-handoff-18f85956e88c5ed8",
+  "handoff_level": "FULL",
+  "new_behavior": "FLOW-004 decide o nível a partir dos sinais existentes, gera um artefato auditável, registra métricas separadas e oferece recuperação e Teach-Back limitado.",
+  "policy_version": "1.0.0",
+  "previous_behavior": "A execução possuía somente o handoff operacional de coordenação, sem mapa de leitura, policy proporcional ou retomada de conhecimento por task.",
+  "questions": [
+    {
+      "evidence_refs": [
+        "contracts/knowledge-transfer-policy.json#BUSINESS_RULE"
+      ],
+      "expected_concepts": [
+        "BUSINESS_RULE",
+        "Comece",
+        "pela"
+      ],
+      "prompt": "Qual símbolo concentra a mudança principal?",
+      "question_id": "Q1"
+    },
+    {
+      "evidence_refs": [
+        "scripts/jarvis_runtime.py#create_technical_handoff"
+      ],
+      "expected_concepts": [
+        "create_technical_handoff",
+        "Manter",
+        "TechnicalHandoff"
+      ],
+      "prompt": "Por que essa decisão técnica foi adotada?",
+      "question_id": "Q2"
+    },
+    {
+      "evidence_refs": [
+        "tests/test_jarvis_runtime.py#test_knowledge_transfer_reuses_complexity_and_business_rule_signal"
+      ],
+      "expected_concepts": [
+        "test_knowledge_transfer_reuses_complexity_and_business_rule_signal",
+        "Policy",
+        "reutiliza"
+      ],
+      "prompt": "Qual teste protege a regressão principal?",
+      "question_id": "Q3"
+    },
+    {
+      "evidence_refs": [
+        "contracts/knowledge-transfer-policy.json#BUSINESS_RULE"
+      ],
+      "expected_concepts": [
+        "BUSINESS_RULE",
+        "Comece",
+        "pela"
+      ],
+      "prompt": "Onde você começaria uma nova investigação dessa regra?",
+      "question_id": "Q4"
+    }
+  ],
+  "reading_order": [
+    {
+      "description": "Comece pela policy",
+      "evidence_status": "CONFIRMED",
+      "path": "contracts/knowledge-transfer-policy.json",
+      "reason": "explica níveis e budgets",
+      "symbol": "BUSINESS_RULE"
+    },
+    {
+      "description": "Leia a decisão",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "explica quando a feature é ativada",
+      "symbol": "knowledge_transfer_decision"
+    },
+    {
+      "description": "Leia o builder",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "explica evidência e persistência",
+      "symbol": "create_technical_handoff"
+    },
+    {
+      "description": "Finalize nos testes",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_jarvis_runtime.py",
+      "reason": "documenta o comportamento esperado",
+      "symbol": "test_technical_handoff_binds_real_evidence_and_marks_unknown"
+    }
+  ],
+  "risks": [
+    {
+      "description": "Símbolos ausentes não podem virar explicações inventadas",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "invariante de evidência",
+      "symbol": "UNKNOWN/NOT_CONFIRMED"
+    },
+    {
+      "description": "Teach-Back precisa respeitar limite global de turnos",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "invariante de custo",
+      "symbol": "max_teachback_turns"
+    }
+  ],
+  "run_id": "jarvis-20260828T171252Z-d0cd3b88",
+  "schema_version": "1.0.0",
+  "summary": "O Jarvis V3 agora gera Technical Handoff proporcional, valida evidências no workspace, persiste o artefato por task e avalia Teach-Back sem armazenar respostas livres.",
+  "task_id": "JARVIS-FLOW-004",
+  "test_evidence": [
+    {
+      "description": "Policy reutiliza sinais existentes",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_jarvis_runtime.py",
+      "reason": "protege classificação",
+      "symbol": "test_knowledge_transfer_reuses_complexity_and_business_rule_signal"
+    },
+    {
+      "description": "Evidência confirmada e UNKNOWN",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_jarvis_runtime.py",
+      "reason": "protege evidence binding",
+      "symbol": "test_technical_handoff_binds_real_evidence_and_marks_unknown"
+    },
+    {
+      "description": "Persistência e recuperação",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_jarvis_runtime.py",
+      "reason": "protege retomada",
+      "symbol": "test_technical_handoff_budget_persistence_and_recovery_by_task"
+    },
+    {
+      "description": "Avaliação e budget do Teach-Back",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_jarvis_runtime.py",
+      "reason": "protege segurança e custo",
+      "symbol": "test_teachback_evaluates_without_persisting_answer_and_respects_turn_budget"
+    }
+  ]
+}

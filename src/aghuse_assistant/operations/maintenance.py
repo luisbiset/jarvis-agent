@@ -1,32 +1,18 @@
-"""Controlled maintenance operation for the AGHUse Assistant itself."""
-from ..runtime.result import OperationResult
+"""Stable MANUTENCAO operation facade."""
+from ..gateway import ToolGateway
+from ..maintenance import MaintenanceEngine, MaintenanceInputError, to_execution
+from ..orchestrator.models import ExecutionAuthorization, ExecutionContext, ExecutionResult, ExecutionState
 
 OPERATION_ID = "MANUTENCAO"
 SKILL = "manutencao"
 AGENT = "aghuse_assistant"
 
 
-def execute(run) -> OperationResult:
-    return OperationResult(
-        OPERATION_ID,
-        run.project,
-        run.run_id,
-        "SUCCEEDED",
-        "Maintenance operation authorized for the AGHUse Assistant scope",
-        {
-            "mutates": True,
-            "agent": AGENT,
-            "scope": "assistant-only",
-            "task_ref": run.task_ref,
-            "approval_required": True,
-            "changes": [],
-            "files_changed": [],
-            "tests_executed": [],
-            "tests_passed": [],
-            "pending_items": ["Human checkpoint required before changes"],
-            "rollback_notes": "No changes executed by the operation shell.",
-        },
-    )
+def execute(context: ExecutionContext, gateway: ToolGateway, authorization: ExecutionAuthorization) -> ExecutionResult:
+    try:
+        return to_execution(context, MaintenanceEngine().execute(context, gateway, authorization))
+    except (MaintenanceInputError, ValueError) as exc:
+        return ExecutionResult(OPERATION_ID, context.project, context.execution_id, ExecutionState.WAITING_INPUT, str(exc), {"scope": "assistant-only", "agent": AGENT, "approval_required": not authorization.mutation_confirmed})
 
 
 def preview(project_id, parameters, **_):

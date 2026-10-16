@@ -13,7 +13,6 @@
     "review_required": {"type": "boolean"},
     "retry_policy": {"enum": ["NONE", "TARGETED", "ONE_ESCALATION"]},
     "estimated_cost_class": {"enum": ["LOW", "MEDIUM", "HIGH"]},
-    "rag_available": {"type": "boolean"},
     "planner_version": {"type": "string"}
   },
   "additionalProperties": true

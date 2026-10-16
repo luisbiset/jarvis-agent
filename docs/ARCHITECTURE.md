@@ -1,30 +1,34 @@
 # AGHUse Assistant
 
-O core é composto por quatro operações independentes:
+O core é composto por um Orchestrator determinístico e operações independentes:
 
 - `ANALYZE`: investigação somente leitura.
 - `PLAN`: estratégia técnica sem alterar o workspace.
 - `IMPLEMENT`: alteração controlada do workspace.
 - `VALIDATE`: build, testes, revisão e diagnóstico sem correção automática.
+- `MANUTENCAO`: mudança controlada e isolada no próprio Assistant.
 
-Cada execução é uma `OperationRun`. O Runtime cria e acompanha a Run, aplica a Policy e disponibiliza capabilities; ele não impõe uma sequência de negócio. Os únicos estados são `CREATED`, `RUNNING`, `WAITING_INPUT`, `SUCCEEDED`, `FAILED` e `CANCELLED`.
+Cada execução recebe um `ExecutionContext`. O Orchestrator aplica permissões, seleciona o time e devolve um `ExecutionResult`; o Codex permanece como agente principal. Os estados são `CREATED`, `RUNNING`, `WAITING_INPUT`, `SUCCEEDED`, `FAILED` e `CANCELLED`.
 
 O pacote `src/aghuse_assistant/` contém as fronteiras públicas:
 
 ```text
 aghuse_assistant/
 ├── operations/   # quatro operações
-├── runtime/      # Run, Context, Dispatcher e Store
+├── analysis/     # engine genérico, pipeline, evidências e estratégia AGHUse
+├── planning/     # plano técnico; exige AnalysisResult COMPLETE
+├── implementation/ # execução mutável autorizada e rollback
+├── validation/   # checks somente leitura e regressões
+├── maintenance/  # manutenção assistant-only
+├── orchestrator/ # contexto, estado e coordenação determinística
 ├── policy/       # permissões por operação
 ├── agents/       # capabilities técnicas
 ├── mcp/          # registro passivo de tools
-├── rag/          # retrieval opcional
-└── api/          # catálogo e RunService
+├── teams/        # Analysis, Planning, Development, QA e Maintenance
+├── gateway/      # Tool Gateway/MCP
+└── app.py        # CLI do Codex
 ```
 
-Implementação é a única operação autorizada a editar arquivos ou executar mutações. RAG e MCP são sob demanda. Agents representam competência (`backend`, `database`, `frontend`, `qa`, `architecture`) e podem apoiar mais de uma operação.
+Implementação e manutenção confirmadas são as únicas operações autorizadas a editar arquivos. Artefatos tipados circulam pelo `ExecutionContext` sem store persistente. Todas as ferramentas passam pelo Tool Gateway; planejamento e validação aceitam somente leitura.
 
-`scripts/` contém somente tooling do repositório: validação, instalação, geração de artefatos e manutenção. Ele não participa do core de execução do AGHUse Assistant. O RAG fica em `src/aghuse_assistant/rag`; configurações e contratos ficam em `config/agents` e `config/contracts`; fixtures ficam em `tests/fixtures`. Novos componentes devem depender de `aghuse_assistant`, e não criar novos estados, fases ou agentes por etapa.
-
-
-A API canônica é servida pelo comando ghuse-assistant-api e expõe GET /api/operations, POST /api/runs, GET /api/runs, GET /api/runs/{run_id} e POST /api/runs/{run_id}/cancel. Endpoints específicos de operação permanecem apenas como aliases de compatibilidade.
+`scripts/` contém somente tooling do repositório: validação, instalação, geração de artefatos e manutenção. Busca de código é feita diretamente pelo Codex e pelas ferramentas MCP; configurações e contratos ficam em `config/agents` e `config/contracts`; fixtures ficam em `tests/fixtures`.

@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Validar skills e agentes ao salvar",
+      "trigger": "PostFileSave",
+      "matcher": "\\\\.kiro/(skills|agents|steering)/.*\\\\.md$",
+      "action": {
+        "type": "agent",
+        "prompt": "Um arquivo de skill, agente ou steering foi salvo. Verifique rapidamente se:\n1. O frontmatter YAML está presente e correto (campos `name` e `description` para skills/agentes, `inclusion` para steering).\n2. O conteúdo não contém credenciais, tokens, URLs privadas ou dados sensíveis.\n3. Para skills: a instrução está clara e sem referências a sistemas externos (Codex, OpenAI API, provider HTTP local).\nSe houver algum problema, informe o usuário de forma objetiva."
+      }
+    }
+  ]
+}

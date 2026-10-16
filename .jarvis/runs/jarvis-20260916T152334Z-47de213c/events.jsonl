@@ -1,0 +1,2 @@
+{"at": "2026-09-16T15:23:34.406Z", "event": "RUN_INITIALIZED", "run_id": "jarvis-20260916T152334Z-47de213c", "state": "NEW"}
+{"at": "2026-09-16T15:26:47.682Z", "event": "HANDOFF_CREATED", "handoff_id": "handoff-7b9817558e65dc99", "run_id": "jarvis-20260916T152334Z-47de213c", "stage": "NEW"}

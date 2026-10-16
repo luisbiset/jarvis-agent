@@ -1,0 +1,123 @@
+{
+  "agents_used": [],
+  "budget": {
+    "budget_limit": 3,
+    "budget_override": false,
+    "budget_override_reason": null,
+    "budget_used": 0,
+    "max_agents": 3,
+    "max_parallel_agents": 2,
+    "required_reviewers": [
+      "technical_qa_or_diff_auditor"
+    ]
+  },
+  "complexity": "LOCALIZED",
+  "config_hash": "b1cb5aec0dfe45126044c2b413919d498d4602d4a974233d8354ff080b3de904",
+  "contracts_version": "2.1.0",
+  "created_at": "2026-08-26T14:30:02.576Z",
+  "current_state": "DONE",
+  "finished_at": "2026-08-26T14:32:56.745Z",
+  "gate_attempts": 1,
+  "gate_decision": "APPROVED",
+  "gate_reason_code": "APPROVED_AS_PLANNED",
+  "gate_reason_detail": null,
+  "history": [
+    {
+      "at": "2026-08-26T14:30:02.576Z",
+      "from": null,
+      "reason": "run initialized",
+      "stop_reason": null,
+      "to": "NEW"
+    },
+    {
+      "at": "2026-08-26T14:32:55.858Z",
+      "from": "NEW",
+      "reason": "pedido direto com escopo global definido",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "PLAN_APPROVED"
+    },
+    {
+      "at": "2026-08-26T14:32:56.005Z",
+      "from": "PLAN_APPROVED",
+      "reason": "configuração global e contratos em atualização",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "IMPLEMENTING"
+    },
+    {
+      "at": "2026-08-26T14:32:56.153Z",
+      "from": "IMPLEMENTING",
+      "reason": "alterações concluídas e validações iniciadas",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "VALIDATING"
+    },
+    {
+      "at": "2026-08-26T14:32:56.307Z",
+      "from": "VALIDATING",
+      "reason": "validações determinísticas e instalação limpa aprovadas",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "REVIEW_READY"
+    },
+    {
+      "at": "2026-08-26T14:32:56.599Z",
+      "from": "REVIEW_READY",
+      "reason": "entrega validada e pronta para fechamento",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "HUMAN_GATE"
+    },
+    {
+      "at": "2026-08-26T14:32:56.745Z",
+      "from": "HUMAN_GATE",
+      "reason": "política global instalada e verificada",
+      "rework_origin": null,
+      "rework_reason": null,
+      "stop_reason": null,
+      "to": "DONE"
+    }
+  ],
+  "jarvis_version": "2.1.0",
+  "metrics": {
+    "agent_invocation_count": 0,
+    "cached_input_tokens": 0,
+    "credits": 0.0,
+    "duration_ms": 174169,
+    "first_pass_success": true,
+    "handoff_count": 0,
+    "human_gate_pass_on_first_attempt": true,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "retry_count": 0,
+    "rework_cycles": 0,
+    "stop_count": 0,
+    "stop_reasons": {}
+  },
+  "operational_mode": "ASSISTED_AUTOPILOT",
+  "policy_version": "1.0.0",
+  "reasoning_class": "NORMAL",
+  "risk_class": "MEDIUM",
+  "routing": {
+    "agents_invoked": [],
+    "agents_planned": [],
+    "agents_rejected_by_budget": [],
+    "agents_skipped": [],
+    "missing_agents": [],
+    "parallel_batches": 0,
+    "routing_outcome": "CORRECT",
+    "unnecessary_agents": []
+  },
+  "run_id": "jarvis-20260826T143002Z-8b74a814",
+  "schema_version": "2.1.0",
+  "started_at": "2026-08-26T14:30:02.576Z",
+  "task_id": "JARVIS-METRICAS-GLOBAIS",
+  "telemetry_db": "/home/luisbiset/desenvolvimento/projetos/jarvis-agent/.jarvis/telemetry/jarvis.db",
+  "updated_at": "2026-08-26T14:32:56.755Z"
+}

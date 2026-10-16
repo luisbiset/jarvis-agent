@@ -7,7 +7,7 @@
     "contracts_version", "config_hash", "telemetry_db", "created_at", "started_at",
     "updated_at", "finished_at", "current_state", "complexity", "risk_class",
     "operational_mode", "execution_path", "reasoning_class", "reasoning", "budget", "context_usage", "cost_budget", "history", "agents_used",
-    "routing", "metrics", "rag", "teams", "gate_decision", "gate_reason_code", "gate_reason_detail",
+    "routing", "metrics", "teams", "gate_decision", "gate_reason_code", "gate_reason_detail",
     "gate_attempts"
   ],
   "properties": {
@@ -175,22 +175,6 @@
         "human_gate_pass_on_first_attempt": { "type": ["boolean", "null"] }
       },
       "additionalProperties": false
-    },
-    "rag": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["enabled", "policy_version", "queries", "selected_chunks", "estimated_tokens", "cache_hits", "cache_misses", "last_query_id", "last_context_pack"],
-      "properties": {
-        "enabled": {"type": "boolean"},
-        "policy_version": {"type": "string"},
-        "queries": {"type": "integer", "minimum": 0},
-        "selected_chunks": {"type": "integer", "minimum": 0},
-        "estimated_tokens": {"type": "integer", "minimum": 0},
-        "cache_hits": {"type": "integer", "minimum": 0},
-        "cache_misses": {"type": "integer", "minimum": 0},
-        "last_query_id": {"type": ["string", "null"]},
-        "last_context_pack": {"type": ["string", "null"]}
-      }
     },
     "gate_decision": { "type": ["string", "null"], "enum": [null, "APPROVED", "CHANGES_REQUESTED", "REJECTED"] },
     "gate_reason_code": { "type": ["string", "null"], "enum": [null, "APPROVED_AS_PLANNED", "WRONG_REQUIREMENT", "REGRESSION", "INSUFFICIENT_TEST", "OUT_OF_SCOPE", "BAD_IMPLEMENTATION", "BAD_EXPLANATION", "OTHER"] },

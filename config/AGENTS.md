@@ -1,6 +1,6 @@
 <!-- managed-by: aghuse-assistant -->
 
-- O AGHUse Assistant Runtime e a ponte RAG global somente devem ser acionados quando uma das skills operacionais globais for explicitamente usada: $analisar, $planejar, $implementar ou $validar. Tarefas comuns, consultas e explicacoes nao devem iniciar o Runtime, o FLOW-003 ou o RAG automaticamente.
+- O Orchestrator do AGHUse Assistant somente deve ser acionado quando uma das skills operacionais globais for explicitamente usada: $analisar, $planejar, $implementar ou $validar.
 # Política global do AGHUse Assistant Policy
 
 - Aplicar `FLOW-003` a toda tarefa solicitada, inclusive consultas e explicações: antes do trabalho substantivo, classificar `complexity`, `risk_class`, `operational_mode`, budget e sinais objetivos da tarefa.

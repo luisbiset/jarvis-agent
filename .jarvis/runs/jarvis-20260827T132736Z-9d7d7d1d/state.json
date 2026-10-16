@@ -1,0 +1,148 @@
+{
+  "agents_used": [
+    "aghuse_analyst"
+  ],
+  "budget": {
+    "budget_limit": 4,
+    "budget_override": false,
+    "budget_override_reason": null,
+    "budget_used": 1,
+    "hard_max_model_calls": 8,
+    "max_agents": 4,
+    "max_duration_ms": 3600000,
+    "max_model_calls": 5,
+    "max_parallel_agents": 2,
+    "model_calls_used": 1,
+    "progress_events": 0,
+    "required_reviewers": [
+      "technical_qa_or_diff_auditor"
+    ]
+  },
+  "complexity": "TRANSVERSAL",
+  "config_hash": "2c79d906801fc61e5afe21d07640184def7e45745844e7c3a8d9298845636131",
+  "context_usage": {
+    "estimated_tokens": 0,
+    "files": 0,
+    "limit_hits": 0,
+    "limits": {
+      "max_context_tokens": 100000,
+      "max_files": 30,
+      "max_raw_bytes": 1500000,
+      "max_tool_reads": 60
+    },
+    "mode": "OBSERVE_ONLY",
+    "raw_bytes": 0,
+    "tool_reads": 0
+  },
+  "contracts_version": "3.1.0",
+  "cost_budget": {
+    "limit_hits": 0,
+    "max_credits": 35,
+    "max_uncached_input_tokens": 180000,
+    "mode": "OBSERVE_ONLY",
+    "soft_limit_ratio": 0.8,
+    "status": "ALLOW"
+  },
+  "created_at": "2026-08-27T13:27:36.111Z",
+  "current_state": "NEW",
+  "execution_path": "STANDARD",
+  "finished_at": null,
+  "gate_attempts": 0,
+  "gate_decision": null,
+  "gate_reason_code": null,
+  "gate_reason_detail": null,
+  "history": [
+    {
+      "at": "2026-08-27T13:27:36.111Z",
+      "from": null,
+      "reason": "run initialized",
+      "stop_reason": null,
+      "to": "NEW"
+    }
+  ],
+  "jarvis_version": "3.1.0",
+  "metrics": {
+    "agent_invocation_count": 1,
+    "cached_input_tokens": 0,
+    "credits": 0.0,
+    "duration_ms": 21205,
+    "first_pass_success": null,
+    "handoff_count": 0,
+    "human_gate_pass_on_first_attempt": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "retry_count": 0,
+    "rework_cycles": 0,
+    "stop_count": 0,
+    "stop_reasons": {}
+  },
+  "operational_mode": "READ_ONLY_AUDIT",
+  "policy_version": "3.1.0",
+  "reasoning": {
+    "attempts_used": 1,
+    "context_budget": "LARGE",
+    "contributions": {
+      "ambiguity": 3.0,
+      "architectural": 3,
+      "complexity": 3.0,
+      "database_migration": 0,
+      "many_files": 2,
+      "multiple_modules": 2,
+      "production_critical": 3,
+      "security_sensitive": 0,
+      "tests_required": 1
+    },
+    "current_level": "HIGH",
+    "effective_effort": null,
+    "effective_model": null,
+    "escalation_allowed": false,
+    "escalations_used": 0,
+    "final_level": null,
+    "initial_level": "HIGH",
+    "last_escalation_reason": null,
+    "max_attempts": 3,
+    "max_child_depth": 3,
+    "max_escalations": 1,
+    "max_input_tokens": 160000,
+    "policy_version": "3.1.0",
+    "requested_effort": "high",
+    "requested_model": "gpt-5.6-sol",
+    "score": 17.0,
+    "signals": {
+      "ambiguity_score": 3.0,
+      "architectural": true,
+      "complexity_score": 3.0,
+      "database_migration": false,
+      "estimated_files": 12,
+      "estimated_modules": 5,
+      "production_critical": true,
+      "security_sensitive": false,
+      "task_type": "ANALYSIS",
+      "tests_required": true
+    },
+    "termination_reason": null
+  },
+  "reasoning_class": "DEEP",
+  "registry_version": "1.1.0",
+  "risk_class": "MEDIUM",
+  "routing": {
+    "agents_invoked": [
+      "aghuse_analyst"
+    ],
+    "agents_planned": [
+      "1"
+    ],
+    "agents_rejected_by_budget": [],
+    "agents_skipped": [],
+    "missing_agents": [],
+    "parallel_batches": 0,
+    "routing_outcome": "UNKNOWN",
+    "unnecessary_agents": []
+  },
+  "run_id": "jarvis-20260827T132736Z-9d7d7d1d",
+  "schema_version": "3.1.0",
+  "started_at": "2026-08-27T13:27:36.111Z",
+  "task_id": "54698-technical-analysis",
+  "telemetry_db": "/home/luisbiset/desenvolvimento/projetos/jarvis-agent/.jarvis/telemetry/jarvis.db",
+  "updated_at": "2026-08-27T13:27:57.316Z"
+}

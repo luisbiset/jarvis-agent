@@ -1,0 +1,112 @@
+{
+  "agents_used": [],
+  "budget": {
+    "budget_limit": 6,
+    "budget_override": false,
+    "budget_override_reason": null,
+    "budget_used": 0,
+    "max_agents": 6,
+    "max_parallel_agents": 2,
+    "required_reviewers": [
+      "technical_qa",
+      "diff_auditor",
+      "system_reviewer"
+    ]
+  },
+  "complexity": "TRANSVERSAL",
+  "config_hash": "7be6250e2ef8d02685ffafb1d1f283cd81daa824feb59bd34edae06aec8afc26",
+  "contracts_version": "3.0.0",
+  "created_at": "2026-08-27T01:51:17.233Z",
+  "current_state": "NEW",
+  "finished_at": null,
+  "gate_attempts": 0,
+  "gate_decision": null,
+  "gate_reason_code": null,
+  "gate_reason_detail": null,
+  "history": [
+    {
+      "at": "2026-08-27T01:51:17.233Z",
+      "from": null,
+      "reason": "run initialized",
+      "stop_reason": null,
+      "to": "NEW"
+    }
+  ],
+  "jarvis_version": "3.0.0",
+  "metrics": {
+    "agent_invocation_count": 0,
+    "cached_input_tokens": 0,
+    "credits": 0.0,
+    "duration_ms": 6,
+    "first_pass_success": null,
+    "handoff_count": 0,
+    "human_gate_pass_on_first_attempt": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "retry_count": 0,
+    "rework_cycles": 0,
+    "stop_count": 0,
+    "stop_reasons": {}
+  },
+  "operational_mode": "ASSISTED_AUTOPILOT",
+  "policy_version": "3.0.0",
+  "reasoning": {
+    "attempts_used": 0,
+    "contributions": {
+      "ambiguity": 1.0,
+      "architectural": 3,
+      "complexity": 3.0,
+      "database_migration": 0,
+      "many_files": 2,
+      "multiple_modules": 2,
+      "production_critical": 0,
+      "security_sensitive": 0,
+      "tests_required": 1
+    },
+    "current_level": "HIGH",
+    "effective_effort": null,
+    "escalation_allowed": false,
+    "escalations_used": 0,
+    "final_level": null,
+    "initial_level": "HIGH",
+    "last_escalation_reason": null,
+    "max_attempts": 3,
+    "max_child_depth": 3,
+    "max_escalations": 1,
+    "policy_version": "3.0.0",
+    "requested_effort": "high",
+    "score": 12.0,
+    "signals": {
+      "ambiguity_score": 1.0,
+      "architectural": true,
+      "complexity_score": 3.0,
+      "database_migration": false,
+      "estimated_files": 8,
+      "estimated_modules": 3,
+      "production_critical": false,
+      "security_sensitive": false,
+      "task_type": "ARCHITECTURE_IMPLEMENTATION",
+      "tests_required": true
+    },
+    "termination_reason": null
+  },
+  "reasoning_class": "DEEP",
+  "registry_version": "1.1.0",
+  "risk_class": "HIGH",
+  "routing": {
+    "agents_invoked": [],
+    "agents_planned": [],
+    "agents_rejected_by_budget": [],
+    "agents_skipped": [],
+    "missing_agents": [],
+    "parallel_batches": 0,
+    "routing_outcome": "UNKNOWN",
+    "unnecessary_agents": []
+  },
+  "run_id": "jarvis-20260827T015117Z-a9876738",
+  "schema_version": "3.0.0",
+  "started_at": "2026-08-27T01:51:17.233Z",
+  "task_id": "adaptive-model-cost-control-docx-20260826",
+  "telemetry_db": "/home/luisbiset/desenvolvimento/projetos/jarvis-agent/.jarvis/telemetry/jarvis.db",
+  "updated_at": "2026-08-27T01:51:17.239Z"
+}

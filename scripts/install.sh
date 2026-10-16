@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-python "${project_root}/scripts/validate.py"
+python3 "${project_root}/scripts/validate.py"
 run mkdir -p "$codex_home/agents"
 
 global_instructions_source="$project_root/config/AGENTS.md"

@@ -5,7 +5,7 @@ import argparse
 import json
 import re
 import sys
-from .api.runs import RunService
+from .orchestrator import Orchestrator
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -32,13 +32,10 @@ def main() -> int:
         if operation in {"IMPLEMENT", "MANUTENCAO"} and args.execute and not args.confirm:
             print(json.dumps({"status": "WAITING_INPUT", "message": f"{operation} exige --confirm explícito."}, ensure_ascii=False))
             return 0
-        service = RunService()
-        run = service.create(payload)
-        if args.execute:
-            result = service.execute(run["run_id"])
-            print(json.dumps(result, ensure_ascii=False, indent=2) if args.json else service.present_result(result))
-        else:
-            print(json.dumps(run, ensure_ascii=False, indent=2))
+        orchestrator = Orchestrator()
+        context = orchestrator.create(payload)
+        result = orchestrator.execute(context, confirm=args.confirm)
+        print(json.dumps(result.as_dict(), ensure_ascii=False, indent=2))
         return 0
     else:
         parser.error("use /analisar, /planejar, /implementar, /validar ou /manutencao")

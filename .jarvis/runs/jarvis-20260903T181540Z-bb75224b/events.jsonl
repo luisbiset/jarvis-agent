@@ -1,0 +1,2 @@
+{"at": "2026-09-03T18:15:40.572Z", "event": "RUN_INITIALIZED", "run_id": "jarvis-20260903T181540Z-bb75224b", "state": "NEW"}
+{"at": "2026-09-03T18:16:01.331Z", "classification": "TRANSVERSAL", "event": "TECHNICAL_HANDOFF_GENERATED", "evidence_status": "CONFIRMED", "handoff_duration_ms": 0, "handoff_id": "technical-handoff-b0f283bbff4ee664", "handoff_tokens": 0, "run_id": "jarvis-20260903T181540Z-bb75224b", "teachback_questions": 4, "teachback_required": false}

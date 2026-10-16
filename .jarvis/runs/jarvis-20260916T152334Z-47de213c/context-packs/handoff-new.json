@@ -1,0 +1,27 @@
+{
+  "blockers": [],
+  "complexity": "LOCALIZED",
+  "contracts_changed": [],
+  "decisions": [],
+  "files": [],
+  "jarvis_version": "3.1.0",
+  "limitations": [],
+  "next": [],
+  "operational_mode": "ASSISTED_AUTOPILOT",
+  "ownership": {},
+  "reasoning_class": "FAST",
+  "requirement_ids": [],
+  "risk_class": "LOW",
+  "risks": [],
+  "run_id": "jarvis-20260916T152334Z-47de213c",
+  "schema_version": "2.0.0",
+  "stage": "NEW",
+  "status": "IN_PROGRESS",
+  "stop_reason": null,
+  "validations": {
+    "executed": [],
+    "failed": [],
+    "not_executed": [],
+    "passed": []
+  }
+}

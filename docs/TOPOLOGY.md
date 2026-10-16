@@ -52,5 +52,4 @@ Versão comportamental: `3.1.0`.
 | `FLOW-002` | flow_policy | Redmine, banco, deploy, commit e push exigem autorização própria; aprovação anterior não é autorização implícita. |
 | `FLOW-003` | flow_policy | Toda tarefa usa sinais objetivos e policy V3 para reasoning adaptativo, budgets e telemetria por tentativa, com resumo métrico no fechamento. |
 | `FLOW-004` | flow_policy | Mudanças relevantes geram transferência de conhecimento proporcional, baseada em evidências e recuperável por tarefa. |
-| `FLOW-005` | flow_policy | O runtime seleciona times lógicos antes do menor conjunto de agentes, preservando escrita e revisão independente. |
-| `RAG-001` | knowledge_policy | Retrieval local usa provenance, respeita o context budget, recusa conteúdo sensível antes da indexação e exige confirmação na fonte para decisões críticas. |
+| `FLOW-005` | flow_policy | O orchestrator seleciona times lógicos antes do menor conjunto de agentes, preservando escrita e revisão independente. |

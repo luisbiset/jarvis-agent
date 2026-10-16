@@ -1,0 +1,231 @@
+{
+  "changed_components": [
+    {
+      "description": "índice incremental SQLite",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/indexer.py",
+      "reason": "persistência separada e invalidação por hash",
+      "symbol": "RagIndex"
+    },
+    {
+      "description": "chunking estrutural",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/chunkers.py",
+      "reason": "preserva símbolos e linhas",
+      "symbol": "chunk_text"
+    },
+    {
+      "description": "retrieval e orçamento",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/retriever.py",
+      "reason": "ranking, dedupe e Top-K",
+      "symbol": "retrieve"
+    },
+    {
+      "description": "integração runtime",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "context pack, cache e telemetria",
+      "symbol": "rag_retrieve"
+    }
+  ],
+  "classification": "TRANSVERSAL",
+  "created_at": "2026-09-03T18:16:01.331Z",
+  "decisions": [
+    {
+      "description": "fallback lexical local",
+      "evidence_status": "CONFIRMED",
+      "path": "contracts/rag-policy.json",
+      "reason": "nenhum provider externo é obrigatório",
+      "symbol": "fallback_mode"
+    },
+    {
+      "description": "interfaces desacopladas",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/models.py",
+      "reason": "provider sem acoplamento ao runtime",
+      "symbol": "EmbeddingProvider"
+    },
+    {
+      "description": "vector store desacoplado",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/models.py",
+      "reason": "permite evolução híbrida",
+      "symbol": "VectorStore"
+    }
+  ],
+  "evidence_status": "CONFIRMED",
+  "execution_flow": [
+    {
+      "description": "indexação do corpus",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/indexer.py",
+      "reason": "entrada do pipeline",
+      "symbol": "index_repo"
+    },
+    {
+      "description": "seleção de chunks",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/retriever.py",
+      "reason": "aplica budget e provenance",
+      "symbol": "retrieve"
+    },
+    {
+      "description": "gravação por execução",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/retriever.py",
+      "reason": "produz rag-context.json",
+      "symbol": "write_context_pack"
+    }
+  ],
+  "execution_id": null,
+  "handoff_id": "technical-handoff-b0f283bbff4ee664",
+  "handoff_level": "FULL",
+  "new_behavior": "O Jarvis indexa fontes textuais seguras incrementalmente, recupera chunks relevantes dentro do context budget e reutiliza packs frescos sem contabilizar chamada de modelo.",
+  "policy_version": "1.0.0",
+  "previous_behavior": "O Jarvis controlava orçamento de contexto, mas dependia de leituras diretas e não possuía índice ou context pack recuperado por relevância.",
+  "questions": [
+    {
+      "evidence_refs": [
+        "rag/chunkers.py#chunk_text"
+      ],
+      "expected_concepts": [
+        "chunk_text",
+        "chunking",
+        "estrutural"
+      ],
+      "prompt": "Qual símbolo concentra a mudança principal?",
+      "question_id": "Q1"
+    },
+    {
+      "evidence_refs": [
+        "contracts/rag-policy.json#fallback_mode"
+      ],
+      "expected_concepts": [
+        "fallback_mode",
+        "fallback",
+        "lexical"
+      ],
+      "prompt": "Por que essa decisão técnica foi adotada?",
+      "question_id": "Q2"
+    },
+    {
+      "evidence_refs": [
+        "tests/test_rag.py#test_incremental_index_skips_unchanged_and_invalidates_one_file"
+      ],
+      "expected_concepts": [
+        "test_incremental_index_skips_unchanged_and_invalidates_one_file",
+        "indexação",
+        "incremental"
+      ],
+      "prompt": "Qual teste protege a regressão principal?",
+      "question_id": "Q3"
+    },
+    {
+      "evidence_refs": [
+        "rag/chunkers.py#chunk_text"
+      ],
+      "expected_concepts": [
+        "chunk_text",
+        "chunking",
+        "estrutural"
+      ],
+      "prompt": "Onde você começaria uma nova investigação dessa regra?",
+      "question_id": "Q4"
+    }
+  ],
+  "reading_order": [
+    {
+      "description": "chunking estrutural",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/chunkers.py",
+      "reason": "preserva símbolos e linhas",
+      "symbol": "chunk_text"
+    },
+    {
+      "description": "índice incremental SQLite",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/indexer.py",
+      "reason": "persistência separada e invalidação por hash",
+      "symbol": "RagIndex"
+    },
+    {
+      "description": "retrieval e orçamento",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/retriever.py",
+      "reason": "ranking, dedupe e Top-K",
+      "symbol": "retrieve"
+    },
+    {
+      "description": "integração runtime",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "context pack, cache e telemetria",
+      "symbol": "rag_retrieve"
+    },
+    {
+      "description": "indexação incremental e invalidação",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_rag.py",
+      "reason": "teste offline aprovado",
+      "symbol": "test_incremental_index_skips_unchanged_and_invalidates_one_file"
+    },
+    {
+      "description": "runtime sem model call",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_rag.py",
+      "reason": "teste offline aprovado",
+      "symbol": "test_runtime_writes_rag_context_without_counting_model_call"
+    },
+    {
+      "description": "segurança do corpus",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_rag.py",
+      "reason": "teste offline aprovado",
+      "symbol": "test_removed_and_sensitive_files_do_not_leave_active_chunks"
+    }
+  ],
+  "risks": [
+    {
+      "description": "RAG recupera candidatos e não confirma regra crítica",
+      "evidence_status": "CONFIRMED",
+      "path": "docs/RAG.md",
+      "reason": "evita confiança indevida no índice",
+      "symbol": "Confirmação e segurança"
+    },
+    {
+      "description": "conteúdo sensível recusado antes da persistência",
+      "evidence_status": "CONFIRMED",
+      "path": "rag/security.py",
+      "reason": "limite SEC-001",
+      "symbol": "safe_text"
+    }
+  ],
+  "run_id": "jarvis-20260903T181540Z-bb75224b",
+  "schema_version": "1.0.0",
+  "summary": "RAG local-first integrado ao runtime Jarvis com indexação incremental, retrieval lexical, budgets, provenance, cache, telemetria e evals offline.",
+  "task_id": "RAG-IMPLEMENTATION-20260903",
+  "test_evidence": [
+    {
+      "description": "indexação incremental e invalidação",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_rag.py",
+      "reason": "teste offline aprovado",
+      "symbol": "test_incremental_index_skips_unchanged_and_invalidates_one_file"
+    },
+    {
+      "description": "runtime sem model call",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_rag.py",
+      "reason": "teste offline aprovado",
+      "symbol": "test_runtime_writes_rag_context_without_counting_model_call"
+    },
+    {
+      "description": "segurança do corpus",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_rag.py",
+      "reason": "teste offline aprovado",
+      "symbol": "test_removed_and_sensitive_files_do_not_leave_active_chunks"
+    }
+  ]
+}

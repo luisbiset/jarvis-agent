@@ -20,7 +20,6 @@
                                                        ],
                                     "operational_mode":  "READ_ONLY_AUDIT",
                                     "can_write":  false,
-                                    "rag_required":  true,
                                     "human_gate":  false,
                                     "output":  "analysis",
                                     "acceptance":  [
@@ -47,7 +46,6 @@
                                                        ],
                                     "operational_mode":  "COPILOT",
                                     "can_write":  false,
-                                    "rag_required":  true,
                                     "human_gate":  false,
                                     "output":  "plan",
                                     "acceptance":  [
@@ -76,7 +74,6 @@
                                                           ],
                                        "operational_mode":  "ASSISTED_AUTOPILOT",
                                        "can_write":  true,
-                                       "rag_required":  true,
                                        "human_gate":  true,
                                        "requires_checkpoint":  true,
                                        "output":  "implementation",
@@ -94,7 +91,6 @@
                                     "allowed_stages":  ["PLAN_APPROVED", "IMPLEMENTING", "VALIDATING"],
                                     "operational_mode":  "ASSISTED_AUTOPILOT",
                                     "can_write":  true,
-                                    "rag_required":  true,
                                     "human_gate":  true,
                                     "requires_checkpoint":  true,
                                     "output":  "maintenance",
@@ -119,7 +115,6 @@
                                                       ],
                                    "operational_mode":  "READ_ONLY_AUDIT",
                                    "can_write":  false,
-                                   "rag_required":  true,
                                    "human_gate":  false,
                                    "output":  "validation",
                                    "acceptance":  [

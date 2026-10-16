@@ -35,8 +35,6 @@ def audit(root: Path) -> dict:
             continue
         meaningful_lines = "\n".join(line for line in text.splitlines() if "re.compile" not in line and "Pattern(" not in line and "secret-scan: allow-test-fixture" not in line and not path.name.endswith(".env.example") and not any(token in line for token in ("requiredEnv(", "requiredText(", "process.env.", "redact(", "apiKey:", "const password =")))
         for pattern, kind in ((SECRET, "credential"), (PRIVATE_URL, "private_url"), (CLINICAL, "clinical_data")):
-            if path.as_posix().endswith("rag/security.py") and kind == "credential":
-                continue
             candidates = pattern.findall(meaningful_lines)
             if kind == "private_url":
                 candidates = [item for item in candidates if not any(host in item for host in PUBLIC_URLS)]

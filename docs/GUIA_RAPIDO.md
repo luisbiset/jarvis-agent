@@ -8,7 +8,6 @@ Use `$nome-da-skill` no início do pedido quando quiser forçar um fluxo especí
 python3 scripts/aghuse_guard.py audit
 python3 scripts/aghuse_guard.py git-summary
 python3 scripts/aghuse.py simular --task-id TESTE
-python3 scripts/aghuse.py rag search --query "regra de negócio"
 python3 scripts/aghuse.py executar dashboard
 ```
 

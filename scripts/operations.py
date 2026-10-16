@@ -44,15 +44,14 @@ def validate(operation_id: str, parameters: dict[str, Any]) -> dict[str, Any]:
     return clean
 
 
-def create_preview(operation_id: str, project_id: str, parameters: dict[str, Any], *, rag: dict[str, Any], metrics: dict[str, Any], provider: str) -> dict[str, Any]:
+def create_preview(operation_id: str, project_id: str, parameters: dict[str, Any], *, metrics: dict[str, Any], provider: str) -> dict[str, Any]:
     operation_id = operation_id.upper()
     clean = validate(operation_id, parameters)
     operation = OPERATIONS[operation_id]
     proposal_id = "proposal-" + uuid.uuid4().hex
-    safe_context = {"retrieved": bool(rag.get("retrieved")), "query_id": rag.get("query_id"), "sources": len(rag.get("hits", [])) if isinstance(rag.get("hits"), list) else rag.get("selected_chunks"), "ranking_version": rag.get("ranking_version"), "context_budget": rag.get("context_budget", "SMALL")}
     skill = OPERATION_SKILLS[operation_id]
     policy = skill_config(skill)
-    proposal = {"proposal_id": proposal_id, "project_id": project_id, "operation_id": operation_id, "skill": skill, "template_version": "2.0.0", "parameters": clean, "status": "PROPOSAL_READY", "mutates": operation["mutates"], "requires_checkpoint": bool(policy.get("requires_checkpoint", False)), "human_gate": bool(policy.get("human_gate", False)), "allowed_agents": list(policy["allowed_agents"]), "rag": safe_context, "model_requested": metrics.get("initial", {}).get("model") or "UNKNOWN/NOT_CONFIRMED", "reasoning": metrics.get("initial", {}).get("reasoning") or "UNKNOWN/NOT_CONFIRMED", "context_budget": metrics.get("initial", {}).get("context_budget") or "SMALL", "provider": provider, "agents": [], "metrics": {"credits": "UNKNOWN/NOT_OBSERVED", "tokens": "UNKNOWN/NOT_OBSERVED"}, "evidence_refs": [safe_context.get("query_id") or "UNKNOWN/NOT_CONFIRMED"], "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    proposal = {"proposal_id": proposal_id, "project_id": project_id, "operation_id": operation_id, "skill": skill, "template_version": "2.0.0", "parameters": clean, "status": "PROPOSAL_READY", "mutates": operation["mutates"], "requires_checkpoint": bool(policy.get("requires_checkpoint", False)), "human_gate": bool(policy.get("human_gate", False)), "allowed_agents": list(policy["allowed_agents"]), "model_requested": metrics.get("initial", {}).get("model") or "UNKNOWN/NOT_CONFIRMED", "reasoning": metrics.get("initial", {}).get("reasoning") or "UNKNOWN/NOT_CONFIRMED", "context_budget": metrics.get("initial", {}).get("context_budget") or "SMALL", "provider": provider, "agents": [], "metrics": {"credits": "UNKNOWN/NOT_OBSERVED", "tokens": "UNKNOWN/NOT_OBSERVED"}, "evidence_refs": [], "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     proposal["proposal_hash"] = _hash(proposal)
     return proposal
 

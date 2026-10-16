@@ -1,0 +1,166 @@
+{
+  "changed_components": [
+    {
+      "description": "política central dos times",
+      "evidence_status": "CONFIRMED",
+      "path": "contracts/teams-policy.json",
+      "reason": "define membership e estados",
+      "symbol": "ANALISE"
+    },
+    {
+      "description": "runtime de roteamento",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "infere e valida time",
+      "symbol": "resolve_team"
+    }
+  ],
+  "classification": "CRITICAL",
+  "created_at": "2026-09-07T12:37:08.761Z",
+  "decisions": [
+    {
+      "description": "preservar state machine",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "mapeamento evita novos estados",
+      "symbol": "team_for_stage"
+    },
+    {
+      "description": "compatibilidade de task patterns",
+      "evidence_status": "CONFIRMED",
+      "path": "contracts/task-patterns.json",
+      "reason": "mantém agents durante migração",
+      "symbol": "legacy_agents_field"
+    }
+  ],
+  "evidence_status": "CONFIRMED",
+  "execution_flow": [
+    {
+      "description": "roteamento team-first",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "seleciona conjunto mínimo sem chamada LLM",
+      "symbol": "team_route"
+    },
+    {
+      "description": "invocação atribuída ao time",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "persiste team e valida membership",
+      "symbol": "invocation_start"
+    }
+  ],
+  "execution_id": null,
+  "handoff_id": "technical-handoff-9787e6cf54a38e34",
+  "handoff_level": "FULL",
+  "new_behavior": "O runtime seleciona e valida time antes do agente, registra telemetria e contexto por time e preserva compatibilidade.",
+  "policy_version": "1.0.0",
+  "previous_behavior": "Estados e agentes existiam, mas a dimensão de time era implícita.",
+  "questions": [
+    {
+      "evidence_refs": [
+        "contracts/teams-policy.json#ANALISE"
+      ],
+      "expected_concepts": [
+        "ANALISE",
+        "política",
+        "central"
+      ],
+      "prompt": "Qual símbolo concentra a mudança principal?",
+      "question_id": "Q1"
+    },
+    {
+      "evidence_refs": [
+        "scripts/jarvis_runtime.py#team_for_stage"
+      ],
+      "expected_concepts": [
+        "team_for_stage",
+        "preservar",
+        "state"
+      ],
+      "prompt": "Por que essa decisão técnica foi adotada?",
+      "question_id": "Q2"
+    },
+    {
+      "evidence_refs": [
+        "tests/test_team_routing.py#TeamRoutingTest"
+      ],
+      "expected_concepts": [
+        "TeamRoutingTest",
+        "roteamento",
+        "por"
+      ],
+      "prompt": "Qual teste protege a regressão principal?",
+      "question_id": "Q3"
+    },
+    {
+      "evidence_refs": [
+        "contracts/teams-policy.json#ANALISE"
+      ],
+      "expected_concepts": [
+        "ANALISE",
+        "política",
+        "central"
+      ],
+      "prompt": "Onde você começaria uma nova investigação dessa regra?",
+      "question_id": "Q4"
+    },
+    {
+      "evidence_refs": [
+        "tests/test_team_routing.py#test_agent_outside_team_is_rejected"
+      ],
+      "expected_concepts": [
+        "test_agent_outside_team_is_rejected",
+        "agente",
+        "fora"
+      ],
+      "prompt": "Qual risco ou invariante não pode ser quebrado?",
+      "question_id": "Q5"
+    }
+  ],
+  "reading_order": [
+    {
+      "description": "política central dos times",
+      "evidence_status": "CONFIRMED",
+      "path": "contracts/teams-policy.json",
+      "reason": "define membership e estados",
+      "symbol": "ANALISE"
+    },
+    {
+      "description": "runtime de roteamento",
+      "evidence_status": "CONFIRMED",
+      "path": "scripts/jarvis_runtime.py",
+      "reason": "infere e valida time",
+      "symbol": "resolve_team"
+    },
+    {
+      "description": "roteamento por times",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_team_routing.py",
+      "reason": "cobre inferência, membership e fast path",
+      "symbol": "TeamRoutingTest"
+    }
+  ],
+  "risks": [
+    {
+      "description": "agente fora do time deve falhar",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_team_routing.py",
+      "reason": "protege membership",
+      "symbol": "test_agent_outside_team_is_rejected"
+    }
+  ],
+  "run_id": "jarvis-20260907T123703Z-32061b19",
+  "schema_version": "1.0.0",
+  "summary": "Formalização de três times lógicos no runtime Jarvis sem novos coordenadores LLM.",
+  "task_id": "JARVIS-TEAMS-1",
+  "test_evidence": [
+    {
+      "description": "roteamento por times",
+      "evidence_status": "CONFIRMED",
+      "path": "tests/test_team_routing.py",
+      "reason": "cobre inferência, membership e fast path",
+      "symbol": "TeamRoutingTest"
+    }
+  ]
+}

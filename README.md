@@ -6,17 +6,21 @@ Arquitetura canônica para análise, planejamento, implementação e validação
 
 ```text
 src/aghuse_assistant/
-├── api/          API de operações e runs
+├── analysis/     interpretação, plano, evidências, cobertura e impacto
+├── planning/     plano técnico a partir de análise completa
+├── implementation/ execução autorizada e rollback
+├── validation/   checks independentes e regressões
+├── maintenance/  manutenção isolada do próprio Assistant
 ├── agents/       seleção por competência
 ├── mcp/          registro passivo de ferramentas
 ├── operations/   ANALYZE, PLAN, IMPLEMENT e VALIDATE
 ├── policy/       permissões por operação
-├── rag/          recuperação opcional
-└── runtime/      Run, Context, Dispatcher e Store
+├── orchestrator/ estado, policy, contexto e execução
+├── teams/        Análise, Planejamento, Dev, QA e Manutenção
+└── gateway/      Git, Oracle, Redmine e Build/Test
 
 config/agents/    perfis backend, database, frontend, qa e architecture
 config/contracts/ contratos e políticas
-frontend/         dashboard
 plugins/          plugin canônico e integrações externas
 tests/            testes e fixtures
 ```
@@ -31,4 +35,4 @@ python -m aghuse_assistant.app /validar "objetivo"
 python scripts/validate.py
 ```
 
-O RAG é opcional e fica em `.aghuse-assistant/rag/`. A implementação é a única operação autorizada a alterar arquivos.
+O Codex é o agente principal. O orchestrator é determinístico e controla contexto, permissões, checkpoints e execução. A implementação é a única operação autorizada a alterar arquivos.

@@ -298,8 +298,6 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
     required = {
         "version.json",
         "reasoning-policy.json",
-        "rag-policy.json",
-        "rag-context.schema.json",
         "chat-metrics.schema.json",
         "teams-policy.json",
         "knowledge-transfer-policy.json",
@@ -323,7 +321,7 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
         fail("dashboard-integration.schema.json deve ser fechado e versionado em 1.0.0")
 
     version = load_json(contract_dir / "version.json")
-    if version.get("product_version") != "3.1.0" or version.get("execution_state_schema_version") != "3.1.0" or version.get("telemetry_schema_version") != "3.1.0" or version.get("reasoning_policy_version") != "3.1.0" or version.get("technical_handoff_schema_version") != "1.0.0" or version.get("knowledge_transfer_policy_version") != "1.0.0" or version.get("rag_policy_version") != "1.0.0" or version.get("rag_context_schema_version") != "1.0.0" or version.get("teams_policy_version") != "1.0.0" or version.get("routing_schema_version") != 2:
+    if version.get("product_version") != "3.1.0" or version.get("execution_state_schema_version") != "3.1.0" or version.get("telemetry_schema_version") != "3.1.0" or version.get("reasoning_policy_version") != "3.1.0" or version.get("technical_handoff_schema_version") != "1.0.0" or version.get("knowledge_transfer_policy_version") != "1.0.0" or version.get("teams_policy_version") != "1.0.0" or version.get("routing_schema_version") != 2:
         fail("config/contracts/version.json não declara AGHUse Assistant/runtime/policy 3.1.0 e routing schema 2")
 
     handoff = load_json(contract_dir / "handoff.schema.json")
@@ -342,6 +340,20 @@ def validate_versioned_contracts(agent_names: set[str]) -> None:
     execution = load_json(contract_dir / "execution-state.schema.json")
     if execution.get("additionalProperties") is not False:
         fail("execution-state.schema.json deve ser fechado")
+
+    forbidden_rag_terms = re.compile(r"(?i)(?:\brag\b|retriev|embedding|rerank|taxonomy|context[-_ ]?pack)")
+    scan_roots = (ROOT / "src", ROOT / "scripts", ROOT / "config", ROOT / "docs", ROOT / "tests", ROOT / "README.md", ROOT / "AGENTS.md")
+    for scan_root in scan_roots:
+        paths = [scan_root] if scan_root.is_file() else scan_root.rglob("*")
+        for path in paths:
+            if path == Path(__file__).resolve() or not path.is_file() or path.suffix in {".pyc", ".zip", ".docx"} or "__pycache__" in path.parts:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            if forbidden_rag_terms.search(text):
+                fail(f"Referência residual de RAG em {path.relative_to(ROOT)}")
 
     policies = load_json(contract_dir / "policy-registry.json").get("policies", [])
     policy_ids: set[str] = set()
@@ -447,29 +459,6 @@ def validate_reasoning_policy() -> None:
     cost_limits = policy.get("cost_limits", {})
     if cost_limits.get("mode") != "ENFORCED" or not 0 < cost_limits.get("soft_limit_ratio", 0) < 1:
         fail("Cost limits devem usar modo ENFORCED e soft_limit_ratio entre 0 e 1")
-
-
-def validate_rag_policy() -> None:
-    policy = load_json(ROOT / "config/contracts/rag-policy.json")
-    if policy.get("policy_version") != "1.0.0" or policy.get("enabled") is not True:
-        fail("RAG policy deve estar habilitada e versionada em 1.0.0")
-    if policy.get("retrieval", {}).get("fallback_mode") != "LEXICAL_ONLY":
-        fail("RAG deve possuir fallback LEXICAL_ONLY")
-    reasoning = load_json(ROOT / "config/contracts/reasoning-policy.json")
-    previous = {"candidate_k": 0, "top_k": 0, "max_tokens": 0, "max_sources": 0}
-    for level in ("SMALL", "MEDIUM", "LARGE"):
-        current = policy.get("budgets", {}).get(level, {})
-        for key in previous:
-            value = current.get(key, 0)
-            if not isinstance(value, int) or value < 1 or value < previous[key]:
-                fail(f"RAG budget inválido ou não monotônico: {level}.{key}")
-            previous[key] = value
-        maximum = reasoning.get("context_limits", {}).get(level, {}).get("max_context_tokens", 0)
-        if current.get("max_tokens", 0) > maximum:
-            fail(f"RAG excede max_context_tokens global em {level}")
-    schema = load_json(ROOT / "config/contracts/rag-context.schema.json")
-    if schema.get("additionalProperties") is not False or schema.get("properties", {}).get("schema_version", {}).get("const") != "1.0.0":
-        fail("rag-context.schema.json deve ser fechado e versionado em 1.0.0")
 
 
 def validate_knowledge_transfer_policy() -> None:
@@ -653,7 +642,6 @@ def main() -> int:
     validate_redmine_server()
 
     validate_reasoning_policy()
-    validate_rag_policy()
     validate_knowledge_transfer_policy()
     validate_teams_policy(agents)
     validate_critical_contracts()
