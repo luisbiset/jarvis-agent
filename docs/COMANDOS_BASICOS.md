@@ -21,10 +21,10 @@ python3 scripts/aghuse_guard.py audit
 python3 scripts/aghuse_guard.py git-summary
 python3 scripts/aghuse.py simular --task-id TESTE --task-type SECURITY --security-sensitive
 python3 scripts/aghuse.py simular-redmine --task-id 55315
-python3 scripts/aghuse.py executar dashboard
+aghuse-assistant /analisar "objetivo" --plan
 ```
 
-`auditar` verifica credenciais, URLs privadas e dados clínicos detectáveis. `resumo-git` é somente leitura. `simular` não cria estado nem acessa serviços externos. A busca de código é feita pelo Codex e pelas ferramentas MCP.
+`auditar` verifica credenciais, URLs privadas e dados clínicos detectáveis. `resumo-git` é somente leitura. `simular` não cria estado nem acessa serviços externos. A CLI `aghuse-assistant` oferece busca de código local, somente leitura e limitada ao workspace; não existe dashboard neste runtime.
 
 Para bloquear automaticamente commits inseguros nesta cópia:
 

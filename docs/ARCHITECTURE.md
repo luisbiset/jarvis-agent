@@ -14,7 +14,7 @@ O pacote `src/aghuse_assistant/` contém as fronteiras públicas:
 
 ```text
 aghuse_assistant/
-├── operations/   # quatro operações
+├── operations/   # cinco operações
 ├── analysis/     # engine genérico, pipeline, evidências e estratégia AGHUse
 ├── planning/     # plano técnico; exige AnalysisResult COMPLETE
 ├── implementation/ # execução mutável autorizada e rollback
@@ -23,12 +23,11 @@ aghuse_assistant/
 ├── orchestrator/ # contexto, estado e coordenação determinística
 ├── policy/       # permissões por operação
 ├── agents/       # capabilities técnicas
-├── mcp/          # registro passivo de tools
 ├── teams/        # Analysis, Planning, Development, QA e Maintenance
-├── gateway/      # Tool Gateway/MCP
+├── gateway/      # Tool Gateway e adaptadores locais
 └── app.py        # CLI do Codex
 ```
 
-Implementação e manutenção confirmadas são as únicas operações autorizadas a editar arquivos. Artefatos tipados circulam pelo `ExecutionContext` sem store persistente. Todas as ferramentas passam pelo Tool Gateway; planejamento e validação aceitam somente leitura.
+Implementação e manutenção confirmadas são as únicas operações autorizadas a editar arquivos. Artefatos tipados circulam pelo `ExecutionContext` sem store persistente. Todas as ferramentas passam pelo Tool Gateway; planejamento e validação aceitam somente leitura. O runtime local registra apenas `code.search`, que é limitada ao workspace e não acessa rede, banco ou Redmine.
 
-`scripts/` contém somente tooling do repositório: validação, instalação, geração de artefatos e manutenção. Busca de código é feita diretamente pelo Codex e pelas ferramentas MCP; configurações e contratos ficam em `config/agents` e `config/contracts`; fixtures ficam em `tests/fixtures`.
+`scripts/` contém tooling do repositório: validação, instalação, geração de artefatos e manutenção. Configurações e contratos ficam em `config/agents` e `config/contracts`; fixtures ficam em `tests/fixtures`. Não há servidor HTTP, dashboard operacional, banco de telemetria nem pacote `mcp` no runtime canônico.

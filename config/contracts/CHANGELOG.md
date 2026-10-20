@@ -1,5 +1,11 @@
 # Changelog comportamental
 
+## Não lançado
+
+- O runtime local documenta a CLI `aghuse-assistant` como único entry point; a API HTTP e a dashboard não fazem parte do pacote canônico.
+- A análise local registra evidência qualificada por caminho, linha, classificação semântica, trecho e termos correspondentes; `COMPLETE` requer cobertura das áreas obrigatórias relevantes.
+- A operação `IMPLEMENT` exige plano aprovado, confirmação e ferramenta de workspace com rollback.
+
 ## Times 1.0.0 - 2026-09-07
 
 - Formaliza Time de Análise, Time de Desenvolvimento e Time de Revisão e Qualidade sem criar coordenadores LLM.

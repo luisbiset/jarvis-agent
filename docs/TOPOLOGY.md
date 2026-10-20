@@ -8,14 +8,15 @@ Versão comportamental: `3.1.0`.
 
 | Plugin | Versão | Skills |
 |---|---|---:|
-| aghuse-assistant | `0.1.0` | 4 |
-| redmine-agent | `0.1.0+codex.20261006013631` | 1 |
-| sfa-agent | `0.1.0+codex.20261006013631` | 1 |
+| aghuse-assistant | `0.1.1+codex.20261008133544` | 5 |
+| redmine-agent | `0.1.0+codex.20261008133543` | 1 |
+| sfa-agent | `0.1.0+codex.20261008133543` | 1 |
 
 ## Times de agentes
 
 | Time | Agente | Papel | Reasoning padrão | Sandbox | Responsabilidade |
 |---|---|---|---|---|---|
+| Time de Desenvolvimento | aghuse_assistant | ASSISTANT_MAINTAINER | adaptive | workspace-write | Especialista exclusivo na manutenção do AGHUse Assistant e seus plugins, skills, contratos, runtime, agentes, testes e documentação. |
 | Time de Revisão e Qualidade | architecture | DIFF_AUDITOR | adaptive | read-only | Auditor do diff do AGHUse em modo somente leitura. |
 | Time de Desenvolvimento | backend | BACKEND | adaptive | workspace-write | Especialista no backend do AGHUse em Java 17, Maven multi-módulo, Java EE 8, EJB, CDI, JAX-RS e WildFly. Use para regras, facades, serviços, APIs, integrações e empacotamento EAR. |
 | Time de Desenvolvimento | database | DATABASE | adaptive | workspace-write | Especialista na persistência Oracle/PostgreSQL do AGHUse. Use para entidades JPA, DAOs, HQL/Criteria/SQL, dialetos, JTA, unidades aghu-pu/aghu-fit-pu, Envers, Search, cache e desempenho. |
@@ -30,8 +31,9 @@ Versão comportamental: `3.1.0`.
 
 | Plugin | Skill | Roteamento |
 |---|---|---|
-| aghuse-assistant | analisar | Executa uma análise independente do AGHUse Assistant sobre projeto, tarefa ou escopo, em modo somente leitura. |
+| aghuse-assistant | analisar | Executa uma analise tecnica independente, em modo somente leitura, sobre projeto, tarefa ou escopo, usando o Redmine apenas como fonte de contexto e requisitos. |
 | aghuse-assistant | implementar | Executa uma implementação controlada pelo AGHUse Assistant, com aprovação e checkpoint. |
+| aghuse-assistant | manutencao | Mantém exclusivamente o AGHUse Assistant, seus plugins, skills, contratos, runtime, agentes, testes e documentação. |
 | aghuse-assistant | planejar | Cria um plano técnico independente pelo AGHUse Assistant, sem alterar arquivos. |
 | aghuse-assistant | validar | Executa uma validação independente pelo AGHUse Assistant, sem corrigir automaticamente. |
 | redmine-agent | redmine-workflows | Consultar e gerenciar projetos, chamados, comentários, status, responsáveis e horas no Redmine da SESAB. Usar quando o usuário pedir para localizar, resumir, criar ou atualizar chamados do Redmine, acompanhar suas pendências, registrar trabalho ou preparar triagens e relatórios a partir dos tickets. |
@@ -52,4 +54,4 @@ Versão comportamental: `3.1.0`.
 | `FLOW-002` | flow_policy | Redmine, banco, deploy, commit e push exigem autorização própria; aprovação anterior não é autorização implícita. |
 | `FLOW-003` | flow_policy | Toda tarefa usa sinais objetivos e policy V3 para reasoning adaptativo, budgets e telemetria por tentativa, com resumo métrico no fechamento. |
 | `FLOW-004` | flow_policy | Mudanças relevantes geram transferência de conhecimento proporcional, baseada em evidências e recuperável por tarefa. |
-| `FLOW-005` | flow_policy | O orchestrator seleciona times lógicos antes do menor conjunto de agentes, preservando escrita e revisão independente. |
+| `FLOW-005` | flow_policy | O runtime seleciona times lógicos antes do menor conjunto de agentes, preservando escrita e revisão independente. |

@@ -8,7 +8,8 @@ Use `$nome-da-skill` no início do pedido quando quiser forçar um fluxo especí
 python3 scripts/aghuse_guard.py audit
 python3 scripts/aghuse_guard.py git-summary
 python3 scripts/aghuse.py simular --task-id TESTE
-python3 scripts/aghuse.py executar dashboard
+aghuse-assistant /analisar "objetivo"
+aghuse-assistant /analisar "objetivo" --plan
 ```
 
 ## Coordenação
@@ -63,7 +64,7 @@ Use para página negada, menu ausente, permissão, perfil ou `SecurityPhaseListe
 
 Use ao criar ou revisar aplicação e rollback Oracle/PostgreSQL.
 
-> Use `$implementar` para revisar estes scripts de aplicação e rollback, garantindo que ambos possam ser executados duas vezes com segurança. Não execute no banco.
+> Use `$implementar` para revisar os scripts Oracle e PostgreSQL de aplicação e rollback, sem idempotência. Não execute no banco.
 
 ### `$implementar`
 

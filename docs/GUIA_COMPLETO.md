@@ -82,7 +82,7 @@ Mostre o texto final e só publique após minha confirmação.
 
 ### AGHUse
 
-Usar para Java 17, Java EE, EJB, JSF, PrimeFaces, RN/ON, Facades, JPA, Oracle/PostgreSQL e testes. Nova regra deve reutilizar uma RN compatível; sem RN compatível, uma nova classe de negócio deve ser `*ON`. Todo script novo ou alterado deve possuir aplicação e rollback idempotentes.
+Usar para Java 17, Java EE, EJB, JSF, PrimeFaces, RN/ON, Facades, JPA, Oracle/PostgreSQL e testes. Nova regra deve reutilizar uma RN compatível; sem RN compatível, uma nova classe de negócio deve ser `*ON`. Todo script novo ou alterado deve possuir aplicação e rollback separados para Oracle e PostgreSQL, sem idempotência.
 
 Exemplo:
 
@@ -123,7 +123,7 @@ O usuário chama apenas o Aghuse Agent; não precisa memorizar os perfis interno
 | Auditor do diff | `architecture` | Revisar baseline, escopo, hunks, arquivos, EOL/encoding, segredos e higiene em leitura |
 | Gate humano | usuário | Aprovar, pedir correção e autorizar separadamente ações externas |
 
-`Análise paralela` e `Validação paralela` são estágios de coordenação. `Plano aprovado` e `Gate humano` são decisões reais do usuário, não subagentes. Um pedido direto, inequívoco e já delimitado de implementação pode funcionar como plano aprovado; ações como Redmine, banco, deploy, commit e push continuam exigindo autorização explícita própria.
+`Análise paralela` e `Validação paralela` são estágios de coordenação. `Plano aprovado` e `Gate humano` são decisões reais do usuário, não subagentes. A operação `IMPLEMENT` exige artefato de plano aprovado; ações como Redmine, banco, deploy, commit e push continuam exigindo autorização explícita própria.
 
 Exemplo completo:
 
@@ -187,12 +187,12 @@ Use para montar o pacote que será anexado ao Redmine. Scripts de implantação 
 
 ```text
 Use $implementar com o database para revisar os scripts da
-tarefa 51093. Confira aplicação e rollback idempotentes, comentários,
+tarefa 51093. Confira aplicação e rollback Oracle/PostgreSQL sem idempotência, comentários,
 restrições, índices, grants e ordem. Gere o manifesto com resumos SHA-256,
 mas não execute no banco e não adicione os SQL ao Git.
 ```
 
-Resultado esperado: lista ordenada, objetos afetados, achados, guardas de idempotência, limitações e manifesto de arquivos.
+Resultado esperado: lista ordenada, objetos afetados, achados, scripts de aplicação e rollback por dialeto, limitações e manifesto de arquivos.
 
 #### Diagnosticar segurança
 
@@ -342,8 +342,8 @@ caso não exista, crie uma ON.
 ```
 
 ```text
-Use o database para preparar aplicação e rollback idempotentes para
-Oracle e PostgreSQL. Não execute no banco.
+Use o database para preparar aplicação e rollback não idempotentes para Oracle e PostgreSQL.
+Não execute no banco.
 ```
 
 ```text
