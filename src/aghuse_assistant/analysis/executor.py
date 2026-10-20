@@ -4,7 +4,7 @@ from collections import deque
 from typing import Any
 
 from ..gateway import ToolGateway
-from .evidence import normalize
+from .evidence import normalize, validate
 from .models import InvestigationLimits, InvestigationPlan, InvestigationStep, InvestigationTrace
 
 
@@ -12,6 +12,7 @@ def execute(plan: InvestigationPlan, gateway: ToolGateway, limits: Investigation
     trace = InvestigationTrace()
     queue = deque(plan.steps)
     seen: set[tuple[str, str, str]] = set()
+    seen_findings: set[tuple[str, str, str, int]] = set()
     completed: set[str] = set()
 
     while queue:
@@ -58,7 +59,19 @@ def execute(plan: InvestigationPlan, gateway: ToolGateway, limits: Investigation
             payload = result.data if isinstance(result.data, list) else [result.data]
             for item in payload:
                 if isinstance(item, dict):
-                    step_findings.append(normalize(item, step.requirement_id))
+                    finding = normalize(item, step.requirement_id)
+                    finding["area"] = step.area
+                    valid, reason = validate(finding)
+                    if not valid:
+                        trace.limitations.append(f"{step.area}/{tool.name}: evidência inválida ({reason})")
+                        continue
+                    source = finding["source"]
+                    fingerprint = (finding["requirement_id"], step.area, source["path"], source["line"])
+                    if fingerprint not in seen_findings:
+                        seen_findings.add(fingerprint)
+                        step_findings.append(finding)
+                else:
+                    trace.limitations.append(f"{step.area}/{tool.name}: payload de evidência inválido")
 
         if successful_call and not step_findings:
             trace.no_occurrences.append(f"{step.area}: {step.query}")

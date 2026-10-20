@@ -13,7 +13,7 @@ from aghuse_assistant.planning.models import PlanResult
 
 def complete_analysis():
     gateway = ToolGateway()
-    gateway.register(ToolSpec("code.search", "analysis", "workspace", handler=lambda query: [{"requirement_id": query["requirement_id"], "component": "X", "classification": "REQUIRED", "conclusion": "ok", "type": "CODE", "source_id": "x.py:1", "source": {"path": "x.py", "line": 1}}]))
+    gateway.register(ToolSpec("code.search", "analysis", "workspace", handler=lambda query: [{"requirement_id": query["requirement_id"], "component": "X", "classification": "REQUIRED", "conclusion": "ok", "type": "CODE", "source_id": "x.py:1", "source": {"path": "x.py", "line": 1}, "matched_terms": ["objetivo"]}]))
     return AnalysisEngine().execute(ExecutionContext("other", "ANALYZE", "objetivo"), gateway)
 
 

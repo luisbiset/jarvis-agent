@@ -25,6 +25,7 @@ class OrchestratorGatewayTests(unittest.TestCase):
             "type": "CODE",
             "source_id": "src/ContaON.java:10",
             "source": {"path": "src/ContaON.java", "line": 10},
+            "matched_terms": ["calculo"],
         }]))
         gateway.register(ToolSpec("code.write", "analysis", "workspace", read_only=False, handler=lambda **_: self.fail("write tool invoked")))
         orchestrator = Orchestrator(gateway=gateway)

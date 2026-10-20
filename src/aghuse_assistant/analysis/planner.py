@@ -17,6 +17,7 @@ def plan(demand: DemandContext, strategy) -> InvestigationPlan:
                 query=f"{stage['area']}: {requirement.text}",
                 preferred_tools=tuple(stage.get("preferred_tools", ())),
                 depends_on=(previous,) if previous else (),
+                required_area=bool(stage.get("required", True)),
             ))
             previous = step_id
     return InvestigationPlan(tuple(steps))

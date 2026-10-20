@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
 
 from aghuse_assistant.analysis import AnalysisEngine
 from aghuse_assistant.analysis.evidence import is_confirmed, normalize
-from aghuse_assistant.analysis.interpreter import interpret
+from aghuse_assistant.analysis.interpreter import interpret, search_terms
 from aghuse_assistant.analysis.planner import plan
 from aghuse_assistant.analysis.strategies import AghuseStrategy, GenericStrategy
 from aghuse_assistant.gateway import ToolGateway, ToolSpec
@@ -22,6 +22,7 @@ def finding(requirement_id="REQ-01"):
         "type": "CODE",
         "source_id": "src/ContaON.java:10",
         "source": {"path": "src/ContaON.java", "line": 10},
+        "matched_terms": ["conta"],
     }
 
 
@@ -30,6 +31,9 @@ class InterpreterTests(unittest.TestCase):
         for text, expected in (("erro no cálculo", "bug"), ("melhoria na tela", "melhoria"), ("migração do fluxo", "migração"), ("refatorar serviço", "refatoração")):
             self.assertEqual(interpret(text).demand_type, expected)
         self.assertEqual(interpret("").ambiguities, ("Descrição técnica ausente",))
+
+    def test_extracts_unique_normalized_search_terms(self):
+        self.assertEqual(search_terms("Melhoria no cálculo; cálculo de alta"), ("melhoria", "calculo", "alta"))
 
 
 class PlannerTests(unittest.TestCase):
@@ -49,6 +53,14 @@ class EvidenceTests(unittest.TestCase):
         self.assertTrue(is_confirmed(finding()))
         self.assertFalse(is_confirmed(normalize({"type": "CODE", "conclusion": "x"}, "REQ-01")))
 
+    def test_unknown_classification_or_missing_terms_cannot_confirm_coverage(self):
+        unknown = finding()
+        unknown["classification"] = "UNKNOWN"
+        self.assertFalse(is_confirmed(unknown))
+        missing_terms = finding()
+        missing_terms.pop("matched_terms")
+        self.assertFalse(is_confirmed(missing_terms))
+
 
 class EngineTests(unittest.TestCase):
     def test_no_tools_is_blocked(self):
@@ -62,6 +74,29 @@ class EngineTests(unittest.TestCase):
         result = AnalysisEngine().execute(ExecutionContext("other", "ANALYZE", "investigar"), gateway)
         self.assertEqual(result.coverage.status, "COMPLETE")
         self.assertEqual(result.affected_files, ("src/ContaON.java",))
+
+    def test_requires_evidence_for_each_planned_area(self):
+        gateway = ToolGateway()
+        gateway.register(ToolSpec("code.search", "analysis", "workspace", handler=lambda query: [finding(query["requirement_id"])] if query["area"] == "código" else []))
+        result = AnalysisEngine().execute(ExecutionContext("aghuse", "ANALYZE", "investigar banco"), gateway)
+        self.assertEqual(result.coverage.status, "PARTIAL")
+        self.assertIn("banco", result.coverage.pending_areas)
+
+    def test_malformed_tool_evidence_is_a_limitation(self):
+        gateway = ToolGateway()
+        gateway.register(ToolSpec("code.search", "analysis", "workspace", handler=lambda query: [{"conclusion": "sem origem"}]))
+        result = AnalysisEngine().execute(ExecutionContext("other", "ANALYZE", "investigar"), gateway)
+        self.assertEqual(result.coverage.status, "BLOCKED")
+        self.assertTrue(any("evidência inválida" in item for item in result.trace.limitations))
+
+    def test_source_outside_workspace_is_rejected(self):
+        unsafe = finding()
+        unsafe["source"] = {"path": "../secret.py", "line": 1}
+        gateway = ToolGateway()
+        gateway.register(ToolSpec("code.search", "analysis", "workspace", handler=lambda query: [unsafe]))
+        result = AnalysisEngine().execute(ExecutionContext("other", "ANALYZE", "investigar"), gateway)
+        self.assertEqual(result.coverage.status, "BLOCKED")
+        self.assertTrue(any("fora do workspace" in item for item in result.trace.limitations))
 
     def test_partial_failure_preserves_other_evidence(self):
         gateway = ToolGateway()

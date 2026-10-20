@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+import unicodedata
+
 from .models import DemandContext, Requirement
 
 
@@ -26,3 +29,13 @@ def interpret(text: str, references: tuple[str, ...] = ()) -> DemandContext:
         references=references,
         ambiguities=() if raw else ("Descrição técnica ausente",),
     )
+
+
+_SEARCH_STOP_WORDS = frozenset({"a", "ao", "as", "com", "da", "das", "de", "do", "dos", "e", "em", "na", "nas", "no", "nos", "o", "os", "para", "por", "um", "uma"})
+
+
+def search_terms(text: str) -> tuple[str, ...]:
+    """Extract deterministic, auditable terms from a requirement or step query."""
+    normalized = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii").casefold()
+    terms = (term for term in re.findall(r"[a-z0-9_./-]+", normalized) if len(term) > 2 and term not in _SEARCH_STOP_WORDS)
+    return tuple(dict.fromkeys(terms))

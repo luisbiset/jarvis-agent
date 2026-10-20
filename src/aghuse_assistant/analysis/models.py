@@ -38,6 +38,7 @@ class InvestigationStep:
     preferred_tools: tuple[str, ...] = ()
     depends_on: tuple[str, ...] = ()
     stop_condition: str = "evidência verificável ou bloqueio documentado"
+    required_area: bool = True
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,9 @@ class Coverage:
     unsupported_findings: int
     impact_components: int
     limitations: tuple[str, ...]
+    required_areas: tuple[str, ...] = ()
+    covered_areas: tuple[str, ...] = ()
+    pending_areas: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -95,7 +99,7 @@ class AnalysisResult:
             plan_value = value["plan"]
             investigation_plan = InvestigationPlan(tuple(InvestigationStep(
                 item["id"], item["requirement_id"], item["area"], item["capability"], item["query"],
-                tuple(item.get("preferred_tools", ())), tuple(item.get("depends_on", ())), item.get("stop_condition", "evidência verificável ou bloqueio documentado"),
+                tuple(item.get("preferred_tools", ())), tuple(item.get("depends_on", ())), item.get("stop_condition", "evidência verificável ou bloqueio documentado"), item.get("required_area", True),
             ) for item in plan_value["steps"]))
             trace_value = value["trace"]
             trace = InvestigationTrace(**trace_value)
@@ -104,6 +108,8 @@ class AnalysisResult:
                 coverage_value["status"], coverage_value["requirements_total"], coverage_value["requirements_covered"],
                 tuple(coverage_value["requirements_pending"]), coverage_value["unsupported_findings"],
                 coverage_value["impact_components"], tuple(coverage_value.get("limitations", ())),
+                tuple(coverage_value.get("required_areas", ())), tuple(coverage_value.get("covered_areas", ())),
+                tuple(coverage_value.get("pending_areas", ())),
             )
             return cls(demand, investigation_plan, trace, tuple(value["findings"]), tuple(value["impact_matrix"]), coverage, tuple(value["affected_files"]), tuple(value["evidence"]), dict(value["metrics"]))
         except (KeyError, TypeError, ValueError) as exc:

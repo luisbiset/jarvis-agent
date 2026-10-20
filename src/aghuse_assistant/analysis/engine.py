@@ -19,7 +19,7 @@ class AnalysisEngine:
         investigation_plan = plan(demand, self._strategy(context.project))
         trace = execute_plan(investigation_plan, gateway, self._limits(context))
         impacts = build_impact(trace.findings)
-        coverage = evaluate(demand, trace, len(impacts))
+        coverage = evaluate(demand, investigation_plan, trace, len(impacts))
         evidence = confirmed(trace.findings)
         files = tuple(sorted({item["source"]["path"] for item in evidence}))
         observed_metrics = {

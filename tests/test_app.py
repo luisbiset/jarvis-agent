@@ -54,6 +54,8 @@ class AppTests(unittest.TestCase):
             self.assertEqual(source.read_text(encoding="utf-8"), "linha com termo")
         self.assertEqual(result.status, "SUCCEEDED")
         self.assertEqual(result.data[0]["source"], {"path": "source.txt", "line": 1})
+        self.assertEqual(result.data[0]["matched_terms"], ("termo",))
+        self.assertEqual(result.data[0]["classification"], "CONDITIONAL")
         self.assertTrue(gateway.select(capability="analysis", read_only=True))
 
 
