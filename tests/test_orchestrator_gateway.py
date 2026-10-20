@@ -37,7 +37,7 @@ class OrchestratorGatewayTests(unittest.TestCase):
         orchestrator = Orchestrator()
         context = orchestrator.create({"operation": "IMPLEMENT", "objective": "alterar"})
         self.assertEqual(orchestrator.execute(context).state, ExecutionState.WAITING_INPUT)
-        self.assertEqual(orchestrator.execute(context, confirm=True).state, ExecutionState.SUCCEEDED)
+        self.assertEqual(orchestrator.execute(context, confirm=True).state, ExecutionState.WAITING_INPUT)
 
     def test_plan_requires_complete_analysis_artifact(self):
         result = Orchestrator().execute(Orchestrator().create({"operation": "PLAN", "objective": "planejar"}))

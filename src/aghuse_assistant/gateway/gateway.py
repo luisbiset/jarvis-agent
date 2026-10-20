@@ -12,6 +12,7 @@ class ToolSpec:
     read_only: bool = True
     confirmation_required: bool = False
     handler: Callable[..., Any] | None = None
+    rollback_handler: Callable[..., Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -52,5 +53,18 @@ class ToolGateway:
             return ToolResult(name, "UNAVAILABLE", warning="tool handler is not configured")
         try:
             return ToolResult(name, "SUCCEEDED", tool.handler(**kwargs))
+        except Exception as exc:
+            return ToolResult(name, "FAILED", warning=str(exc))
+
+    def rollback(self, name: str, *, confirm: bool = False, **kwargs: Any) -> ToolResult:
+        tool = self._tools.get(name)
+        if tool is None:
+            return ToolResult(name, "UNAVAILABLE", warning="tool is not registered")
+        if tool.confirmation_required and not confirm:
+            return ToolResult(name, "WAITING_INPUT", warning="explicit confirmation required")
+        if tool.rollback_handler is None:
+            return ToolResult(name, "UNAVAILABLE", warning="rollback handler is not configured")
+        try:
+            return ToolResult(name, "SUCCEEDED", tool.rollback_handler(**kwargs))
         except Exception as exc:
             return ToolResult(name, "FAILED", warning=str(exc))
