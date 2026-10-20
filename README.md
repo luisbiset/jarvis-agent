@@ -29,6 +29,7 @@ tests/            testes e fixtures
 
 ```bash
 python -m aghuse_assistant.app /analisar "objetivo"
+python -m aghuse_assistant.app /analisar "objetivo" --plan
 python -m aghuse_assistant.app /planejar "objetivo"
 python -m aghuse_assistant.app /implementar "objetivo" --confirm
 python -m aghuse_assistant.app /validar "objetivo"
@@ -36,3 +37,5 @@ python scripts/validate.py
 ```
 
 O Codex é o agente principal. O orchestrator é determinístico e controla contexto, permissões, checkpoints e execução. A implementação é a única operação autorizada a alterar arquivos.
+
+Use `--plan` com `/analisar` para encadear o planejamento na mesma execução. O artefato de análise permanece apenas em memória; o planejamento só é criado quando a análise está completa.

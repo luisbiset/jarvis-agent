@@ -12,7 +12,7 @@ Este repositório é a fonte central do AGHUse Assistant e reúne os plugins, sk
 - Ao alterar um plugin, valide o manifest, atualize somente o cachebuster e reinstale pelo marketplace `codex-agents`.
 - Não execute operações reais no Redmine, banco, WildFly, Docker ou ambientes compartilhados durante testes deste projeto.
 - Aplique `SEC-001`: não persista credenciais, URLs privadas nem conteúdo clínico/faturamento real em handoffs, artefatos, caches ou telemetria.
-- Aplique `FLOW-003` a toda tarefa: informe as pré-métricas ao usuário antes do trabalho substantivo, envie sinais objetivos ao policy engine V3, use modelo, reasoning e contexto adaptativos nas novas chamadas, exija progresso verificável em retries, respeite budgets agregados e informe métricas resumidas no fechamento, sem estimar tokens ou créditos ausentes.
+- Aplique `FLOW-003` a toda tarefa: classifique internamente antes do trabalho substantivo, envie sinais objetivos ao policy engine V3, use modelo, reasoning e contexto adaptativos nas novas chamadas, exija progresso verificável em retries, respeite budgets agregados e informe métricas resumidas somente no fechamento, sem estimar tokens ou créditos ausentes.
 - Aplique `FLOW-004` ao concluir mudanças relevantes: gere Technical Handoff proporcional com símbolos confirmados, ordem mínima de leitura, evidências de teste e Teach-Back conforme a policy, sem chamada adicional para tarefas triviais.
 
 ## Validação

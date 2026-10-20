@@ -529,16 +529,15 @@ def validate_critical_contracts() -> None:
         "config/AGENTS.md": [
             "Aplicar `FLOW-003` a toda tarefa solicitada",
             "não escolher reasoning manualmente quando o policy engine V3 estiver disponível",
-            "Antes de executar qualquer trabalho substantivo ou chamar ferramentas, mostrar ao usuário uma linha curta",
-            "modelo LLM <model retornado pela policy>",
-            "modelo LLM pendente da policy",
+            "Antes de executar qualquer trabalho substantivo ou chamar ferramentas, classificar internamente a tarefa",
+            "Não exibir pré-métricas nem atualizações intermediárias ao usuário",
             "Somente `MEDIUM` pode escalar automaticamente uma vez para `HIGH`",
             "Registrar tokens e créditos somente quando forem valores observados",
             "Encerrar toda resposta final com uma linha curta",
         ],
         "AGENTS.md": [
             "Aplique `FLOW-003` a toda tarefa",
-            "informe as pré-métricas ao usuário antes do trabalho substantivo",
+            "classifique internamente antes do trabalho substantivo",
         ],
         "config/contracts/protocol.md": [
             "Toda tarefa solicitada, inclusive consulta, explicação, diagnóstico somente leitura ou ação externa",
