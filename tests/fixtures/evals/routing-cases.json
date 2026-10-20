@@ -226,7 +226,7 @@
     },
     {
       "id": "aghuse-script",
-      "prompt": "Prepare aplicação e rollback idempotentes para uma nova coluna do AGHUse e mantenha os arquivos fora do Git.",
+      "prompt": "Prepare aplicação e rollback Oracle e PostgreSQL, sem idempotência, para uma nova coluna do AGHUse e mantenha os arquivos fora do Git.",
       "canary": true,
       "expected_skills": [
         "implementar",
@@ -261,7 +261,7 @@
       "requires_confirmation": false,
       "read_only": false,
       "invariants": [
-        "idempotent-apply-and-rollback",
+        "dialect-specific-apply-and-rollback",
         "aghuse-db-scripts-outside-git",
         "human-gate"
       ]
@@ -322,7 +322,7 @@
     },
     {
       "id": "implementar",
-      "prompt": "Revise aplicação e rollback Oracle da tarefa AGHUse e prepare o manifesto para anexar ao Redmine, sem commit nem publicação.",
+      "prompt": "Revise os scripts de aplicação e rollback Oracle e PostgreSQL, sem idempotência, da tarefa AGHUse e prepare o manifesto para anexar ao Redmine, sem commit nem publicação.",
       "canary": false,
       "expected_skills": [
         "implementar",
@@ -356,7 +356,7 @@
       "requires_confirmation": false,
       "read_only": false,
       "invariants": [
-        "idempotent-apply-and-rollback",
+        "dialect-specific-apply-and-rollback",
         "aghuse-db-scripts-outside-git"
       ]
     },

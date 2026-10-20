@@ -83,7 +83,7 @@ a escrita externa/compartilhada; edição local já autorizada não exige nova c
 
 Invariantes disponíveis:
 - create-on-not-rn: política AGH-RN-001.
-- idempotent-apply-and-rollback: política AGH-DB-002.
+- dialect-specific-apply-and-rollback: política AGH-DB-002.
 - aghuse-db-scripts-outside-git: política AGH-DB-001.
 - human-gate: política FLOW-001.
 - explicit-external-authorization: política FLOW-002.

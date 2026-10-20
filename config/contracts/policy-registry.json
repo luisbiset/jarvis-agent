@@ -16,8 +16,8 @@
     {
       "id": "AGH-DB-002",
       "category": "critical_invariant",
-      "summary": "Aplicação e rollback de banco AGHUse devem ser idempotentes.",
-      "enforced_by": ["config/agents/database.toml", "config/agents/database.toml", "scripts/validate.py"]
+      "summary": "Todo script de banco AGHUse tem aplicação e rollback separados para Oracle e PostgreSQL, sem lógica de idempotência.",
+      "enforced_by": ["config/agents/database.toml", "scripts/validate.py"]
     },
     {
       "id": "AGH-DB-003",

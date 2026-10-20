@@ -43,7 +43,7 @@ Versão comportamental: `3.1.0`.
 |---|---|---|
 | `AGH-RN-001` | critical_invariant | No AGHUse, reutilizar RN coesa existente ou criar ON; nunca criar nova classe RN. |
 | `AGH-DB-001` | critical_invariant | Scripts de implantação AGHUse são entregues externamente e não entram no Git do sistema. |
-| `AGH-DB-002` | critical_invariant | Aplicação e rollback de banco AGHUse devem ser idempotentes. |
+| `AGH-DB-002` | critical_invariant | Todo script de banco AGHUse tem aplicação e rollback separados para Oracle e PostgreSQL, sem lógica de idempotência. |
 | `AGH-DB-003` | critical_invariant | Novas consultas Criteria do AGHUse usam JPA CriteriaBuilder, não a API Criteria legada do Hibernate. |
 | `DB-DDL-001` | critical_invariant | No Oracle, novas FKs e unique constraints sobre tabelas populadas usam ENABLE NOVALIDATE, toda FK possui índice associado e todo CREATE INDEX termina com ONLINE. |
 | `AGH-TEST-001` | critical_invariant | O especialista qa cria ou altera testes unitários somente de ONs e RNs existentes. |

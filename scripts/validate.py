@@ -178,7 +178,7 @@ def validate_evals(agent_names: set[str]) -> None:
     ids: set[str] = set()
     allowed_invariants = {
         "create-on-not-rn",
-        "idempotent-apply-and-rollback",
+        "dialect-specific-apply-and-rollback",
         "aghuse-db-scripts-outside-git",
         "human-gate",
         "explicit-external-authorization",
@@ -565,7 +565,8 @@ def validate_critical_contracts() -> None:
         ],
         "config/agents/database.toml": [
             "aplicação e rollback",
-            "deve ser idempotente",
+            "aplicação Oracle, rollback Oracle, aplicação PostgreSQL e rollback PostgreSQL",
+            "não devem ser idempotentes",
             "Toda nova consulta baseada em Criteria",
             "Não crie novas consultas com `DetachedCriteria`",
             "comentários de dicionário, índices e grants",
